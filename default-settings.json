@@ -1,0 +1,10 @@
+{
+  "gitPath": "",
+  "refreshSeconds": 5,
+  "historyLimit": 100,
+  "pullMethod": "rebase",
+  "openOnStartup": true,
+  "commitMessage": "{{date}} {{hostname}} : ",
+  "commitDateFormat": "YYYY-MM-DD HH:mm:ss",
+  "hostname": ""
+}
