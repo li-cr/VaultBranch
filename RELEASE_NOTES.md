@@ -1,13 +1,10 @@
-VaultBranch 0.2.0 is the first public release.
+VaultBranch 0.2.1 addresses the community directory's release recommendations.
 
-- Compact source control sidebar with file trees, staging, commit, pull and push.
-- Commits include only the staged index.
-- Commit graph with branch filtering, search and file diffs.
-- Multiple Stash entries with individual Apply and Pop actions.
-- Right-click graph actions for Stash, Push and Rebase.
-- Conflict editor with local/incoming labels and continue/abort controls.
-- Commit message templates with date and hostname placeholders.
-- Theme-aware interface and portable settings.
+- Generate GitHub artifact attestations for `main.js`, `manifest.json` and `styles.css`.
+- Attach only the three supported Obsidian plugin assets; omit the extra ZIP.
+- Document the filesystem and Git subprocess capabilities detected by the community scanner.
+- Explicitly set `shell: false` on Git subprocesses (matching the previous execFile default).
+- Keep the existing source control, graph, Stash and conflict workflows.
 
 Desktop only. Requires Git installed separately. Git authentication and commit identity use the local Git configuration.
 

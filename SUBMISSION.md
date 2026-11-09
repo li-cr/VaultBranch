@@ -14,7 +14,7 @@ Description:
 
 > Manage Git changes, browse a commit graph, restore stashes, and resolve conflicts in your vault.
 
-Initial release tag: `0.2.0` (must match `manifest.json` exactly).
+Current release tag: `0.2.1` (must match `manifest.json` exactly).
 
 ## Before submitting
 
@@ -31,3 +31,9 @@ The default branch must contain `README.md`, `LICENSE`, `manifest.json` and the 
 The plugin becomes installable from within Obsidian after the directory's review requirements are satisfied. This repository cannot bypass or guarantee that review. Do not submit a duplicate plugin entry through the old `community-plugins.json` PR route unless the official documentation changes back to it.
 
 No Obsidian account password, GitHub token, SSH private key, or local plugin `data.json` should be committed to the repository.
+
+## Review recommendations and capability disclosures
+
+Version `0.2.1` publishes only `main.js`, `manifest.json` and `styles.css` as release attachments. GitHub artifact attestations are generated for those exact files by the release workflow. Select or refresh this version in the directory to rerun the release checks; version `0.2.0` still has its original attachments.
+
+The filesystem and shell/process capability warnings are expected: the plugin reads Git metadata and repository files with `node:fs/promises` and invokes the installed Git executable with `node:child_process.execFile`. It uses argument arrays and `shell: false`, not concatenated shell command strings. These capabilities share Obsidian's OS permissions; Git hooks and credential helpers follow the user's Git configuration. See the README for the full disclosure. Attestations do not suppress those warnings or guarantee directory approval.

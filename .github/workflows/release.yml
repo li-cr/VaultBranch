@@ -13,6 +13,10 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,6 +27,22 @@ jobs:
       - run: npm run check
       - run: npm test
       - run: npm run build
+      - name: Attest release files
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            dist/vaultbranch/main.js
+            dist/vaultbranch/manifest.json
+            dist/vaultbranch/styles.css
+      - name: Verify attestations
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for file in main.js manifest.json styles.css; do
+            gh attestation verify "dist/vaultbranch/$file" --repo "$GITHUB_REPOSITORY"
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: vaultbranch
@@ -49,14 +69,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          cd dist
-          zip -r vaultbranch.zip vaultbranch
-          cd ..
           gh release create "$RELEASE_TAG" \
             dist/vaultbranch/main.js \
             dist/vaultbranch/manifest.json \
             dist/vaultbranch/styles.css \
-            dist/vaultbranch.zip \
             --title "VaultBranch $RELEASE_TAG" \
             --notes-file RELEASE_NOTES.md \
             --verify-tag

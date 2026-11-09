@@ -25,11 +25,11 @@ Community directory submission is pending. Uploading this repository or creating
 ### Install from a GitHub release
 
 1. Install Git and initialize or clone a repository whose root is your vault.
-2. Download `vaultbranch.zip` from [Releases](https://github.com/li-cr/VaultBranch/releases).
-3. Extract the `vaultbranch` folder into `<vault>/.obsidian/plugins/`.
+2. Create `<vault>/.obsidian/plugins/vaultbranch/`.
+3. Download `main.js`, `manifest.json` and `styles.css` from the same [Release](https://github.com/li-cr/VaultBranch/releases) into that folder.
 4. Open Obsidian Settings → Community plugins and enable **VaultBranch**.
 
-Alternatively, create `<vault>/.obsidian/plugins/vaultbranch/` and put the release assets `main.js`, `manifest.json` and `styles.css` inside it. No Node.js or npm is needed to run the plugin.
+No Node.js or npm is needed to run the plugin. Release attachments contain only these three files, matching the Obsidian installer.
 
 BRAT users can add the repository `li-cr/VaultBranch` once its first release is available.
 
@@ -72,6 +72,27 @@ VaultBranch has its own plugin ID. Disable **My Git** before enabling VaultBranc
 
 VaultBranch has no analytics or telemetry and does not use a separate backend. Git data stays in your repository. Fetch, Pull and Push communicate with the remotes configured in that repository through the installed Git executable. The plugin reads the local hostname only for the commit message template, unless you override it. No credentials are included in the release.
 
+### Why the directory reports filesystem and command execution warnings
+
+VaultBranch is a native Git integration. The directory's capability scanner detects the following modules:
+
+- `node:fs/promises`: reads repository files and Git operation metadata (including hidden files), writes conflict resolutions, and updates `.gitignore` when you explicitly choose to allow settings tracking. Git metadata can live outside the vault for a linked Git worktree.
+- `node:child_process`: launches the installed Git executable using `execFile` with an argument array, the vault as its working directory, and `shell: false`. Commit messages and paths are not assembled into a shell command. The optional executable override is a path to Git, not a shell command.
+
+These capabilities run with the same system permissions as Obsidian; they are not an operating-system sandbox. Git also honors your repository configuration, hooks, credential helpers and configured remotes. Use the plugin with repositories and Git configurations you trust. The module warnings are expected for this design and are disclosed here rather than hidden or bypassed.
+
+### Verify release provenance
+
+Tagged releases from `0.2.1` onward generate GitHub artifact attestations for `main.js`, `manifest.json` and `styles.css`. These bind each file's digest to the source repository and release build. After downloading the files, verify them with GitHub CLI:
+
+```sh
+gh attestation verify main.js --repo li-cr/VaultBranch
+gh attestation verify manifest.json --repo li-cr/VaultBranch
+gh attestation verify styles.css --repo li-cr/VaultBranch
+```
+
+Attestations establish build provenance; they do not remove filesystem or process-execution capabilities and do not certify that a plugin is safe.
+
 ## Development
 
 ```sh
@@ -83,7 +104,7 @@ npm run build
 
 Source files are in `src/`. The build bundles the Git service into a single CommonJS `main.js`; only the Obsidian API and Node built-ins remain external. `dist/vaultbranch/` contains the installable plugin. Test cases create isolated temporary repositories and local bare remotes; `npm test` does not contact GitHub.
 
-Pushing a tag that exactly matches `manifest.json` (for example `0.2.0`, without a `v` prefix) triggers the release workflow. It runs checks and tests, builds the plugin, and publishes the three Obsidian assets plus a ZIP. The workflow uses the repository's automatic GitHub Actions token.
+Pushing a tag that exactly matches `manifest.json` (for example `0.2.1`, without a `v` prefix) triggers the release workflow. It runs checks and tests, builds the plugin, generates provenance attestations and publishes only the three Obsidian assets. The workflow uses the repository's automatic GitHub Actions token and short-lived OIDC identity; no personal release token is needed.
 
 See [SUBMISSION.md](SUBMISSION.md) for the current community directory submission process.
 

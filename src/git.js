@@ -153,6 +153,7 @@ class GitService {
     return new Promise((resolve, reject) => {
       execFile(this.binary, ["-c", "core.quotepath=false", "-c", "color.ui=false", ...args], {
         cwd: this.root,
+        shell: false,
         windowsHide: true,
         encoding: "utf8",
         timeout,
