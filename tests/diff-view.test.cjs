@@ -7,15 +7,23 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { createRequire } = require("node:module");
 const main = path.resolve(__dirname, "../src/main.js");
-const localRequire = createRequire(main);
-const exported = { exports: {} };
-vm.runInNewContext(fs.readFileSync(main, "utf8"), {
-  module: exported,
-  require: (name) => name === "obsidian" ? {
-    Plugin: class {}, ItemView: class {}, PluginSettingTab: class {},
-  } : localRequire(name),
-});
-const Plugin = exported.exports;
+const modules = new Map();
+function load(file) {
+  if (modules.has(file)) return modules.get(file).exports;
+  const module = { exports: {} };
+  modules.set(file, module);
+  const localRequire = createRequire(file);
+  vm.runInNewContext(fs.readFileSync(file, "utf8"), {
+    module, setTimeout, clearTimeout,
+    require: (name) => {
+      if (name === "obsidian") return { Plugin: class {}, ItemView: class {}, PluginSettingTab: class {} };
+      const resolved = localRequire.resolve(name);
+      return resolved.startsWith(path.join(__dirname, "../src/views/")) || resolved === path.join(__dirname, "../src/settings.js") ? load(resolved) : localRequire(name);
+    },
+  }, { filename: file });
+  return module.exports;
+}
+const Plugin = load(main);
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 test("rapid file clicks keep the latest MD/hidden-JSON request visible even when loading times differ", async () => {
@@ -98,4 +106,73 @@ test("non-Git settings update without refreshing the repository or rewriting unc
   assert.equal(saved, 1);
   await plugin.updateSetting("gitPath", "git-custom");
   assert.equal(refreshed, 1);
+});
+
+function editorFixture() {
+  const plugin = new Plugin();
+  plugin.settings = { diffAutosave: false };
+  plugin.editSessions = new Map(); plugin.editorTasks = new Map(); plugin.diffDrafts = new Map();
+  let disk = "working\n";
+  plugin.git = { worktreeVersions: async () => ({ index: "index\n", working: disk }) };
+  plugin.scheduleRefresh = () => {};
+  plugin.app = {
+    workspace: { requestSaveLayout() {} },
+    vault: { getAbstractFileByPath: () => null, adapter: { process: async (_, update) => { disk = update(disk); } } },
+  };
+  return plugin;
+}
+
+test("shared clean editor sessions are released only after the last view releases them", async () => {
+  const plugin = editorFixture();
+  const [first, second] = await Promise.all([plugin.editorSession("a.json", true), plugin.editorSession("a.json", true)]);
+  assert.equal(first, second);
+  assert.equal(first.users, 2);
+  plugin.releaseEditorSession("a.json", first);
+  assert.equal(plugin.editSessions.get("a.json"), second);
+  plugin.releaseEditorSession("a.json", second);
+  assert.equal(plugin.editSessions.size, 0);
+  assert.equal(plugin.diffDrafts.size, 0);
+});
+
+test("closed manual drafts survive reopening and are released after saving and closing", async () => {
+  const plugin = editorFixture();
+  const session = await plugin.editorSession("a.json", true);
+  session.edit("unsaved draft\n");
+  plugin.releaseEditorSession("a.json", session);
+  assert.equal(plugin.editSessions.get("a.json"), session);
+  const reopened = await plugin.editorSession("a.json", true);
+  assert.equal(reopened, session);
+  assert.equal(reopened.draft.text, "unsaved draft\n");
+  await reopened.flush();
+  plugin.releaseEditorSession("a.json", reopened);
+  assert.equal(plugin.editSessions.size, 0);
+  assert.equal(plugin.diffDrafts.size, 0);
+});
+
+test("closing during a pending save retains its session until the write finishes", async () => {
+  const plugin = editorFixture();
+  let begin, release;
+  const started = new Promise((resolve) => { begin = resolve; });
+  const blocked = new Promise((resolve) => { release = resolve; });
+  plugin.app.vault.adapter.process = async (_, update) => { begin(); await blocked; assert.equal(update("working\n"), "saved\n"); };
+  const session = await plugin.editorSession("a.json", true);
+  session.edit("saved\n");
+  const saving = session.flush();
+  await started;
+  plugin.releaseEditorSession("a.json", session);
+  assert.equal(plugin.editSessions.get("a.json"), session);
+  release();
+  assert.equal(await saving, true);
+  assert.equal(plugin.editSessions.size, 0);
+  assert.equal(plugin.diffDrafts.size, 0);
+});
+
+test("return-context cleanup visits every leaf and only removes closed leaves", () => {
+  const plugin = new Plugin();
+  plugin.graphReturns = new Map([["first", {}], ["second", {}], ["closed", {}]]);
+  plugin.app = { workspace: { iterateAllLeaves: (visit) => {
+    for (const id of ["first", "second"]) if (visit({ id })) break;
+  } } };
+  plugin.pruneGraphReturns();
+  assert.deepEqual([...plugin.graphReturns.keys()], ["first", "second"]);
 });

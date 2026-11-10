@@ -3,7 +3,8 @@
 ## 项目与目录
 
 - 本仓库是 Obsidian 桌面 Git 插件 VaultBranch 的正式源码，远程仓库为 `li-cr/VaultBranch`。
-- `src/main.js`：Obsidian 生命周期、设置、侧栏、提交图和冲突界面。
+- `src/main.js`：Obsidian 生命周期、Git 操作协调、编辑会话和视图导航。
+- `src/views/`：侧栏 `source.js`、差异编辑 `diff.js`、提交图 `history.js`、冲突 `conflict.js`；`shared.js` 只放视图类型和共用 UI 辅助函数。`src/settings.js` 负责设置界面。
 - `src/git.js`：Git 命令、状态解析、提交图数据、Stash 和冲突操作。
 - `src/i18n.js`：中文与英文文案；使用 `t("文案")` 或带插值的标签模板，新增提示需补英文翻译。
 - 未暂存差异默认用 CodeMirror MergeView 编辑，不按扩展名或 Obsidian 文件索引筛选；二进制、删除等无法编辑的文件回退为差异预览。Diff autosave 默认关闭，使用保存按钮或 Ctrl/Cmd+S；切换文件保留草稿，未保存时阻止 Git 操作。开启后停止输入 500 ms 自动保存，切换文件和 Git 操作前保存。普通文件使用 `vault.process`，隐藏配置使用 `adapter.process` 并监听 `raw`。暂存区和历史只读，不自动暂存或提交。`src/autosave.js` 按路径串行处理保存及外部修改；差异打开请求按点击顺序执行。保留换行、BOM、撤销历史和草稿；外部修改与草稿并存时暂停覆盖。
@@ -19,6 +20,9 @@
 
 - 使用现有 CommonJS JavaScript 和 esbuild，保持实现简洁，避免无必要的依赖或框架。
 - 性能优化优先使用 Obsidian debounce 和 CodeMirror 更新机制；合并重复文件通知，无变化时不重建目录树。Git 文本缓存按不可变 blob 哈希匹配并限制容量；保留实时索引、工作区、路径和冲突检查，不缓存可变工作区状态。
+- 历史沿用现有分批加载上限；批量获取 Stash 元数据，长列表分批绘制并检查关闭/切换请求。文件排序复用原生 Intl.Collator，不引入额外列表框架。
+- 差异视图获取和释放编辑会话必须成对，包括加载被取消的情况；多视图共用的会话在最后一个视图关闭后才释放。未保存草稿和保存中的会话保留，写入完成后再清理；销毁 MergeView、移除会话监听器和文档引用。不要为了清理内存而丢弃草稿。
+- 异常提示沿用简短原因和必要下一步，不增加多级分类、重复弹窗或自动重试流程。
 - 支持 Windows、Linux、macOS 桌面端；路径使用 `node:path`，默认从 PATH 调用 `git`，不硬编码个人路径或假定可执行文件一定叫 `git.exe`。
 - Obsidian 桌面端提供 Node.js 运行环境，用户需要另行安装 Git；当前实现不支持移动端。
 - Git 使用 `execFile`、参数数组、`shell: false`，不拼接 shell 命令。保留超时、输出大小限制和错误处理。

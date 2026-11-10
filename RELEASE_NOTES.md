@@ -1,12 +1,12 @@
-VaultBranch 0.2.14 reduces redundant Git queries and view updates.
+VaultBranch 0.2.15 separates views and releases unused editor resources.
 
-- Coalesce repeated file notifications and use Obsidian's debounce for repository refreshes.
-- Reuse one size-limited, immutable index blob by Git hash while continuing to check the current index and working file.
-- Skip unchanged directory-tree renders and avoid repeatedly converting unchanged CodeMirror documents.
-- Avoid repository queries when changing non-Git preferences and skip saving identical setting values.
-- Preserve manual saving, optional autosave, undo history, hidden JSON editing, and external-change conflict protection.
+- Move source control, diff, history, conflict, and settings views into focused modules while retaining the existing Obsidian and CodeMirror APIs.
+- Read all Stash metadata in one Git process and reuse native Intl.Collator for file-tree sorting.
+- Render long history lists in batches of 100, allowing the UI to process other events and stopping when a view closes or changes.
+- Release clean editor sessions, drafts, CodeMirror instances, and document references after their last view closes. Retain unsaved drafts and pending saves; keep shared sessions alive while another view uses them.
+- Remove return-navigation records for closed workspace leaves. Keep existing error messages and recovery controls.
 
-Validated with 48 local automated tests and 27 Obsidian UI checks. In an isolated test vault, ten simultaneous unchanged-file notifications required 2 Git subprocesses instead of 50; three unchanged repository refreshes produced no directory-tree DOM mutations. These measurements describe the tested operations, not an overall application speedup.
+Validated with 52 local automated tests and Obsidian UI checks, including a synthetic 1,000-commit graph, cancellation during rendering, manual draft recovery, shared editor sessions, hidden JSON editing, keyboard and mouse actions, graph return navigation, and external-change protection. No new runtime dependencies.
 
 Release assets continue to include GitHub provenance attestations.
 

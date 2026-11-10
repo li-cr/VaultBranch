@@ -120,6 +120,14 @@ test("three consecutive stashes remain visible and restore newest first with ind
     assert.equal((await service.history(100, "main")).length, 1);
   }
   assert.equal((await service.stashHistory(2)).length, 2);
+  const commands = [];
+  const run = service.run.bind(service);
+  service.run = (args, options) => { commands.push(args[0]); return run(args, options); };
+  const entries = await service.stashHistory(100);
+  assert.deepEqual(commands, ["stash"], "all stash metadata comes from a single Git process");
+  assert.ok(entries.every((entry) => entry.author === "VaultBranch Test" && Number.isFinite(Date.parse(entry.date))));
+  assert.ok(entries.every((entry) => entry.parents[0] === git(root, "rev-parse", "HEAD").trim()));
+  service.run = run;
   await write(root, "blocked.md", "keep this\n");
   await assert.rejects(() => service.stashPop(), /工作区干净/);
   assert.equal((await service.stashHistory(100)).length, 3);

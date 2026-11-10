@@ -393,16 +393,15 @@ class GitService {
   }
 
   async stashHistory(limit) {
-    const fields = (await this.run(["stash", "list", "-z", `--max-count=${Math.max(1, Math.min(1000, Number(limit) || 100))}`, "--format=%H%x00%gd%x00%gs"]))
+    const fields = (await this.run(["stash", "list", "-z", `--max-count=${Math.max(1, Math.min(1000, Number(limit) || 100))}`, "--format=%H%x00%gd%x00%gs%x00%P%x00%an%x00%aI"]))
       .split("\0");
     const entries = [];
-    for (let i = 0; i + 2 < fields.length; i += 3) {
-      const [hash, ref, subject] = fields.slice(i, i + 3);
+    for (let i = 0; i + 5 < fields.length; i += 6) {
+      const [hash, ref, subject, parents, author, date] = fields.slice(i, i + 6);
       if (!/^[a-f0-9]{40,64}$/.test(hash)) continue;
-      const detail = (await this.run(["show", "-s", `--format=%P%x00%an%x00%aI%x00%s%x00`, hash])).split("\0");
       entries.push({
-        hash, parents: (detail[0] || "").split(" ").filter(Boolean).slice(0, 1), short: hash.slice(0, 7),
-        author: detail[1] || "", date: detail[2] || "", refs: "stash", stashRef: ref,
+        hash, parents: parents.split(" ").filter(Boolean).slice(0, 1), short: hash.slice(0, 7),
+        author, date, refs: "stash", stashRef: ref,
         subject: `${ref} · ${subject.replace(/^On [^:]+: /, "")}`, stash: true,
       });
     }

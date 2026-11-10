@@ -1,733 +1,16 @@
 "use strict";
 
-const { t, setLanguage } = require("./i18n.js");
-
-const { Plugin, ItemView, Notice, setIcon, Platform, PluginSettingTab, Setting, Modal, Menu, Scope, moment, debounce } = require("obsidian");
+const { Plugin, Notice, setIcon, Platform, Modal, moment, debounce } = require("obsidian");
 const { hostname } = require("node:os");
-const { MergeView } = require("@codemirror/merge");
-const { EditorState, Compartment, Transaction } = require("@codemirror/state");
-const { EditorView, keymap, lineNumbers, drawSelection } = require("@codemirror/view");
-const { history, historyKeymap, defaultKeymap, indentWithTab } = require("@codemirror/commands");
+const { t, setLanguage } = require("./i18n.js");
 const { Autosave, normalize, conflictMessage } = require("./autosave.js");
 const { dateTriggerRange } = require("./date.js");
-
-const SOURCE_VIEW = "vaultbranch-source-control";
-const DIFF_VIEW = "vaultbranch-diff";
-const HISTORY_VIEW = "vaultbranch-history";
-const CONFLICT_VIEW = "vaultbranch-conflict";
-const DEFAULT_SETTINGS = require("../default-settings.json");
-const LABELS = { staged: "已暂存", unstaged: "未暂存", conflicts: "冲突", history: "历史" };
-const STATUS_LABELS = { M: "已修改", A: "新增", D: "删除", R: "重命名", C: "复制", T: "类型改变", U: "冲突", "?": "未跟踪" };
-
-function el(parent, tag, cls, text) {
-  const node = document.createElement(tag);
-  if (cls) node.className = cls;
-  if (text !== undefined) node.textContent = text;
-  parent.appendChild(node);
-  return node;
-}
-
-function button(parent, icon, title, action, text) {
-  const node = el(parent, "button", text ? "vaultbranch-button" : "vaultbranch-icon-button");
-  node.type = "button";
-  node.title = title;
-  node.setAttribute("aria-label", title);
-  if (icon) setIcon(el(node, "span", "vaultbranch-button-icon"), icon);
-  if (text) el(node, "span", "", text);
-  node.addEventListener("click", (event) => {
-    event.stopPropagation();
-    Promise.resolve().then(action).catch((error) => new Notice(error.message));
-  });
-  return node;
-}
-
-function drawGraph(parent, commit, width) {
-  const colors = ["blue", "green", "orange", "purple", "red"];
-  const color = (lane) => `var(--color-${colors[lane % colors.length]})`;
-  const x = (lane) => 12 + lane * 16;
-  const svgNode = (parent, tag, attributes) => {
-    const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
-    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
-    parent.appendChild(node);
-    return node;
-  };
-  const svg = svgNode(parent, "svg", { width, height: 36, viewBox: `0 0 ${width} 36`, class: "vaultbranch-graph" });
-  for (const { from, to, through } of commit.edges) {
-    if (to < 0) continue;
-    const d = through ? `M ${x(from)} 0 L ${x(from)} 18 C ${x(from)} 26 ${x(to)} 26 ${x(to)} 36`
-      : `M ${x(from)} 18 C ${x(from)} 27 ${x(to)} 27 ${x(to)} 36`;
-    svgNode(svg, "path", { d, stroke: color(from), "stroke-width": 2, fill: "none" });
-  }
-  svgNode(svg, "path", { d: `M ${x(commit.column)} 0 L ${x(commit.column)} 18`, stroke: color(commit.column), "stroke-width": 2 });
-  svgNode(svg, "circle", { cx: x(commit.column), cy: 18, r: commit.parents.length > 1 ? 5 : 4,
-    fill: color(commit.column), stroke: "var(--background-primary)", "stroke-width": 1.5 });
-}
-
-class SourceControlView extends ItemView {
-  constructor(leaf, plugin) {
-    super(leaf);
-    this.plugin = plugin;
-    this.collapsed = new Set();
-    this.selected = "";
-  }
-
-  getViewType() { return SOURCE_VIEW; }
-  getDisplayText() { return t("VaultBranch · 源代码管理"); }
-  getIcon() { return "git-branch"; }
-
-  async onOpen() {
-    this.renderSnapshot = null;
-    this.contentEl.empty();
-    this.contentEl.addClass("vaultbranch-source");
-    const header = el(this.contentEl, "div", "vaultbranch-header");
-    this.branchEl = el(header, "div", "vaultbranch-branch");
-    this.commitButton = button(header, "check", t("Commit · 只提交暂存区 · Ctrl+Enter"), () => this.plugin.commit());
-    this.commitButton.classList.add("vaultbranch-commit");
-    this.pullButton = button(header, "arrow-down", "Pull", () => this.plugin.runGit("pull"));
-    this.pushButton = button(header, "arrow-up", "Push", () => this.plugin.runGit("push"));
-    this.stashButton = button(header, "archive", t("Stash 当前修改"), () => this.plugin.toggleStash());
-    button(header, "history", t("提交历史 / 分支图"), () => this.plugin.openHistory());
-    this.refreshButton = button(header, "refresh-cw", t("刷新文件状态"), () => this.plugin.refresh(true));
-    button(header, "ellipsis", t("更多操作"), () => {
-      const menu = new Menu();
-      menu.addItem((item) => item.setTitle("Fetch").setIcon("download").onClick(() => this.plugin.runGit("fetch")));
-      menu.addItem((item) => item.setTitle(t("操作输出")).setIcon("scroll-text").onClick(() => this.plugin.showOutput()));
-      menu.addItem((item) => item.setTitle(t("设置")).setIcon("settings").onClick(() => this.plugin.openSettings()));
-      menu.showAtPosition({ x: header.getBoundingClientRect().right - 180, y: header.getBoundingClientRect().bottom });
-    });
-    const composer = el(this.contentEl, "div", "vaultbranch-composer");
-    this.messageEl = el(composer, "textarea", "vaultbranch-message");
-    this.messageEl.setAttribute("aria-label", t("提交说明"));
-    this.messageEl.rows = 2;
-    this.messageEl.value = this.plugin.draft;
-    this.messageEl.addEventListener("input", () => {
-      this.plugin.draft = this.messageEl.value;
-      this.updateButtons();
-    });
-    this.messageEl.addEventListener("keydown", (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-        event.preventDefault();
-        if (!this.commitButton.disabled) this.commitButton.click();
-      }
-    });
-    this.noticeEl = el(this.contentEl, "div", "vaultbranch-notice");
-    this.recoveryEl = el(this.contentEl, "div", "vaultbranch-recovery");
-    this.treeEl = el(this.contentEl, "div", "vaultbranch-tree");
-    this.treeEl.setAttribute("aria-label", t("Git 文件改动"));
-    this.render();
-    await this.plugin.refresh();
-  }
-
-  updateButtons() {
-    if (!this.commitButton) return;
-    const { status, busy, ready } = this.plugin;
-    const blocked = !ready || busy || !status || Boolean(status.operation) || Boolean(status?.files.some((file) => file.conflict));
-    const staged = status ? this.plugin.core.groupsFor(status.files).staged.length : 0;
-    const message = this.plugin.commitMessage();
-    this.messageEl.placeholder = this.plugin.commitMessage("") || t("提交说明（Ctrl+Enter）");
-    this.messageEl.title = t`最终提交说明：${message || t("（空）")}`;
-    this.messageEl.disabled = busy;
-    this.commitButton.disabled = blocked || !staged || !message;
-    this.pullButton.disabled = blocked || !status?.upstream;
-    this.pushButton.disabled = blocked || !status?.upstream;
-    const canStash = !blocked && Boolean(status?.files.length);
-    const canPop = !blocked && !status?.files.length && Boolean(status?.stash);
-    this.stashButton.disabled = !canStash && !canPop;
-    const stashTitle = canPop ? t("恢复最近一次 Stash") : canStash ? t("Stash 当前修改（包含未跟踪文件）") : t("没有可 Stash 或恢复的修改");
-    this.stashButton.title = stashTitle;
-    this.stashButton.setAttribute("aria-label", stashTitle);
-    this.stashButton.classList.toggle("is-active", canPop);
-    const reason = busy ? t("已有 Git 操作执行中，请稍候。") : !ready || !status ? t("仓库尚未就绪，请刷新状态。") : status.operation ? t`当前 ${status.operation} 尚未完成。请先解决冲突并继续，或中止本次操作。` : status.files.some((file) => file.conflict) ? t("请先解决冲突。") : !status.upstream ? t("当前分支未配置上游，暂不能 Pull / Push。") : "";
-    this.pullButton.title = reason || `Pull (${this.plugin.settings.pullMethod})`;
-    this.pushButton.title = reason || `Push → ${status.upstream}`;
-    this.commitButton.title = blocked ? reason : !staged ? t("暂存区为空，先点击文件旁的 +。") : !message ? t("请填写提交说明。") : t`Commit · 只提交暂存区 · Ctrl+Enter\n${message}`;
-    this.refreshButton.disabled = busy;
-    this.commitButton.classList.toggle("is-busy", busy);
-  }
-
-  render() {
-    if (!this.treeEl) return;
-    const { status, busy, error } = this.plugin;
-    this.updateButtons();
-    const snapshot = JSON.stringify([status, busy, error, this.selected, [...this.collapsed], this.plugin.settings.language]);
-    if (this.renderSnapshot === snapshot) return;
-    this.renderSnapshot = snapshot;
-    this.branchEl.replaceChildren();
-    setIcon(el(this.branchEl, "span", "vaultbranch-branch-icon"), "git-branch");
-    el(this.branchEl, "span", "vaultbranch-branch-name", status?.branch || t("读取仓库中…"));
-    if (status) el(this.branchEl, "span", "vaultbranch-sync-count", `↑ ${status.ahead}  ↓ ${status.behind}`);
-    this.branchEl.title = status?.upstream ? t`上游 ${status.upstream} · ↑↓ 为上次 Fetch 的结果` : t("未设置上游分支");
-    this.noticeEl.textContent = busy ? `${this.plugin.busyLabel}…` : error || (status?.operation ? t`${status.operation} 尚未完成，Pull / Push 暂不可用。解决冲突后继续，或中止。` : status && !status.upstream ? t("当前分支没有上游，Pull / Push 暂不可用。") : "");
-    this.noticeEl.classList.toggle("is-error", Boolean(error || status?.operation));
-    this.noticeEl.hidden = !this.noticeEl.textContent;
-    this.recoveryEl.replaceChildren();
-    this.recoveryEl.hidden = !["rebase", "merge"].includes(status?.operation);
-    if (!this.recoveryEl.hidden) {
-      const next = button(this.recoveryEl, "play", t("继续当前操作"), () => this.plugin.mutate(t("继续"), () => this.plugin.git.continueOperation()), t("继续"));
-      next.disabled = busy || status.files.some((file) => file.conflict);
-      const abort = button(this.recoveryEl, "undo-2", t("中止当前操作"), () => this.plugin.confirmAbort(), t("中止"));
-      abort.disabled = busy;
-    }
-
-    const scroll = this.treeEl.scrollTop;
-    this.treeEl.replaceChildren();
-    if (!status) {
-      el(this.treeEl, "div", "vaultbranch-empty", error ? t("无法读取 Git 仓库，请查看上方错误。") : t("正在读取文件改动…"));
-      return;
-    }
-    const groups = this.plugin.core.groupsFor(status.files);
-    if (groups.conflicts.length) this.renderGroup("conflicts", groups.conflicts);
-    this.renderGroup("staged", groups.staged);
-    this.renderGroup("unstaged", groups.unstaged);
-    if (!status.files.length) el(this.treeEl, "div", "vaultbranch-clean", t("✓ 工作区干净"));
-    this.treeEl.scrollTop = scroll;
-  }
-
-  renderGroup(area, files) {
-    const group = el(this.treeEl, "section", "vaultbranch-group");
-    const header = el(group, "div", "vaultbranch-group-header");
-    const key = `group:${area}`;
-    const toggle = button(header, this.collapsed.has(key) ? "chevron-right" : "chevron-down", t`展开或折叠${t(LABELS[area])}`, () => this.toggle(key));
-    toggle.setAttribute("aria-expanded", String(!this.collapsed.has(key)));
-    const name = el(header, "button", "vaultbranch-group-label", t(LABELS[area]));
-    name.type = "button";
-    name.addEventListener("click", () => this.toggle(key));
-    el(header, "span", "vaultbranch-count", String(files.length));
-    if (files.length && area !== "conflicts") {
-      const action = button(header, area === "staged" ? "minus" : "plus", area === "staged" ? t("全部取消暂存") : t("全部暂存"), () => this.plugin.changeStage(files, area));
-      action.disabled = this.plugin.busy;
-    }
-    if (!files.length) {
-      return;
-    }
-    if (!this.collapsed.has(key)) {
-      const tree = el(group, "div", "vaultbranch-group-tree");
-      tree.setAttribute("role", "tree");
-      tree.setAttribute("aria-label", t`${t(LABELS[area])}文件`);
-      this.renderTree(tree, this.plugin.core.treeFor(files), area, 0);
-    }
-  }
-
-  toggle(key) {
-    if (this.collapsed.has(key)) this.collapsed.delete(key);
-    else this.collapsed.add(key);
-    this.render();
-  }
-
-  renderTree(parent, tree, area, depth) {
-    const compare = (a, b) => a.localeCompare(b, this.plugin.settings.language === "en" ? "en" : "zh-CN", { numeric: true });
-    for (const [name, folder] of [...tree.folders].sort(([a], [b]) => compare(a, b))) {
-      const key = `${area}:${folder.path}`;
-      const node = el(parent, "div", "vaultbranch-folder-node");
-      node.dataset.path = folder.path;
-      node.setAttribute("role", "treeitem");
-      node.setAttribute("aria-level", String(depth + 1));
-      node.setAttribute("aria-expanded", String(!this.collapsed.has(key)));
-      const row = el(node, "button", "vaultbranch-folder");
-      row.type = "button";
-      row.title = folder.path;
-      row.setAttribute("aria-expanded", String(!this.collapsed.has(key)));
-      setIcon(el(row, "span", "vaultbranch-chevron"), this.collapsed.has(key) ? "chevron-right" : "chevron-down");
-      setIcon(el(row, "span", "vaultbranch-file-icon"), this.collapsed.has(key) ? "folder-closed" : "folder-open");
-      el(row, "span", "vaultbranch-file-name", name);
-      row.addEventListener("click", () => this.toggle(key));
-      if (!this.collapsed.has(key)) {
-        const children = el(node, "div", "vaultbranch-children");
-        children.setAttribute("role", "group");
-        this.renderTree(children, folder, area, depth + 1);
-      }
-    }
-    for (const file of [...tree.files].sort((a, b) => compare(a.path, b.path))) {
-      const row = el(parent, "div", "vaultbranch-file-row");
-      row.dataset.path = file.path;
-      row.setAttribute("role", "treeitem");
-      row.setAttribute("aria-level", String(depth + 1));
-      el(row, "span", "vaultbranch-chevron vaultbranch-file-spacer").setAttribute("aria-hidden", "true");
-      row.classList.toggle("is-selected", this.selected === `${area}:${file.path}`);
-      const code = file.conflict ? "U" : file.untracked ? "?" : area === "staged" ? file.index : file.worktree;
-      const open = el(row, "button", "vaultbranch-file-open");
-      open.type = "button";
-      open.title = t`${file.path}\n${t(STATUS_LABELS[code] || code)}${file.oldPath ? t`\n原路径：${file.oldPath}` : ""}\n点击查看${t(LABELS[area])}差异`;
-      setIcon(el(open, "span", "vaultbranch-file-icon"), "file-text");
-      el(open, "span", "vaultbranch-file-name", file.path.split("/").at(-1));
-      open.addEventListener("click", () => {
-        this.selected = `${area}:${file.path}`;
-        this.render();
-        (area === "conflicts" ? this.plugin.openConflict(file.path) : this.plugin.openDiff(file, area)).catch((error) => new Notice(error.message));
-      });
-      if (area !== "conflicts") {
-        const stage = button(row, area === "staged" ? "minus" : "plus", area === "staged" ? t("取消暂存") : t("暂存文件"), () => this.plugin.changeStage([file], area));
-        stage.classList.add("vaultbranch-row-action");
-        stage.disabled = this.plugin.busy;
-        if (area === "unstaged") {
-          const discard = button(row, "undo-2", t("撤销更改"), () => this.plugin.confirmDiscard(file));
-          discard.classList.add("vaultbranch-row-action", "vaultbranch-discard");
-          discard.disabled = this.plugin.busy || Boolean(this.plugin.status?.operation);
-        }
-      }
-      const badge = el(row, "span", `vaultbranch-file-status status-${code === "?" ? "untracked" : code}`, code);
-      badge.setAttribute("aria-label", t(STATUS_LABELS[code] || code));
-      badge.title = t(STATUS_LABELS[code] || code);
-    }
-  }
-}
-
-class GitView extends ItemView {
-  constructor(leaf, plugin) { super(leaf); this.plugin = plugin; this.request = 0; }
-  async onOpen() { this.contentEl.addClass(this.getViewType()); await this.render(); }
-  async onClose() { this.request++; }
-}
-
-class DiffView extends GitView {
-  constructor(leaf, plugin) {
-    super(leaf, plugin);
-    this.file = null;
-    this.area = "unstaged";
-    this.unified = false;
-    this.graphReturn = null;
-    this.stateRequest = 0;
-    this.editable = new Compartment();
-    this.editScope = new Scope(this.app.scope);
-    this.editScope.register(["Mod"], "s", () => {
-      void this.saveEditor().catch((error) => new Notice(error.message));
-      return false;
-    });
-  }
-
-  getViewType() { return DIFF_VIEW; }
-  getDisplayText() { return this.file ? `${this.file.path.split("/").at(-1)} · ${t(LABELS[this.area])}` : t("VaultBranch · 差异"); }
-  getIcon() { return "git-compare"; }
-  getState() { return { file: this.file, area: this.area, unified: this.unified, graphReturn: this.graphReturn, editDraft: this.area === "unstaged" ? this.plugin.diffDrafts.get(this.file?.path) : undefined }; }
-  async setState(state, result) {
-    const request = ++this.stateRequest;
-    this.request++;
-    await this.session?.autoFlush();
-    if (request !== this.stateRequest) return;
-    this.destroyEditor();
-    this.file = state.file || null;
-    this.area = LABELS[state.area] ? state.area : "unstaged";
-    this.unified = Boolean(state.unified);
-    this.graphReturn = this.area === "history" ? state.graphReturn || null : null;
-    const draft = state.editDraft;
-    if (this.area === "unstaged" && this.file && draft && ["index", "working", "text"].every((key) => typeof draft[key] === "string") && !this.plugin.diffDrafts.has(this.file.path)) {
-      this.plugin.diffDrafts.set(this.file.path, draft);
-    }
-    this.plugin.setGraphReturn(this.leaf, this.file?.path, this.graphReturn);
-    await this.render();
-    await super.setState(state, result);
-  }
-
-  async onClose() {
-    this.stateRequest++;
-    this.request++;
-    await this.session?.autoFlush();
-    this.destroyEditor();
-    this.app.keymap.popScope(this.editScope);
-    const draft = this.plugin.diffDrafts.get(this.file?.path);
-    if (draft && draft.text !== draft.working.replace(/\r\n?/g, "\n")) {
-      new Notice(t("未保存的草稿会在本次会话中保留，重新打开此文件可继续编辑。"));
-    }
-    await super.onClose();
-  }
-
-  async render() {
-    if (this.merge && this.session) {
-      this.updateEditor();
-      await this.session.sync();
-      return;
-    }
-    const request = ++this.request;
-    this.app.keymap.popScope(this.editScope);
-    this.contentEl.empty();
-    if (!this.file) { el(this.contentEl, "div", "vaultbranch-empty", t("在 VaultBranch 侧栏选择文件查看差异。")); return; }
-    const header = el(this.contentEl, "div", "vaultbranch-diff-header");
-    if (this.area === "history") button(header, "arrow-left", t("返回 Git Graph"), () => this.plugin.returnToGraph(this.graphReturn), "Git Graph");
-    el(header, "div", "vaultbranch-diff-path", this.file.path);
-    el(header, "span", "vaultbranch-tag", t(LABELS[this.area]));
-    button(header, "file-pen-line", t("打开文件"), () => this.plugin.openFile(this.file.path, this.graphReturn));
-    const editable = this.area === "unstaged" && this.file.worktree !== "D";
-    if (!editable) {
-      button(header, this.unified ? "columns-2" : "list", this.unified ? t("切换左右对比") : t("切换统一差异"), async () => { this.unified = !this.unified; await this.render(); });
-      button(header, "refresh-cw", t("刷新差异"), () => this.render());
-    }
-    el(this.contentEl, "div", "vaultbranch-diff-description", this.area === "history" ? t`提交 ${this.file.commit.slice(0, 8)} · 相对第一父提交` : this.area === "staged" ? t("HEAD → 暂存区") : t("暂存区 → 工作区"));
-    const body = el(this.contentEl, "div", "vaultbranch-diff-body");
-    el(body, "div", "vaultbranch-empty", t("读取差异中…"));
-    try {
-      await this.plugin.ensureReady();
-      if (editable) {
-        try {
-          const session = await this.plugin.editorSession(this.file.path);
-          if (request !== this.request) return;
-          this.session = session;
-          body.replaceChildren();
-          this.renderEditor(body);
-          await session.sync();
-          return;
-        } catch (error) {
-          if (request !== this.request) return;
-          el(this.contentEl, "div", "vaultbranch-editor-warning", error.message);
-        }
-      }
-      const result = this.area === "history" ? await this.plugin.git.commitDiff(this.file) : await this.plugin.git.diff(this.file, this.area);
-      if (request !== this.request) return;
-      body.replaceChildren();
-      if (result.message) el(body, "div", "vaultbranch-empty", result.message);
-      if (!result.patch) return;
-      if (this.unified || this.area === "conflicts") {
-        const code = el(body, "div", "vaultbranch-unified");
-        for (const line of result.patch.split("\n")) {
-          const type = line.startsWith("@@") ? "hunk" : line.startsWith("+") && !line.startsWith("+++") ? "add" : line.startsWith("-") && !line.startsWith("---") ? "delete" : "context";
-          el(code, "div", `vaultbranch-patch-line is-${type}`, line || " ");
-        }
-      } else {
-        const captions = el(body, "div", "vaultbranch-diff-captions");
-        el(captions, "span", "", this.area === "history" ? t("父提交") : this.area === "staged" ? "HEAD" : t("暂存区"));
-        el(captions, "span", "", this.area === "history" ? t("当前提交") : this.area === "staged" ? t("暂存区") : t("工作区"));
-        const grid = el(body, "div", "vaultbranch-split");
-        for (const row of this.plugin.core.splitPatch(result.patch)) {
-          if (row.kind === "hunk" || row.kind === "meta") {
-            el(grid, "div", `vaultbranch-diff-meta is-${row.kind}`, row.text || " ");
-          } else {
-            const line = el(grid, "div", "vaultbranch-diff-row");
-            for (const side of ["left", "right"]) {
-              const cell = el(line, "div", `vaultbranch-diff-cell${row.kind === "change" && row[side] ? side === "left" ? " is-delete" : " is-add" : ""}${!row[side] ? " is-blank" : ""}`);
-              el(cell, "span", "vaultbranch-line-number", row[side] ? String(row[side].line) : "");
-              el(cell, "span", "vaultbranch-line-text", row[side]?.text || " ");
-            }
-          }
-        }
-      }
-    } catch (error) {
-      if (request === this.request) { body.replaceChildren(); el(body, "div", "vaultbranch-empty is-error", error.message); }
-    }
-  }
-
-  destroyEditor() {
-    this.session?.listeners.delete(this.editorListener);
-    this.merge?.destroy();
-    this.merge = null;
-    this.session = null;
-    this.app.keymap.popScope(this.editScope);
-  }
-
-  renderEditor(body) {
-    body.classList.add("has-editor");
-    this.warningEl = el(body, "div", "vaultbranch-editor-warning");
-    this.saveButton = button(this.contentEl.querySelector(".vaultbranch-diff-header"), "save", t("保存文件 · Ctrl/Cmd+S"), () => this.saveEditor(), t("保存"));
-    const captions = el(body, "div", "vaultbranch-diff-captions");
-    this.leftCaption = el(captions, "span");
-    this.rightCaption = el(captions, "span");
-    const panes = el(body, "div", "vaultbranch-edit-panes");
-    const common = [lineNumbers(), drawSelection(), EditorState.tabSize.of(4)];
-    this.merge = new MergeView({
-      parent: panes, root: body.ownerDocument,
-      a: { doc: normalize(this.session.draft.index), extensions: [common, EditorState.readOnly.of(true), EditorView.editable.of(false)] },
-      b: { doc: this.session.draft.text, extensions: [common, history(),
-        keymap.of([{ key: "Mod-s", run: () => { void this.saveEditor(); return true; } }, ...defaultKeymap, ...historyKeymap, indentWithTab]),
-        this.editable.of(this.editorAccess()),
-        EditorView.updateListener.of((update) => {
-          if (update.docChanged && !this.syncingEditor) {
-            this.editorText = update.state.doc.toString();
-            this.session.edit(this.editorText);
-          }
-        }),
-        EditorView.domEventHandlers({
-          focus: () => { this.app.keymap.pushScope(this.editScope); },
-          blur: () => { this.app.keymap.popScope(this.editScope); },
-        }),
-      ] },
-      highlightChanges: true, gutter: true,
-    });
-    this.editorText = this.session.draft.text;
-    this.editorIndex = this.session.draft.index;
-    this.editorListener = () => this.updateEditor();
-    this.session.listeners.add(this.editorListener);
-    this.updateEditor();
-  }
-
-  editorAccess() {
-    const locked = Boolean(this.plugin.busy || this.plugin.mutationPending);
-    return [EditorState.readOnly.of(locked), EditorView.editable.of(!locked)];
-  }
-
-  updateEditor() {
-    if (!this.merge || !this.session) return;
-    const { draft, error, saving, dirty } = this.session;
-    this.syncingEditor = true;
-    try {
-      if (this.editorIndex !== draft.index) {
-        this.merge.a.dispatch({ changes: { from: 0, to: this.merge.a.state.doc.length, insert: normalize(draft.index) }, annotations: Transaction.addToHistory.of(false) });
-        this.editorIndex = draft.index;
-      }
-      if (this.editorText !== draft.text) {
-        this.merge.b.dispatch({ changes: { from: 0, to: this.merge.b.state.doc.length, insert: draft.text }, annotations: Transaction.addToHistory.of(false) });
-        this.editorText = draft.text;
-      }
-      const locked = Boolean(this.plugin.busy || this.plugin.mutationPending);
-      if (this.merge.b.state.readOnly !== locked) this.merge.b.dispatch({ effects: this.editable.reconfigure(this.editorAccess()) });
-    } finally { this.syncingEditor = false; }
-    this.leftCaption.textContent = t("暂存区（只读）");
-    this.rightCaption.textContent = saving ? t("工作区 · 正在保存…") : dirty ? t("工作区 · 未保存") : this.session.enabled ? t("工作区 · 已自动保存") : t("工作区 · 已保存");
-    this.saveButton.disabled = !dirty || saving || this.plugin.busy || this.plugin.mutationPending;
-    this.merge.a.contentDOM.setAttribute("aria-label", t("暂存区（只读）"));
-    this.merge.b.contentDOM.setAttribute("aria-label", t("工作区（可编辑）"));
-    this.warningEl.hidden = !error;
-    if (this.warningEl.dataset.error !== error || this.warningEl.dataset.language !== this.plugin.settings.language) {
-      this.warningEl.dataset.error = error;
-      this.warningEl.dataset.language = this.plugin.settings.language;
-      this.warningEl.replaceChildren();
-      if (error) {
-        el(this.warningEl, "span", "", error);
-        button(this.warningEl, "file-text", t("核对磁盘文件"), () => this.plugin.openFile(this.file.path), t("核对磁盘文件"));
-        button(this.warningEl, "refresh-cw", t("重试自动保存"), () => this.session.retry(), t("重试自动保存"));
-        button(this.warningEl, "undo-2", t("放弃草稿并重新载入"), () => this.reloadEditor(), t("放弃草稿并重新载入"));
-      }
-    }
-  }
-
-  saveEditor(automatic = false) { return (automatic ? this.session?.autoFlush() : this.session?.flush()) || Promise.resolve(true); }
-
-  reloadEditor() {
-    const session = this.session;
-    const modal = new Modal(this.app);
-    modal.titleEl.textContent = t("放弃草稿并重新载入？");
-    el(modal.contentEl, "p", "", t("保留磁盘上的文件，放弃此差异编辑器中尚未保存的输入。"));
-    const actions = el(modal.contentEl, "div", "vaultbranch-confirm-actions");
-    button(actions, null, t("取消"), () => modal.close(), t("取消"));
-    button(actions, null, t("放弃草稿"), async () => { modal.close(); await session.reload(); }, t("放弃草稿")).classList.add("mod-warning");
-    modal.open();
-  }
-}
-
-class HistoryView extends GitView {
-  constructor(leaf, plugin) { super(leaf, plugin); this.limit = plugin.settings.historyLimit; this.selected = ""; this.query = ""; this.ref = ""; }
-  getViewType() { return HISTORY_VIEW; }
-  getDisplayText() { return t("VaultBranch · 提交历史"); }
-  getIcon() { return "git-fork"; }
-  getState() { return { ref: this.ref, query: this.query, selected: this.selected, limit: this.limit }; }
-  async setState(state, result) {
-    for (const key of ["ref", "query", "selected"]) if (typeof state[key] === "string") this[key] = state[key];
-    if (Number.isFinite(state.limit)) this.limit = Math.max(10, Math.min(1000, state.limit));
-    await this.render(); await super.setState(state, result);
-  }
-  captureNavigation() {
-    return { leafId: this.leaf.id, state: this.getState(), scrollTop: this.bodyEl?.scrollTop || 0, scrollLeft: this.bodyEl?.scrollLeft || 0, detailTop: this.detailsEl?.scrollTop || 0 };
-  }
-  async render() {
-    const scroll = { top: this.bodyEl?.scrollTop || 0, left: this.bodyEl?.scrollLeft || 0, detail: this.detailsEl?.scrollTop || 0 };
-    const request = ++this.request;
-    this.contentEl.empty();
-    const toolbar = el(this.contentEl, "div", "vaultbranch-history-toolbar");
-    el(toolbar, "strong", "", "Git Graph");
-    const branch = el(toolbar, "select", "vaultbranch-history-filter");
-    branch.setAttribute("aria-label", t("历史分支"));
-    el(branch, "option", "", t("全部分支")).value = "";
-    const search = el(toolbar, "input", "vaultbranch-history-search");
-    search.type = "search"; search.placeholder = t("搜索提交…"); search.value = this.query;
-    search.setAttribute("aria-label", t("搜索提交"));
-    button(toolbar, "download", "Fetch", () => this.plugin.runGit("fetch"));
-    button(toolbar, "arrow-up", t("Push 当前分支"), () => this.plugin.runGit("push"));
-    button(toolbar, "archive", t("Stash 当前修改（含未跟踪文件）"), () => this.plugin.runGit("stash"));
-    button(toolbar, "refresh-cw", t("刷新历史"), () => this.render());
-    const body = el(this.contentEl, "div", "vaultbranch-history-body");
-    const details = el(this.contentEl, "div", "vaultbranch-history-details");
-    this.bodyEl = body; this.detailsEl = details;
-    el(body, "div", "vaultbranch-empty", t("读取历史…"));
-    try {
-      await this.plugin.ensureReady();
-      const [commits, refs, hasStash] = await Promise.all([
-        this.plugin.git.history(this.limit, this.ref),
-        this.plugin.git.run(["for-each-ref", "--format=%(refname:short)", "refs/heads/", "refs/remotes/"]),
-        this.plugin.git.stashExists(),
-      ]);
-      if (request !== this.request) return;
-      for (const ref of refs.trim().split("\n").filter(Boolean)) el(branch, "option", "", ref).value = ref;
-      if (hasStash) el(branch, "option", "", t("stash（临时修改）")).value = "stash";
-      branch.value = this.ref;
-      branch.addEventListener("change", () => { this.ref = branch.value; void this.render(); });
-      body.replaceChildren();
-      if (!commits.length) { el(body, "div", "vaultbranch-empty", t("还没有提交。")); return; }
-      const columns = Math.max(...commits.map((commit) => commit.width));
-      const width = Math.max(36, columns * 16 + 14);
-      body.style.setProperty("--vaultbranch-graph-width", `${Math.max(width, 70)}px`);
-      const headings = el(body, "div", "vaultbranch-history-columns");
-      for (const label of [t("分支图"), t("提交说明"), t("日期"), t("作者"), t("提交")]) el(headings, "span", "", label);
-      for (const commit of commits) {
-        const row = el(body, "button", "vaultbranch-history-row");
-        row.type = "button";
-        row.dataset.commit = commit.hash;
-        row.classList.toggle("is-stash", Boolean(commit.stash));
-        row.dataset.search = `${commit.subject} ${commit.author} ${commit.hash} ${commit.refs}`.toLocaleLowerCase();
-        row.classList.toggle("is-selected", this.selected === commit.hash);
-        row.title = `${commit.hash}\n${commit.author} · ${commit.date}\n${commit.subject}${commit.stashRef ? `\n${commit.stashRef}` : ""}`;
-        row.addEventListener("contextmenu", (event) => {
-          event.preventDefault(); event.stopPropagation();
-          const menu = new Menu();
-          for (const action of this.actionsFor(commit)) {
-            menu.addItem((item) => item.setTitle(action.title).setIcon(action.icon)
-              .setDisabled(this.plugin.busy).onClick(action.run));
-          }
-          menu.showAtMouseEvent(event);
-        });
-        drawGraph(row, commit, width);
-        const text = el(row, "div", "vaultbranch-history-message");
-        el(text, "span", "vaultbranch-history-subject", commit.subject || t("（无说明）"));
-        if (commit.refs) el(text, "span", "vaultbranch-history-refs", commit.refs);
-        el(row, "time", "vaultbranch-history-date", new Date(commit.date).toLocaleDateString());
-        el(row, "span", "vaultbranch-history-author", commit.author);
-        el(row, "code", "vaultbranch-history-hash", commit.short);
-        row.onclick = async () => {
-          this.selected = commit.hash;
-          for (const item of body.querySelectorAll(".vaultbranch-history-row")) item.classList.toggle("is-selected", item === row);
-          details.replaceChildren();
-          el(details, "div", "vaultbranch-history-detail-title", `${commit.short} · ${commit.subject}`);
-          const actions = el(details, "div", "vaultbranch-history-actions");
-          for (const action of this.actionsFor(commit)) {
-            button(actions, action.icon, action.title, action.run, action.title).disabled = this.plugin.busy;
-          }
-          try {
-            const files = commit.stash ? await this.plugin.git.stashFiles(commit.hash) : await this.plugin.git.commitFiles(commit.hash);
-            if (this.selected !== commit.hash || request !== this.request) return;
-            for (const file of files) button(details, "file-diff", `${file.index} ${file.path}`, () => this.plugin.openDiff(file, "history", this.captureNavigation()), `${file.index}  ${file.path}`);
-            if (!files.length) el(details, "div", "vaultbranch-empty", t("此提交相对第一父提交没有文件改动。"));
-          } catch (error) { el(details, "div", "is-error", error.message); }
-        };
-      }
-      const applySearch = () => {
-        this.query = search.value;
-        const query = this.query.trim().toLocaleLowerCase();
-        for (const row of body.querySelectorAll(".vaultbranch-history-row")) {
-          const match = !query || row.dataset.search.includes(query);
-          row.classList.toggle("is-dimmed", !match);
-          row.setAttribute("aria-label", `${match ? "" : t("非搜索匹配：")}${row.title}`);
-        }
-      };
-      search.addEventListener("input", applySearch); applySearch();
-      if (commits.length >= this.limit && this.limit < 1000) button(body, "chevrons-down", t("加载更多历史"), async () => { this.limit = Math.min(1000, this.limit + this.plugin.settings.historyLimit); await this.render(); }, t("加载更多"));
-      const selectedRow = [...body.querySelectorAll(".vaultbranch-history-row")].find((row) => row.dataset.commit === this.selected);
-      if (selectedRow) await selectedRow.onclick();
-      if (request === this.request) { body.scrollTop = scroll.top; body.scrollLeft = scroll.left; details.scrollTop = scroll.detail; }
-    } catch (error) {
-      if (request === this.request) { body.replaceChildren(); el(body, "div", "vaultbranch-empty is-error", error.message); }
-    }
-  }
-
-  actionsFor(commit) {
-    const p = this.plugin;
-    if (commit.stash) return [
-      { title: t("应用此 Stash（保留记录）"), icon: "archive-restore", run: () => p.mutate(t("应用 Stash"), () => p.git.stashApply(commit)) },
-      { title: t("Pop 此 Stash（恢复并移除）"), icon: "archive-x", run: () => p.mutate("Pop Stash", () => p.git.stashPop(commit)) },
-    ];
-    return [
-      { title: t("Rebase 当前分支到此提交…"), icon: "git-branch", run: () => p.confirmRebase(commit) },
-      { title: t("Push 当前分支"), icon: "arrow-up", run: () => p.runGit("push") },
-    ];
-  }
-}
-
-class ConflictView extends GitView {
-  constructor(leaf, plugin) { super(leaf, plugin); this.filePath = ""; }
-  getViewType() { return CONFLICT_VIEW; }
-  getDisplayText() { return this.filePath ? t`冲突 · ${this.filePath.split("/").at(-1)}` : t("VaultBranch · 解决冲突"); }
-  getIcon() { return "git-merge"; }
-  getState() { return { filePath: this.filePath }; }
-  async setState(state, result) { this.filePath = state.filePath || ""; await this.render(); await super.setState(state, result); }
-  async render({ preserveDraft = false } = {}) {
-    const draft = preserveDraft ? this.contentEl.querySelector(".vaultbranch-conflict-result")?.value : undefined;
-    const request = ++this.request;
-    this.contentEl.empty();
-    if (!this.filePath) return;
-    const header = el(this.contentEl, "div", "vaultbranch-diff-header");
-    el(header, "div", "vaultbranch-diff-path", this.filePath);
-    const body = el(this.contentEl, "div", "vaultbranch-conflict-body");
-    try {
-      await this.plugin.ensureReady();
-      const versions = await this.plugin.git.conflictVersions(this.filePath);
-      if (request !== this.request) return;
-      const expected = draft !== undefined && this.loadedPath === this.filePath ? this.expectedResult : versions.result;
-      this.loadedPath = this.filePath;
-      this.expectedResult = expected;
-      const sources = el(body, "div", "vaultbranch-conflict-sources");
-      const resultLabel = el(body, "div", "vaultbranch-conflict-label", t("解决结果 · 可直接编辑"));
-      const result = el(body, "textarea", "vaultbranch-conflict-result");
-      result.setAttribute("aria-label", t("冲突解决结果")); result.spellcheck = false; result.value = draft ?? versions.result;
-      for (const [key, label] of [["ours", versions.oursLabel], ["theirs", versions.theirsLabel]]) {
-        const pane = el(sources, "section", "vaultbranch-conflict-pane");
-        const title = el(pane, "div", "vaultbranch-conflict-label"); el(title, "span", "", label);
-        const take = button(title, "check", t`使用${label}`, () => { result.value = versions[key] || ""; }, t("使用此版本"));
-        take.disabled = versions[key] === null;
-        const text = el(pane, "textarea", "vaultbranch-conflict-source"); text.readOnly = true; text.spellcheck = false; text.value = versions[key] === null ? t("（此版本已删除文件）") : versions[key]; text.setAttribute("aria-label", label);
-      }
-      const base = el(body, "details", "vaultbranch-conflict-base"); el(base, "summary", "", t("共同祖先")); el(base, "pre", "", versions.base || t("（无共同祖先内容）"));
-      body.insertBefore(base, resultLabel);
-      const save = button(header, "check", t("保存并暂存解决结果"), async () => {
-        const saved = await this.plugin.mutate(t("解决冲突"), () => this.plugin.git.resolveConflict(this.filePath, result.value, expected));
-        if (saved) { save.disabled = true; result.readOnly = true; resultLabel.textContent = t("已保存并暂存 · 在侧栏点击继续"); }
-      }, t("保存并暂存"));
-      if (versions.ours === null || versions.theirs === null) {
-        save.disabled = true;
-        el(body, "div", "vaultbranch-empty", t("此冲突涉及删除，请在外部 Git 工具中处理。"));
-      }
-    } catch (error) { if (request === this.request) el(body, "div", "vaultbranch-empty is-error", error.message); }
-  }
-}
-
-class MyGitSettings extends PluginSettingTab {
-  constructor(app, plugin) { super(app, plugin); this.plugin = plugin; }
-  display() {
-    const { containerEl } = this; const p = this.plugin;
-    containerEl.empty();
-    new Setting(containerEl).setName(t("界面语言")).addDropdown((input) => input.addOptions({ zh: "简体中文", en: "English" }).setValue(p.settings.language).onChange(async (value) => {
-      if (await p.updateSetting("language", value)) this.display();
-    }));
-    new Setting(containerEl).setName(t("Git 路径")).setDesc(t("留空自动检测。仅当本机 Git 不在 PATH 中时填写 Git 可执行文件的完整路径。")).addText((input) => input.setPlaceholder(t("自动检测")).setValue(p.settings.gitPath).onChange((value) => p.updateSetting("gitPath", value.trim())));
-    new Setting(containerEl).setName(t("拉取方式")).setDesc(t("默认 rebase，遇到冲突会停下，解决后继续。")).addDropdown((input) => input.addOptions({ rebase: "Rebase", merge: "Merge" }).setValue(p.settings.pullMethod).onChange((value) => p.updateSetting("pullMethod", value)));
-    const preview = new Setting(containerEl).setName(t("提交说明前缀")).setDesc(t("支持 {{date}} 和 {{hostname}}；提交时自动加在手写说明前。留空关闭前缀。"));
-    const updatePreview = () => preview.setDesc(t`支持 {{date}} 和 {{hostname}}；提交时自动加在手写说明前，留空关闭。预览：${p.commitMessage(t("修改笔记"))}`);
-    for (const [key, name, placeholder, desc] of [
-      ["commitMessage", t("提交说明前缀"), DEFAULT_SETTINGS.commitMessage, ""],
-      ["commitDateFormat", t("提交时间格式"), DEFAULT_SETTINGS.commitDateFormat, t("使用 Moment 格式，例如 YYYY-MM-DD HH:mm:ss。")],
-      ["hostname", t("主机名"), hostname(), t("留空自动读取当前电脑名称；迁移后自动使用新电脑名称。")],
-    ]) {
-      const setting = key === "commitMessage" ? preview : new Setting(containerEl).setName(name).setDesc(desc);
-      setting.addText((input) => input.setPlaceholder(placeholder).setValue(p.settings[key]).onChange(async (value) => {
-        await p.updateSetting(key, key === "hostname" ? value.trim() : value);
-        updatePreview();
-      }));
-    }
-    updatePreview();
-    for (const [key, name, min, max] of [["refreshSeconds", t("刷新间隔（秒）"), 1, 300], ["historyLimit", t("历史加载条数"), 10, 1000]]) {
-      new Setting(containerEl).setName(name).addText((input) => {
-        input.inputEl.type = "number"; input.inputEl.min = String(min); input.inputEl.max = String(max);
-        input.setValue(String(p.settings[key])).onChange((value) => p.updateSetting(key, Math.max(min, Math.min(max, Number(value) || DEFAULT_SETTINGS[key]))));
-      });
-    }
-    new Setting(containerEl).setName(t("启动时打开侧栏")).addToggle((input) => input.setValue(p.settings.openOnStartup).onChange((value) => p.updateSetting("openOnStartup", value)));
-    const tracking = new Setting(containerEl).setName(t("配置文件版本管理")).setDesc(t("检查 data.json 是否被 Git 忽略…"));
-    void p.ensureReady().then(() => p.git.settingsTracking()).then((state) => {
-      tracking.setDesc(state.tracked ? t("data.json 已在 Git 中，修改后会显示为未暂存。") : state.ignored ? t("data.json 被 .gitignore 忽略，修改不会显示在文件列表。") : t("data.json 可加入 Git。请在文件列表中暂存并提交。"));
-      if (state.ignored && !state.tracked) tracking.addButton((input) => input.setButtonText(t("允许追踪")).onClick(async () => {
-        if (await p.mutate(t("允许配置追踪"), () => p.git.enableSettingsTracking())) this.display();
-      }));
-    }).catch((error) => tracking.setDesc(error.message));
-    new Setting(containerEl).setName(t("检查 Git")).setDesc(t("插件和 data.json 可随笔记库迁移。新电脑需要安装 Git，并配置提交身份和 SSH / HTTPS 凭据。")).addButton((input) => input.setButtonText(t("检查")).onClick(async () => {
-      try { new Notice((await p.git.run(["--version"])).trim()); } catch (error) { new Notice(error.message, 8000); }
-    }));
-    new Setting(containerEl).setName(t("其他")).setHeading();
-    new Setting(containerEl).setName(t("日期触发字符串")).setDesc(t("在笔记中输入此字符串后自动替换为当前日期时间。留空关闭；前面须为空格或行首。")).addText((input) => input.setPlaceholder("@date").setValue(p.settings.dateTrigger).onChange((value) => p.updateSetting("dateTrigger", value.trim())));
-    const datePreview = new Setting(containerEl).setName(t("日期时间格式"));
-    const showDatePreview = () => datePreview.setDesc(t`Moment 格式；固定文字用方括号包住，例如 [Time:] YYYY-MM-DD HH:mm:ss。预览：${p.formatDate()}`);
-    datePreview.addText((input) => input.setPlaceholder(DEFAULT_SETTINGS.dateFormat).setValue(p.settings.dateFormat).onChange(async (value) => { await p.updateSetting("dateFormat", value); showDatePreview(); }));
-    showDatePreview();
-    new Setting(containerEl).setName(t("插入日期时间快捷键")).setDesc(t("为 VaultBranch 的“插入当前日期时间”命令设置快捷键。")).addButton((input) => input.setButtonText(t("配置快捷键")).onClick(() => {
-      this.app.setting.openTabById("hotkeys");
-      const tab = this.app.setting.activeTab;
-      if (typeof tab?.setQuery === "function") tab.setQuery(`${p.manifest.name}: ${t("插入当前日期时间")}`);
-    }));
-    new Setting(containerEl).setName("Diff autosave").setDesc(t("默认关闭。开启后停止输入 500 ms 自动保存；关闭时按 Ctrl/Cmd+S 或点击保存。切换文件保留草稿，Git 操作前请先保存。")).addToggle((input) => input.setValue(p.settings.diffAutosave).onChange((value) => p.updateSetting("diffAutosave", value)));
-  }
-}
+const { SOURCE_VIEW, DIFF_VIEW, HISTORY_VIEW, CONFLICT_VIEW, DEFAULT_SETTINGS, el, button } = require("./views/shared.js");
+const { SourceControlView } = require("./views/source.js");
+const { DiffView } = require("./views/diff.js");
+const { HistoryView } = require("./views/history.js");
+const { ConflictView } = require("./views/conflict.js");
+const { MyGitSettings } = require("./settings.js");
 
 const VIEW_CLASSES = { [SOURCE_VIEW]: SourceControlView, [DIFF_VIEW]: DiffView, [HISTORY_VIEW]: HistoryView, [CONFLICT_VIEW]: ConflictView };
 
@@ -786,6 +69,7 @@ module.exports = class MyGitPlugin extends Plugin {
       this.updateEditorReturn(leaf);
     }));
     this.registerEvent(this.app.workspace.on("file-open", () => this.updateEditorReturn(this.app.workspace.activeLeaf)));
+    this.registerEvent(this.app.workspace.on("layout-change", () => this.pruneGraphReturns()));
     const navigateBack = (event) => {
       const context = this.activeGraphReturn();
       if (!context) return;
@@ -832,6 +116,10 @@ module.exports = class MyGitPlugin extends Plugin {
     window.clearTimeout(this.dateTimer);
     document.querySelectorAll(".vaultbranch-editor-return").forEach((node) => node.remove());
     this.graphReturns?.clear();
+    for (const view of this.views(DIFF_VIEW)) {
+      view.stateRequest++; view.request++;
+      view.destroyEditor();
+    }
     for (const session of this.editSessions.values()) session.stop();
   }
 
@@ -968,9 +256,8 @@ module.exports = class MyGitPlugin extends Plugin {
     await this.initTask;
   }
 
-  async editorSession(filePath) {
-    if (this.editSessions.has(filePath)) return this.editSessions.get(filePath);
-    if (!this.editorTasks.has(filePath)) this.editorTasks.set(filePath, (async () => {
+  async editorSession(filePath, retain = false) {
+    if (!this.editSessions.has(filePath) && !this.editorTasks.has(filePath)) this.editorTasks.set(filePath, (async () => {
       const versions = await this.git.worktreeVersions(filePath);
       const draft = this.diffDrafts.get(filePath) || { ...versions, text: normalize(versions.working) };
       this.diffDrafts.set(filePath, draft);
@@ -987,13 +274,31 @@ module.exports = class MyGitPlugin extends Plugin {
           else if (!file && typeof this.app.vault.adapter.process === "function") await this.app.vault.adapter.process(filePath, update);
           else throw new Error(t("文件状态已改变，请刷新后重试。"));
         },
-        changed: () => this.app.workspace.requestSaveLayout(),
+        changed: () => {
+          if (!this.unloaded) this.app.workspace.requestSaveLayout();
+          if (session.released) this.pruneEditorSession(filePath, session);
+        },
         saved: () => this.scheduleRefresh(),
       });
       this.editSessions.set(filePath, session);
       return session;
     })().finally(() => this.editorTasks.delete(filePath)));
-    return this.editorTasks.get(filePath);
+    const session = this.editSessions.get(filePath) || await this.editorTasks.get(filePath);
+    if (retain) { session.users = (session.users || 0) + 1; session.released = false; }
+    return session;
+  }
+
+  releaseEditorSession(filePath, session) {
+    session.users = Math.max(0, (session.users || 0) - 1);
+    session.released = true;
+    this.pruneEditorSession(filePath, session);
+  }
+
+  pruneEditorSession(filePath, session) {
+    if (this.editSessions.get(filePath) !== session || session.users || session.dirty || session.saving) return;
+    session.stop();
+    this.editSessions.delete(filePath);
+    this.diffDrafts.delete(filePath);
   }
 
   scheduleRefresh() {
@@ -1141,6 +446,14 @@ module.exports = class MyGitPlugin extends Plugin {
     if (graphReturn) this.graphReturns.set(leaf.id, { filePath, graphReturn });
     else this.graphReturns.delete(leaf.id);
     this.updateEditorReturn(leaf);
+  }
+
+  pruneGraphReturns() {
+    if (!this.graphReturns.size) return;
+    const leaves = new Set();
+    // A truthy callback return stops traversal of the current workspace branch.
+    this.app.workspace.iterateAllLeaves((leaf) => { leaves.add(leaf.id); });
+    for (const id of this.graphReturns.keys()) if (!leaves.has(id)) this.graphReturns.delete(id);
   }
 
   activeGraphReturn() {
