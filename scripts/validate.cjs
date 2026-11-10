@@ -18,4 +18,5 @@ for (const file of ["README.md", "LICENSE", "src/main.js", "src/git.js", "src/i1
 for (const file of ["src/main.js", "src/git.js", "default-settings.json"]) {
   assert.doesNotMatch(fs.readFileSync(path.join(root, file), "utf8"), /C:[\\/]|my-git|note_test|createRequire/);
 }
-console.log("Manifest, version map, repository files and portable runtime validated.");
+assert.doesNotMatch(fs.readFileSync(path.join(root, "styles.css"), "utf8"), /!\s*important\b/i, "Use scoped selectors or CSS variables instead of !important.");
+console.log("Manifest, version map, portable runtime and CSS validated.");

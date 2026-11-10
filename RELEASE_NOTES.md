@@ -1,8 +1,10 @@
-VaultBranch 0.2.5 tightens file-row action spacing.
+VaultBranch 0.2.6 addresses the community CSS lint warnings.
 
-- Reduce stage and discard buttons to 22 pixels with a 2-pixel row gap.
-- Remove extra padding before the status letter and keep it aligned with the actions.
-- Document the requirement to publish a version tag for each update and remind users to update manually in Obsidian settings.
+- Remove all 27 `!important` declarations from the stylesheet.
+- Use scoped selectors for view padding, buttons, file rows, graph rows and graph-return controls.
+- Use the standard theme accent variable for selection and focus colors.
+- Reject `!important` in the existing validation command to prevent regressions.
+- Retain the filesystem and native Git capabilities disclosed in SUBMISSION.md.
 
 Release assets continue to include GitHub provenance attestations.
 
