@@ -1,10 +1,8 @@
-VaultBranch 0.2.8 adds direct diff editing with autosave.
+VaultBranch 0.2.9 documents the CSS rule for future updates.
 
-- Click an unstaged file and edit immediately in the right pane, with live red/green differences against the read-only index.
-- Automatically save after 500 ms of idle typing and before switching files or running Git operations. Ctrl/Cmd+S also saves immediately.
-- Saving changes only the working tree. Staged and historical diffs remain read-only.
-- Preserve editor focus, undo history, UTF-8 BOM and CRLF through autosaves.
-- Synchronize clean external changes. When external edits overlap an unsaved draft, pause saving and retain local input, with compare, retry and confirmed discard/reload actions.
+- Explicitly prohibit `!important` in AGENTS.md. Override styles with scoped selector specificity or CSS variables.
+- Require the existing CSS validation before release and prohibit bypassing lint warnings.
+- Plugin behavior and styles are unchanged.
 
 Release assets continue to include GitHub provenance attestations.
 
