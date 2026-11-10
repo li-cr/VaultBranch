@@ -7,7 +7,7 @@ const english = {
   "日期触发字符串": "Date trigger",
   "在笔记中输入此字符串后自动替换为当前日期时间。留空关闭；前面须为空格或行首。": "Type this string in a note to insert the current date and time. Leave blank to disable; start at a line or after whitespace.",
   "日期时间格式": "Date and time format",
-  "Moment 格式，预览：{0}": "Moment format. Preview: {0}",
+  "Moment 格式；固定文字用方括号包住，例如 [Time:] YYYY-MM-DD HH:mm:ss。预览：{0}": "Moment format; put literal text in brackets, e.g. [Time:] YYYY-MM-DD HH:mm:ss. Preview: {0}",
   "插入日期时间快捷键": "Date insertion hotkey",
   "为 VaultBranch 的“插入当前日期时间”命令设置快捷键。": "Assign a hotkey to VaultBranch's Insert current date and time command.",
   "配置快捷键": "Configure hotkey",

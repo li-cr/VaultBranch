@@ -705,7 +705,7 @@ class MyGitSettings extends PluginSettingTab {
     new Setting(containerEl).setName(t("其他")).setHeading();
     new Setting(containerEl).setName(t("日期触发字符串")).setDesc(t("在笔记中输入此字符串后自动替换为当前日期时间。留空关闭；前面须为空格或行首。")).addText((input) => input.setPlaceholder("@date").setValue(p.settings.dateTrigger).onChange((value) => p.updateSetting("dateTrigger", value.trim())));
     const datePreview = new Setting(containerEl).setName(t("日期时间格式"));
-    const showDatePreview = () => datePreview.setDesc(t`Moment 格式，预览：${p.formatDate()}`);
+    const showDatePreview = () => datePreview.setDesc(t`Moment 格式；固定文字用方括号包住，例如 [Time:] YYYY-MM-DD HH:mm:ss。预览：${p.formatDate()}`);
     datePreview.addText((input) => input.setPlaceholder(DEFAULT_SETTINGS.dateFormat).setValue(p.settings.dateFormat).onChange(async (value) => { await p.updateSetting("dateFormat", value); showDatePreview(); }));
     showDatePreview();
     new Setting(containerEl).setName(t("插入日期时间快捷键")).setDesc(t("为 VaultBranch 的“插入当前日期时间”命令设置快捷键。")).addButton((input) => input.setButtonText(t("配置快捷键")).onClick(() => {
