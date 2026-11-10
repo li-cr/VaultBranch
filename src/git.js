@@ -1,5 +1,7 @@
 "use strict";
 
+const { t } = require("./i18n.js");
+
 const { execFile } = require("node:child_process");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -162,11 +164,11 @@ class GitService {
         env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_PAGER: "cat", GIT_EDITOR: "true", GIT_SEQUENCE_EDITOR: "true", GIT_LITERAL_PATHSPECS: ["check-ignore", "stash"].includes(args[0]) ? "0" : "1" },
       }, (error, stdout, stderr) => {
         if (!error || (allowDiffExit && error.code === 1)) return resolve(stdout);
-        const detail = error.killed ? "Git 操作超时；请检查网络、SSH 或凭据配置。" : ([stderr, stdout].filter((value) => value?.trim()).join("\n").trim() || error.message);
+        const detail = error.killed ? t("Git 操作超时；请检查网络、SSH 或凭据配置。") : ([stderr, stdout].filter((value) => value?.trim()).join("\n").trim() || error.message);
         if (/non-fast-forward|fetch first|remote contains work|tip of your current branch is behind/i.test(detail)) {
-          reject(new Error(`Push 被拒绝：远程有新提交。请先 Pull，解决可能的冲突后再 Push。\n\n${detail}`));
+          reject(new Error(t`Push 被拒绝：远程有新提交。请先 Pull，解决可能的冲突后再 Push。\n\n${detail}`));
         } else if (error.code === "ENOENT") {
-          reject(new Error("找不到 Git。请安装 Git for Windows，或在 VaultBranch 设置中选择 git.exe 路径。"));
+          reject(new Error(t("找不到 Git。请安装 Git，或在 VaultBranch 设置中填写 Git 可执行文件的完整路径。")));
         } else reject(new Error(detail));
       });
     });
@@ -176,7 +178,7 @@ class GitService {
     const top = (await this.run(["rev-parse", "--show-toplevel"])).trim();
     const [actual, expected] = await Promise.all([fs.realpath(top), fs.realpath(this.root)]);
     const normalize = (value) => process.platform === "win32" ? value.toLowerCase() : value;
-    if (normalize(actual) !== normalize(expected)) throw new Error("当前笔记库不是 Git 仓库根目录，已停止操作以免影响上级仓库。");
+    if (normalize(actual) !== normalize(expected)) throw new Error(t("当前笔记库不是 Git 仓库根目录，已停止操作以免影响上级仓库。"));
     this.gitDir = path.resolve(this.root, (await this.run(["rev-parse", "--absolute-git-dir"])).trim());
   }
 
@@ -205,10 +207,10 @@ class GitService {
   }
 
   checkPaths(paths) {
-    if (!paths.length) throw new Error("没有选中文件。");
+    if (!paths.length) throw new Error(t("没有选中文件。"));
     for (const file of paths) {
       if (!file || file.includes("\0") || path.isAbsolute(file) || file.split(/[\\/]/).some((part) => part === ".." || part.toLowerCase() === ".git")) {
-        throw new Error("无效的仓库相对路径。");
+        throw new Error(t("无效的仓库相对路径。"));
       }
     }
   }
@@ -226,16 +228,27 @@ class GitService {
     else await this.run(["rm", "--cached", "--force", "--quiet", "--", ...new Set(paths)]);
   }
 
+  async discard(filePath) {
+    this.checkPaths([filePath]);
+    const status = await this.status();
+    this.assertNormal(status);
+    const file = status.files.find((entry) => entry.path === filePath);
+    if (!file || file.worktree === " ") throw new Error(t("该文件没有未暂存的改动，请刷新。"));
+    if (file.untracked) throw new Error(t("未跟踪文件请移入回收站，不能用 Git 恢复。"));
+    // Restore only the worktree from the index, preserving staged content.
+    return this.run(["restore", "--worktree", "--", filePath]);
+  }
+
   assertNormal(status) {
-    if (status.operation) throw new Error(`正在进行 ${status.operation}。请先解决冲突并继续，或中止当前操作。`);
-    if (status.files.some((file) => file.conflict)) throw new Error("存在未解决的冲突，请先处理冲突。");
+    if (status.operation) throw new Error(t`正在进行 ${status.operation}。请先解决冲突并继续，或中止当前操作。`);
+    if (status.files.some((file) => file.conflict)) throw new Error(t("存在未解决的冲突，请先处理冲突。"));
   }
 
   async commit(message) {
-    if (!message.trim()) throw new Error("请填写提交说明。");
+    if (!message.trim()) throw new Error(t("请填写提交说明。"));
     const status = await this.status();
     this.assertNormal(status);
-    if (!groupsFor(status.files).staged.length) throw new Error("暂存区为空。请先点击文件旁的 + 暂存改动。");
+    if (!groupsFor(status.files).staged.length) throw new Error(t("暂存区为空。请先点击文件旁的 + 暂存改动。"));
     // No `add`, `-a`, or path argument: commit exactly the current index.
     return this.run(["commit", "-m", message.trim()], { timeout: 120000 });
   }
@@ -243,18 +256,18 @@ class GitService {
   async pull() {
     const status = await this.status();
     this.assertNormal(status);
-    if (!status.upstream) throw new Error("当前分支没有上游分支，请先通过终端设置 upstream。");
-    if (status.files.length) throw new Error("请先提交，或点击 Stash 收起未提交的改动，再 Pull。");
+    if (!status.upstream) throw new Error(t("当前分支没有上游分支，请先通过终端设置 upstream。"));
+    if (status.files.length) throw new Error(t("请先提交，或点击 Stash 收起未提交的改动，再 Pull。"));
     return this.run(["pull", this.pullMethod === "merge" ? "--no-rebase" : "--rebase", "--no-autostash", "--no-edit"], { timeout: 120000 });
   }
 
   async push() {
     const status = await this.status();
     this.assertNormal(status);
-    if (!status.upstream) throw new Error("当前分支没有上游分支，请先通过终端设置 upstream。");
+    if (!status.upstream) throw new Error(t("当前分支没有上游分支，请先通过终端设置 upstream。"));
     const remote = (await this.run(["config", "--get", `branch.${status.branch}.remote`])).trim();
     const target = (await this.run(["config", "--get", `branch.${status.branch}.merge`])).trim();
-    if (!remote || !target.startsWith("refs/heads/")) throw new Error("无法确定当前分支的上游推送目标。");
+    if (!remote || !target.startsWith("refs/heads/")) throw new Error(t("无法确定当前分支的上游推送目标。"));
     return this.run(["push", "--", remote, `HEAD:${target}`], { timeout: 120000 });
   }
 
@@ -263,11 +276,11 @@ class GitService {
     if (file.untracked && area === "unstaged") {
       const absolute = path.resolve(this.root, file.path);
       const stat = await fs.stat(absolute);
-      if (stat.size > MAX_PREVIEW) return { message: "文件超过 2 MB，请在外部编辑器中查看。", patch: "" };
+      if (stat.size > MAX_PREVIEW) return { message: t("文件超过 2 MB，请在外部编辑器中查看。"), patch: "" };
       const content = await fs.readFile(absolute);
-      if (content.includes(0)) return { message: "二进制文件，无法显示文本差异。", patch: "" };
+      if (content.includes(0)) return { message: t("二进制文件，无法显示文本差异。"), patch: "" };
       const text = content.toString("utf8");
-      if (!text) return { message: "新增的空文件。", patch: "" };
+      if (!text) return { message: t("新增的空文件。"), patch: "" };
       const lines = text.split("\n");
       if (lines.at(-1) === "") lines.pop();
       return { patch: `--- /dev/null\n+++ ${file.path}\n@@ -0,0 +1,${lines.length} @@\n${lines.map((line) => `+${line}`).join("\n")}\n` };
@@ -276,12 +289,12 @@ class GitService {
     if (area === "staged") args.push("--cached");
     args.push("--", file.path);
     if (area === "staged" && file.oldPath) args.push(file.oldPath);
-    return this.preview(args, "没有可显示的文本差异，文件状态可能已发生变化。");
+    return this.preview(args, t("没有可显示的文本差异，文件状态可能已发生变化。"));
   }
 
   async preview(args, emptyMessage) {
     const patch = await this.run(args);
-    if (Buffer.byteLength(patch, "utf8") > MAX_PREVIEW) return { message: "差异超过 2 MB，请在外部编辑器中查看。", patch: "" };
+    if (Buffer.byteLength(patch, "utf8") > MAX_PREVIEW) return { message: t("差异超过 2 MB，请在外部编辑器中查看。"), patch: "" };
     return { patch, message: patch ? "" : emptyMessage };
   }
 
@@ -301,7 +314,7 @@ class GitService {
   async stash() {
     const status = await this.status();
     this.assertNormal(status);
-    if (!status.files.length) throw new Error("当前没有需要 Stash 的修改。");
+    if (!status.files.length) throw new Error(t("当前没有需要 Stash 的修改。"));
     return this.run(["stash", "push", "--include-untracked", "--message", "VaultBranch temporary pull stash"]);
   }
 
@@ -312,14 +325,14 @@ class GitService {
     this.checkCommit(hash);
     const fields = (await this.run(["stash", "list", "-z", "--format=%H%x00%gd"])).split("\0");
     for (let i = 0; i + 1 < fields.length; i += 2) if (fields[i] === hash) return fields[i + 1];
-    throw new Error("这条 Stash 已被移除，请刷新历史后重新选择。");
+    throw new Error(t("这条 Stash 已被移除，请刷新历史后重新选择。"));
   }
 
   async restoreStash(entry, remove) {
     const status = await this.status();
     this.assertNormal(status);
-    if (status.files.length) throw new Error("恢复 Stash 前请保持工作区干净。");
-    if (!status.stash) throw new Error("没有可恢复的 Stash。");
+    if (status.files.length) throw new Error(t("恢复 Stash 前请保持工作区干净。"));
+    if (!status.stash) throw new Error(t("没有可恢复的 Stash。"));
     const hash = entry?.hash || (await this.run(["rev-parse", "refs/stash"])).trim();
     await this.stashSelector(hash);
     try {
@@ -327,7 +340,7 @@ class GitService {
       if (remove) await this.run(["stash", "drop", await this.stashSelector(hash)]);
       return output;
     } catch (error) {
-      throw new Error(`恢复未完成，Stash 仍保留。请检查文件状态；若出现冲突，在侧栏打开冲突文件解决。\n\n${error.message}`);
+      throw new Error(t`恢复未完成，Stash 仍保留。请检查文件状态；若出现冲突，在侧栏打开冲突文件解决。\n\n${error.message}`);
     }
   }
 
@@ -335,7 +348,7 @@ class GitService {
     this.checkCommit(hash);
     const status = await this.status();
     this.assertNormal(status);
-    if (status.files.length) throw new Error("Rebase 前请先提交或 Stash 当前修改。");
+    if (status.files.length) throw new Error(t("Rebase 前请先提交或 Stash 当前修改。"));
     await this.run(["symbolic-ref", "--quiet", "HEAD"]);
     return this.run(["rebase", "--no-autostash", hash], { timeout: 120000 });
   }
@@ -379,7 +392,7 @@ class GitService {
       while (i < fields.length && !fields[i]) i++;
       if (i + 6 >= fields.length) break;
       const [hash, parents, short, author, date, refs, subject] = fields.slice(i, i + 7);
-      if (!/^[a-f0-9]{40,64}$/.test(hash)) throw new Error("无法解析提交历史。");
+      if (!/^[a-f0-9]{40,64}$/.test(hash)) throw new Error(t("无法解析提交历史。"));
       commits.push({ hash, parents: parents ? parents.split(" ") : [], short, author, date, refs, subject });
       i += 7;
     }
@@ -388,7 +401,7 @@ class GitService {
   }
 
   checkCommit(hash) {
-    if (!/^[a-f0-9]{40,64}$/.test(hash)) throw new Error("无效的提交编号。");
+    if (!/^[a-f0-9]{40,64}$/.test(hash)) throw new Error(t("无效的提交编号。"));
   }
 
   async firstParent(hash) {
@@ -414,20 +427,20 @@ class GitService {
     const parent = await this.firstParent(file.commit);
     const args = parent ? ["diff", ...DIFF_OPTIONS, parent, file.commit, "--", file.path]
       : ["show", ...DIFF_OPTIONS, "--format=", "--root", file.commit, "--", file.path];
-    return this.preview(args, "没有文本差异。");
+    return this.preview(args, t("没有文本差异。"));
   }
 
   async conflictVersions(filePath) {
     this.checkPaths([filePath]);
     const status = await this.status();
-    if (!status.files.some((file) => file.path === filePath && file.conflict)) throw new Error("该文件已不处于冲突状态，请刷新。");
+    if (!status.files.some((file) => file.path === filePath && file.conflict)) throw new Error(t("该文件已不处于冲突状态，请刷新。"));
     const stages = (await this.run(["ls-files", "--unmerged", "-z", "--", filePath])).split("\0").filter(Boolean);
     const versions = { base: null, ours: null, theirs: null, binary: false };
     for (const record of stages) {
       const match = record.match(/^(\d+) ([a-f0-9]+) ([123])\t/);
       if (!match) continue;
       const size = Number((await this.run(["cat-file", "-s", match[2]])).trim());
-      if (size > MAX_PREVIEW) throw new Error("冲突文件超过 2 MB，请使用外部工具解决。");
+      if (size > MAX_PREVIEW) throw new Error(t("冲突文件超过 2 MB，请使用外部工具解决。"));
       const text = await this.run(["show", `:${match[3]}:${filePath}`]);
       if (text.includes("\0")) versions.binary = true;
       versions[{ 1: "base", 2: "ours", 3: "theirs" }[match[3]]] = text;
@@ -435,44 +448,44 @@ class GitService {
     let result = "";
     try {
       const absolute = path.resolve(this.root, filePath);
-      if ((await fs.stat(absolute)).size > MAX_PREVIEW) throw new Error("冲突文件超过 2 MB，请使用外部工具解决。");
+      if ((await fs.stat(absolute)).size > MAX_PREVIEW) throw new Error(t("冲突文件超过 2 MB，请使用外部工具解决。"));
       result = await fs.readFile(absolute, "utf8");
       if (result.includes("\0")) versions.binary = true;
     } catch (error) { if (error.code !== "ENOENT") throw error; }
-    if (versions.binary) throw new Error("二进制冲突请使用外部工具解决。");
+    if (versions.binary) throw new Error(t("二进制冲突请使用外部工具解决。"));
     return { ...versions, result, operation: status.operation,
-      oursLabel: status.operation === "rebase" ? "上游版本" : "本地版本",
-      theirsLabel: status.operation === "rebase" ? "本地版本" : "传入版本" };
+      oursLabel: status.operation === "rebase" ? t("上游版本") : t("本地版本"),
+      theirsLabel: status.operation === "rebase" ? t("本地版本") : t("传入版本") };
   }
 
   async resolveConflict(filePath, content, expected) {
     this.checkPaths([filePath]);
-    if (/^(<{7}|={7}|>{7}|\|{7})(?: |$)/m.test(content)) throw new Error("结果中仍有冲突标记，请编辑完成后再标记已解决。");
+    if (/^(<{7}|={7}|>{7}|\|{7})(?: |$)/m.test(content)) throw new Error(t("结果中仍有冲突标记，请编辑完成后再标记已解决。"));
     const versions = await this.conflictVersions(filePath);
-    if (expected !== undefined && versions.result !== expected) throw new Error("冲突文件已被其他编辑器修改，请重新打开冲突视图。");
-    if (versions.ours === null || versions.theirs === null) throw new Error("涉及删除的冲突请在外部工具中处理，再暂存结果。");
+    if (expected !== undefined && versions.result !== expected) throw new Error(t("冲突文件已被其他编辑器修改，请重新打开冲突视图。"));
+    if (versions.ours === null || versions.theirs === null) throw new Error(t("涉及删除的冲突请在外部工具中处理，再暂存结果。"));
     const absolute = path.resolve(this.root, filePath);
     const [actualParent, realRoot] = await Promise.all([fs.realpath(path.dirname(absolute)), fs.realpath(this.root)]);
     const relative = path.relative(realRoot, actualParent);
-    if (relative.startsWith("..") || path.isAbsolute(relative) || (await fs.lstat(absolute)).isSymbolicLink()) throw new Error("不支持通过符号链接写入冲突结果。");
+    if (relative.startsWith("..") || path.isAbsolute(relative) || (await fs.lstat(absolute)).isSymbolicLink()) throw new Error(t("不支持通过符号链接写入冲突结果。"));
     await fs.writeFile(absolute, content, "utf8");
     await this.stage([filePath]);
   }
 
   async continueOperation() {
     const status = await this.status();
-    if (status.files.some((file) => file.conflict)) throw new Error("仍有未解决的冲突。");
+    if (status.files.some((file) => file.conflict)) throw new Error(t("仍有未解决的冲突。"));
     const unstaged = status.files.filter((file) => !file.untracked && file.worktree !== " ");
-    if (unstaged.length) throw new Error(`还有未暂存的修改，请先处理后再继续：\n${unstaged.map((file) => file.path).join("\n")}\n这些修改不会被自动加入冲突提交。`);
+    if (unstaged.length) throw new Error(t`还有未暂存的修改，请先处理后再继续：\n${unstaged.map((file) => file.path).join("\n")}\n这些修改不会被自动加入冲突提交。`);
     if (status.operation === "rebase") return this.run(["rebase", "--continue"], { timeout: 120000 });
     if (status.operation === "merge") return this.run(["commit", "--no-edit"], { timeout: 120000 });
-    throw new Error("当前没有可继续的 rebase / merge。");
+    throw new Error(t("当前没有可继续的 rebase / merge。"));
   }
 
   async abortOperation() {
     const status = await this.status();
     if (status.operation === "rebase" || status.operation === "merge") return this.run([status.operation, "--abort"]);
-    throw new Error("当前没有可中止的 rebase / merge。");
+    throw new Error(t("当前没有可中止的 rebase / merge。"));
   }
 
   async ignored(filePath) {
@@ -505,8 +518,8 @@ class GitService {
       try { content = await fs.readFile(ignorePath, "utf8"); } catch (error) { if (error.code !== "ENOENT") throw error; }
       await fs.writeFile(ignorePath, `${content}${content && !content.endsWith("\n") ? "\n" : ""}\n# VaultBranch settings\n${rules.join("\n")}\n`, "utf8");
     }
-    if ((await this.settingsTracking()).ignored) throw new Error("配置仍被忽略，请检查更高优先级的 Git 忽略规则。");
-    return "配置已允许加入版本管理。请在未暂存列表中暂存 data.json 和 .gitignore，再提交。";
+    if ((await this.settingsTracking()).ignored) throw new Error(t("配置仍被忽略，请检查更高优先级的 Git 忽略规则。"));
+    return t("配置已允许加入版本管理。请在未暂存列表中暂存 data.json 和 .gitignore，再提交。");
   }
 }
 

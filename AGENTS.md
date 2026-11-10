@@ -5,6 +5,7 @@
 - 本仓库是 Obsidian 桌面 Git 插件 VaultBranch 的正式源码，远程仓库为 `li-cr/VaultBranch`。
 - `src/main.js`：Obsidian 生命周期、设置、侧栏、提交图和冲突界面。
 - `src/git.js`：Git 命令、状态解析、提交图数据、Stash 和冲突操作。
+- `src/i18n.js`：中文与英文文案；使用 `t("文案")` 或带插值的标签模板，新增提示需补英文翻译。
 - `styles.css`：界面样式；优先使用 Obsidian 主题变量，保持界面简洁。
 - `tests/git.test.cjs`：使用临时仓库和本地 bare remote 的 Git 集成测试。
 - `scripts/build.cjs`：打包入口；`scripts/validate.cjs`：清单、版本和源码检查。
@@ -20,6 +21,7 @@
 - Git 使用 `execFile`、参数数组、`shell: false`，不拼接 shell 命令。保留超时、输出大小限制和错误处理。
 - `fs` 用于仓库文件和 Git 元数据，包括位于笔记库外的 linked worktree 元数据。保留路径校验，如实说明系统权限能力，不通过改名或包装隐藏扫描警告。
 - Commit 只提交已有暂存区，不自动执行 `add` 或 `commit -a`；Push 不自动强推。
+- 撤销仅恢复未暂存内容，保留暂存区；未跟踪文件通过 Obsidian 移入回收站。文件行操作按“暂存/取消暂存 → 撤销 → 状态”排列，不额外显示打开文件按钮。
 - Pull、Rebase 和 Stash 恢复保持现有工作区检查；Rebase 保留界面确认和继续/中止流程。
 - Stash 操作按提交哈希识别选中条目，删除前重新解析编号；恢复冲突时保留 Stash，避免误删其他记录。
 - 冲突界面使用用户能理解的“本地/传入”等描述，并区分 Rebase 的语义。

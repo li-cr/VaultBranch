@@ -221,6 +221,44 @@ test("unstage on an unborn branch preserves staged and later working content", a
   assert.equal(await fs.readFile(path.join(root, "new.md"), "utf8"), "later edit\n");
 });
 
+test("discard restores the index version and preserves staged content and unrelated changes", async () => {
+  const { root, service } = await fixture();
+  await write(root, "note.md", "base\n");
+  await service.stage(["note.md"]); await service.commit("base");
+  await write(root, "note.md", "staged\n"); await service.stage(["note.md"]);
+  await write(root, "note.md", "unstaged\n");
+  await write(root, "unrelated.md", "keep\n");
+  await service.discard("note.md");
+  assert.equal(await fs.readFile(path.join(root, "note.md"), "utf8"), "staged\n");
+  assert.equal(git(root, "show", ":note.md"), "staged\n");
+  assert.equal(git(root, "show", "HEAD:note.md"), "base\n");
+  assert.equal(await fs.readFile(path.join(root, "unrelated.md"), "utf8"), "keep\n");
+  await assert.rejects(() => service.discard("note.md"), /没有未暂存/);
+});
+
+test("discard restores a deleted file and treats wildcard and option-like names literally", async () => {
+  const { root, service } = await fixture();
+  for (const name of ["[abc].md", "a.md", "--note.md"]) await write(root, name, "base\n");
+  await service.stage(["[abc].md", "a.md", "--note.md"]); await service.commit("base");
+  await fs.unlink(path.join(root, "[abc].md"));
+  await write(root, "a.md", "keep edit\n");
+  await write(root, "--note.md", "discard edit\n");
+  await service.discard("[abc].md"); await service.discard("--note.md");
+  assert.equal(await fs.readFile(path.join(root, "[abc].md"), "utf8"), "base\n");
+  assert.equal(await fs.readFile(path.join(root, "--note.md"), "utf8"), "base\n");
+  assert.equal(await fs.readFile(path.join(root, "a.md"), "utf8"), "keep edit\n");
+});
+
+test("discard protects untracked files and rejects paths outside the worktree", async () => {
+  const { root, service } = await fixture();
+  await write(root, "new.md", "not in Git\n");
+  await assert.rejects(() => service.discard("new.md"), /回收站/);
+  assert.equal(await fs.readFile(path.join(root, "new.md"), "utf8"), "not in Git\n");
+  await assert.rejects(() => service.discard("../outside.md"), /无效/);
+  await assert.rejects(() => service.discard(".git/config"), /无效/);
+  await assert.rejects(() => service.discard("missing.md"), /没有未暂存/);
+});
+
 test("rename, deletion and unstage retain working files", async () => {
   const { root, service } = await fixture();
   await write(root, "旧名字.md", "keep content\n");
@@ -320,6 +358,7 @@ test("conflicted rebase is detected and blocks normal commit/pull/push", async (
   await assert.rejects(() => service.commit("wrong"), /正在进行 rebase/);
   await assert.rejects(() => service.pull(), /正在进行 rebase/);
   await assert.rejects(() => service.push(), /正在进行 rebase/);
+  await assert.rejects(() => service.discard("conflict.md"), /正在进行 rebase/);
   git(root, "rebase", "--abort");
 });
 

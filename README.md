@@ -5,6 +5,8 @@
 A Git sidebar and commit graph for Obsidian.
 
 - View changed files, diffs and commit history.
+- Switch between Chinese and English in settings.
+- Discard unstaged changes with the undo arrow; move untracked files to trash.
 - **Pull**: pull remote changes.
 - **Push**: push local commits.
 - **Commit staged**: commit only staged changes.

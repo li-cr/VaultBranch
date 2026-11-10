@@ -14,7 +14,7 @@ Description:
 
 > Manage Git changes, browse a commit graph, restore stashes, and resolve conflicts in your vault.
 
-Current release tag: `0.2.1` (must match `manifest.json` exactly).
+Current release tag: `0.2.2` (must match `manifest.json` exactly).
 
 ## Before submitting
 
@@ -34,6 +34,6 @@ No Obsidian account password, GitHub token, SSH private key, or local plugin `da
 
 ## Review recommendations and capability disclosures
 
-Version `0.2.1` publishes only `main.js`, `manifest.json` and `styles.css` as release attachments. GitHub artifact attestations are generated for those exact files by the release workflow. Select or refresh this version in the directory to rerun the release checks; version `0.2.0` still has its original attachments.
+Versions from `0.2.1` onward publish only `main.js`, `manifest.json` and `styles.css` as release attachments. GitHub artifact attestations are generated for those exact files by the release workflow. Select or refresh the current version in the directory to rerun the release checks; version `0.2.0` still has its original attachments.
 
-The filesystem and shell/process capability warnings are expected: the plugin reads Git metadata and repository files with `node:fs/promises` and invokes the installed Git executable with `node:child_process.execFile`. It uses argument arrays and `shell: false`, not concatenated shell command strings. These capabilities share Obsidian's OS permissions; Git hooks and credential helpers follow the user's Git configuration. See the README for the full disclosure. Attestations do not suppress those warnings or guarantee directory approval.
+The filesystem and shell/process capability warnings are expected: the plugin reads Git metadata and repository files with `node:fs/promises` and invokes the installed Git executable with `node:child_process.execFile`. It uses argument arrays and `shell: false`, not concatenated shell command strings. These capabilities share Obsidian's OS permissions; Git hooks and credential helpers follow the user's Git configuration. Filesystem writes save conflict resolutions and explicitly requested settings-tracking exceptions; Git metadata can live outside the vault for linked worktrees. Untracked-file discard uses Obsidian's local trash. Attestations do not suppress those warnings or guarantee directory approval.

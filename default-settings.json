@@ -1,4 +1,5 @@
 {
+  "language": "zh",
   "gitPath": "",
   "refreshSeconds": 5,
   "historyLimit": 100,

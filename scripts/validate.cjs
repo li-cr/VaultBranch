@@ -12,7 +12,7 @@ assert.equal(pkg.version, manifest.version);
 assert.equal(versions[manifest.version], manifest.minAppVersion);
 assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
 assert.equal(manifest.isDesktopOnly, true);
-for (const file of ["README.md", "LICENSE", "src/main.js", "src/git.js", "styles.css"]) {
+for (const file of ["README.md", "LICENSE", "src/main.js", "src/git.js", "src/i18n.js", "styles.css"]) {
   assert.ok(fs.statSync(path.join(root, file)).size, `Missing ${file}`);
 }
 for (const file of ["src/main.js", "src/git.js", "default-settings.json"]) {
