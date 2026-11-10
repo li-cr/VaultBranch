@@ -1,5 +1,7 @@
 # VaultBranch
 
+[English](README.md) | [简体中文](README_zh.md)
+
 A compact Git sidebar and commit graph for Obsidian. Stage selected changes, commit, pull, push, manage Stash entries, and resolve text conflicts without leaving your vault.
 
 VaultBranch is a desktop plugin. Git must be installed separately. It uses your existing Git repository, identity and SSH/HTTPS authentication.
