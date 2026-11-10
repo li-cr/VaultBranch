@@ -6,7 +6,7 @@
 - `src/main.js`：Obsidian 生命周期、设置、侧栏、提交图和冲突界面。
 - `src/git.js`：Git 命令、状态解析、提交图数据、Stash 和冲突操作。
 - `src/i18n.js`：中文与英文文案；使用 `t("文案")` 或带插值的标签模板，新增提示需补英文翻译。
-- 未暂存差异用 CodeMirror MergeView 直接编辑右侧完整文本并实时高亮，停止输入 500 ms 后通过 Obsidian `vault.process` 自动保存；暂存区和历史只读，不自动暂存或提交。`src/autosave.js` 按路径串行处理保存及外部修改，切换文件和 Git 操作前保存；保留原始换行、BOM、撤销历史和草稿。外部修改与草稿并存时暂停覆盖，提示核对、重试或确认放弃草稿。
+- 未暂存差异默认用 CodeMirror MergeView 编辑，不按扩展名或 Obsidian 文件索引筛选；二进制、删除等无法编辑的文件回退为差异预览。停止输入 500 ms 后自动保存：普通文件使用 `vault.process`，未索引的隐藏配置使用 `adapter.process` 并监听 `raw` 事件。暂存区和历史只读，不自动暂存或提交。`src/autosave.js` 按路径串行处理保存及外部修改；差异打开请求按点击顺序执行，切换文件和 Git 操作前保存。保留换行、BOM、撤销历史和草稿；外部修改与草稿并存时暂停覆盖。
 - `styles.css`：界面样式；使用 Obsidian 主题变量和限定在插件视图内的选择器，不使用 `!important`，保持界面简洁。
 - `tests/git.test.cjs`：使用临时仓库和本地 bare remote 的 Git 集成测试。
 - `scripts/build.cjs`：打包入口；`scripts/validate.cjs`：清单、版本和源码检查。

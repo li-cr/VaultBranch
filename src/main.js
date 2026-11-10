@@ -280,6 +280,7 @@ class DiffView extends GitView {
     this.area = "unstaged";
     this.unified = false;
     this.graphReturn = null;
+    this.stateRequest = 0;
     this.editable = new Compartment();
     this.editScope = new Scope(this.app.scope);
     this.editScope.register(["Mod"], "s", () => {
@@ -293,7 +294,10 @@ class DiffView extends GitView {
   getIcon() { return "git-compare"; }
   getState() { return { file: this.file, area: this.area, unified: this.unified, graphReturn: this.graphReturn, editDraft: this.area === "unstaged" ? this.plugin.diffDrafts.get(this.file?.path) : undefined }; }
   async setState(state, result) {
+    const request = ++this.stateRequest;
+    this.request++;
     await this.session?.flush();
+    if (request !== this.stateRequest) return;
     this.destroyEditor();
     this.file = state.file || null;
     this.area = LABELS[state.area] ? state.area : "unstaged";
@@ -309,6 +313,8 @@ class DiffView extends GitView {
   }
 
   async onClose() {
+    this.stateRequest++;
+    this.request++;
     await this.session?.flush();
     this.destroyEditor();
     this.app.keymap.popScope(this.editScope);
@@ -334,7 +340,7 @@ class DiffView extends GitView {
     el(header, "div", "vaultbranch-diff-path", this.file.path);
     el(header, "span", "vaultbranch-tag", t(LABELS[this.area]));
     button(header, "file-pen-line", t("打开文件"), () => this.plugin.openFile(this.file.path, this.graphReturn));
-    const editable = this.area === "unstaged" && typeof this.app.vault.getAbstractFileByPath(this.file.path)?.extension === "string" && this.file.worktree !== "D";
+    const editable = this.area === "unstaged" && this.file.worktree !== "D";
     if (!editable) {
       button(header, this.unified ? "columns-2" : "list", this.unified ? t("切换左右对比") : t("切换统一差异"), async () => { this.unified = !this.unified; await this.render(); });
       button(header, "refresh-cw", t("刷新差异"), () => this.render());
@@ -751,6 +757,14 @@ module.exports = class MyGitPlugin extends Plugin {
       this.scheduleRefresh();
       for (const path of new Set([file.path, oldPath])) void this.editSessions.get(path)?.sync();
     }));
+    this.registerEvent(this.app.vault.on("raw", (path) => {
+      // Hidden configuration files have no TFile and do not emit normal modify events.
+      const session = this.editSessions.get(path);
+      if (session && !this.app.vault.getAbstractFileByPath(path)) {
+        this.scheduleRefresh();
+        void session.sync();
+      }
+    }));
     this.registerDomEvent(window, "focus", () => {
       this.scheduleRefresh();
       for (const view of this.views(DIFF_VIEW)) void view.session?.sync();
@@ -910,11 +924,13 @@ module.exports = class MyGitPlugin extends Plugin {
         read: () => this.git.worktreeVersions(filePath),
         write: async (expected, content) => {
           const file = this.app.vault.getAbstractFileByPath(filePath);
-          if (!file || typeof file.extension !== "string") throw new Error(t("文件状态已改变，请刷新后重试。"));
-          await this.app.vault.process(file, (current) => {
+          const update = (current) => {
             if (current !== expected) throw new Error(conflictMessage());
             return content;
-          });
+          };
+          if (file && typeof file.extension === "string") await this.app.vault.process(file, update);
+          else if (!file && typeof this.app.vault.adapter.process === "function") await this.app.vault.adapter.process(filePath, update);
+          else throw new Error(t("文件状态已改变，请刷新后重试。"));
         },
         changed: () => this.app.workspace.requestSaveLayout(),
         saved: () => this.scheduleRefresh(),
@@ -1049,7 +1065,10 @@ module.exports = class MyGitPlugin extends Plugin {
       const graph = this.app.workspace.getLeavesOfType(HISTORY_VIEW).find((item) => item.view instanceof HistoryView);
       graphReturn = graph?.view.captureNavigation() || null;
     }
-    return this.openView(DIFF_VIEW, { file, area, graphReturn });
+    // WorkspaceLeaf.setViewState itself is asynchronous; preserve click order.
+    const open = () => this.openView(DIFF_VIEW, { file, area, graphReturn });
+    this.diffNavigationTask = (this.diffNavigationTask || Promise.resolve()).then(open, open);
+    return this.diffNavigationTask;
   }
 
   async openFile(filePath, graphReturn = null) {

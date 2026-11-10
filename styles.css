@@ -68,6 +68,8 @@
 .vaultbranch-edit-panes .cm-deletedText { background: color-mix(in srgb, var(--color-red) 24%, transparent); }
 .vaultbranch-edit-panes .cm-merge-b .cm-changedText,
 .vaultbranch-edit-panes .cm-insertedText { background: color-mix(in srgb, var(--color-green) 24%, transparent); }
+.view-content.vaultbranch-diff .vaultbranch-edit-panes .cm-merge-b .cm-changedText,
+.view-content.vaultbranch-diff .vaultbranch-edit-panes .cm-merge-b .cm-insertedLine { text-decoration: none; background-image: none; }
 .vaultbranch-editor-warning { padding: 8px 12px; color: var(--text-error); background: var(--background-secondary); font-size: var(--font-ui-small); }
 .vaultbranch-editor-warning[hidden] { display: none; }
 .vaultbranch-editor-warning .vaultbranch-button { display: inline-flex; margin: 6px 6px 0 0; }

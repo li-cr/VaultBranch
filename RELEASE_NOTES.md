@@ -1,8 +1,10 @@
-VaultBranch 0.2.10 fixes diff selection contrast.
+VaultBranch 0.2.11 fixes hidden JSON editing and file switching.
 
-- Use theme-derived translucent selection backgrounds for focused and inactive diff editors, keeping selected text readable in dark and light themes.
-- Apply red/green backgrounds to changed lines and changed text using the correct CodeMirror merge selectors.
-- Use scoped selector specificity without `!important`.
+- Open unstaged text files in the diff editor without filtering by extension or Obsidian's file index.
+- Edit and autosave hidden configuration JSON through Obsidian's adapter processing, preserving external-change checks and the Git index.
+- Synchronize hidden-file changes through raw file events.
+- Process file-open requests in click order so rapid MD/JSON switching ends on the latest selection.
+- Remove green underline effects while retaining green change backgrounds.
 
 Release assets continue to include GitHub provenance attestations.
 
