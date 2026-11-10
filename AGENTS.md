@@ -6,6 +6,7 @@
 - `src/main.js`：Obsidian 生命周期、设置、侧栏、提交图和冲突界面。
 - `src/git.js`：Git 命令、状态解析、提交图数据、Stash 和冲突操作。
 - `src/i18n.js`：中文与英文文案；使用 `t("文案")` 或带插值的标签模板，新增提示需补英文翻译。
+- 差异页的工作区编辑显示完整文本，使用 Obsidian `vault.process` 保存；保留暂存区、原始换行和外部修改检查，不将差异补丁当成完整文件写回。刷新或切换语言时保留编辑草稿。
 - `styles.css`：界面样式；使用 Obsidian 主题变量和限定在插件视图内的选择器，不使用 `!important`，保持界面简洁。
 - `tests/git.test.cjs`：使用临时仓库和本地 bare remote 的 Git 集成测试。
 - `scripts/build.cjs`：打包入口；`scripts/validate.cjs`：清单、版本和源码检查。

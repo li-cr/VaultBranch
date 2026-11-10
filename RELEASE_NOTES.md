@@ -1,10 +1,11 @@
-VaultBranch 0.2.6 addresses the community CSS lint warnings.
+VaultBranch 0.2.7 adds working-tree editing to the diff view.
 
-- Remove all 27 `!important` declarations from the stylesheet.
-- Use scoped selectors for view padding, buttons, file rows, graph rows and graph-return controls.
-- Use the standard theme accent variable for selection and focus colors.
-- Reject `!important` in the existing validation command to prevent regressions.
-- Retain the filesystem and native Git capabilities disclosed in SUBMISSION.md.
+- Choose **Edit working tree** in an unstaged diff to edit the full file on the right, with the index on the left for reference.
+- Save using the toolbar or Ctrl/Cmd+S. Saving updates only the working tree, without staging or committing.
+- Keep staged and historical diffs read-only.
+- Preserve drafts across view refreshes and language changes, with save/discard controls when returning to the diff.
+- Refuse to overwrite external edits; retain the draft for comparison.
+- Preserve UTF-8 BOM and CRLF and reject binary, oversized or unsafe file paths.
 
 Release assets continue to include GitHub provenance attestations.
 

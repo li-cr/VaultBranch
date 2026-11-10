@@ -292,6 +292,48 @@ test("untracked text and binary previews are handled without modifying the index
   assert.equal(groupsFor((await service.status()).files).staged.length, 0);
 });
 
+test("editable versions load complete index and worktree content without staging later edits", async () => {
+  const { root, service } = await fixture();
+  const name = "[中文 空格].md";
+  const staged = "unchanged before\nstaged\n" + "context\n".repeat(12) + "unchanged after\n";
+  await write(root, name, "base\n"); await service.stage([name]); await service.commit("base");
+  await write(root, name, staged); await service.stage([name]);
+  const working = staged.replace("staged", "working");
+  await write(root, name, working);
+  assert.deepEqual(await service.worktreeVersions(name), { index: staged, working });
+  assert.equal(git(root, "show", `:${name}`), staged);
+  assert.equal(await fs.readFile(path.join(root, name), "utf8"), working);
+});
+
+test("editable versions handle untracked empty files and retain CRLF and UTF-8 BOM", async () => {
+  const { root, service } = await fixture();
+  await write(root, "empty.md", "");
+  assert.deepEqual(await service.worktreeVersions("empty.md"), { index: "", working: "" });
+  await write(root, "note.md", "\ufefffirst\r\nsecond\r\n");
+  assert.equal((await service.worktreeVersions("note.md")).working, "\ufefffirst\r\nsecond\r\n");
+});
+
+test("editable versions reject binary, invalid UTF-8, oversized files and unsafe paths", async () => {
+  const { root, service } = await fixture();
+  await fs.writeFile(path.join(root, "binary.md"), Buffer.from([0, 1, 2]));
+  await fs.writeFile(path.join(root, "invalid.md"), Buffer.from([0xc3, 0x28]));
+  await fs.writeFile(path.join(root, "large.md"), Buffer.alloc(2 * 1024 * 1024 + 1, 65));
+  for (const name of ["binary.md", "invalid.md", "large.md"]) await assert.rejects(() => service.worktreeVersions(name), /UTF-8/);
+  await assert.rejects(() => service.worktreeVersions("../outside.md"), /无效/);
+  await assert.rejects(() => service.worktreeVersions(".git/config"), /无效/);
+  await service.stage(["large.md"]); await write(root, "large.md", "small\n");
+  await assert.rejects(() => service.worktreeVersions("large.md"), /UTF-8/);
+});
+
+test("editable versions reject symbolic links rather than editing their targets", async (context) => {
+  const { root, service } = await fixture();
+  await write(root, "target.md", "keep\n");
+  try { await fs.symlink(path.join(root, "target.md"), path.join(root, "link.md")); }
+  catch (error) { if (error.code === "EPERM") { context.skip("OS does not permit symlinks"); return; } throw error; }
+  await assert.rejects(() => service.worktreeVersions("link.md"), /不支持/);
+  assert.equal(await fs.readFile(path.join(root, "target.md"), "utf8"), "keep\n");
+});
+
 test("split diff pairs deletion and addition lines with correct line numbers", () => {
   const rows = splitPatch("--- a/note.md\n+++ b/note.md\n@@ -1,3 +1,4 @@\n same\n-old\n+new\n+extra\n end\n");
   const changes = rows.filter((row) => row.kind === "change");

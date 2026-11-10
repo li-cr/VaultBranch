@@ -2,7 +2,7 @@
 
 const { t, setLanguage } = require("./i18n.js");
 
-const { Plugin, ItemView, Notice, setIcon, Platform, PluginSettingTab, Setting, Modal, Menu, moment } = require("obsidian");
+const { Plugin, ItemView, Notice, setIcon, Platform, PluginSettingTab, Setting, Modal, Menu, Scope, moment } = require("obsidian");
 const { hostname } = require("node:os");
 
 const SOURCE_VIEW = "vaultbranch-source-control";
@@ -275,24 +275,45 @@ class DiffView extends GitView {
     this.area = "unstaged";
     this.unified = false;
     this.graphReturn = null;
+    this.editScope = new Scope(this.app.scope);
+    this.editScope.register(["Mod"], "s", () => {
+      void this.saveEditor().catch((error) => new Notice(error.message));
+      return false;
+    });
   }
 
   getViewType() { return DIFF_VIEW; }
   getDisplayText() { return this.file ? `${this.file.path.split("/").at(-1)} · ${t(LABELS[this.area])}` : t("VaultBranch · 差异"); }
   getIcon() { return "git-compare"; }
-  getState() { return { file: this.file, area: this.area, unified: this.unified, graphReturn: this.graphReturn }; }
+  getState() { return { file: this.file, area: this.area, unified: this.unified, graphReturn: this.graphReturn, editDraft: this.area === "unstaged" ? this.plugin.diffDrafts.get(this.file?.path) : undefined }; }
   async setState(state, result) {
     this.file = state.file || null;
     this.area = LABELS[state.area] ? state.area : "unstaged";
     this.unified = Boolean(state.unified);
     this.graphReturn = this.area === "history" ? state.graphReturn || null : null;
+    const draft = state.editDraft;
+    if (this.area === "unstaged" && this.file && draft && ["index", "working", "text"].every((key) => typeof draft[key] === "string") && !this.plugin.diffDrafts.has(this.file.path)) {
+      this.plugin.diffDrafts.set(this.file.path, draft);
+    }
     this.plugin.setGraphReturn(this.leaf, this.file?.path, this.graphReturn);
     await this.render();
     await super.setState(state, result);
   }
 
+  async onClose() {
+    this.app.keymap.popScope(this.editScope);
+    const draft = this.plugin.diffDrafts.get(this.file?.path);
+    if (draft && draft.text !== draft.working.replace(/\r\n?/g, "\n")) {
+      new Notice(t("未保存的草稿会在本次会话中保留，重新打开此文件可继续编辑。"));
+    }
+    await super.onClose();
+  }
+
   async render() {
     const request = ++this.request;
+    const selection = this.editorEl?.isConnected && this.editorEl.ownerDocument.activeElement === this.editorEl
+      ? { start: this.editorEl.selectionStart, end: this.editorEl.selectionEnd, top: this.editorEl.scrollTop, left: this.editorEl.scrollLeft } : null;
+    this.app.keymap.popScope(this.editScope);
     this.contentEl.empty();
     if (!this.file) { el(this.contentEl, "div", "vaultbranch-empty", t("在 VaultBranch 侧栏选择文件查看差异。")); return; }
     const header = el(this.contentEl, "div", "vaultbranch-diff-header");
@@ -300,10 +321,16 @@ class DiffView extends GitView {
     el(header, "div", "vaultbranch-diff-path", this.file.path);
     el(header, "span", "vaultbranch-tag", t(LABELS[this.area]));
     button(header, "file-pen-line", t("打开文件"), () => this.plugin.openFile(this.file.path, this.graphReturn));
-    button(header, this.unified ? "columns-2" : "list", this.unified ? t("切换左右对比") : t("切换统一差异"), async () => { this.unified = !this.unified; await this.render(); });
-    button(header, "refresh-cw", t("刷新差异"), () => this.render());
+    const draft = this.area === "unstaged" ? this.plugin.diffDrafts.get(this.file.path) : null;
+    const editable = this.area === "unstaged" && typeof this.app.vault.getAbstractFileByPath(this.file.path)?.extension === "string" && this.file.worktree !== "D";
+    if (editable || draft) button(header, draft ? "git-compare" : "pencil", draft ? t("查看差异") : t("编辑工作区"), () => draft ? this.leaveEditor() : this.startEditing(), draft ? t("查看差异") : t("编辑工作区")).disabled = this.saving || this.plugin.busy;
+    if (!draft) {
+      button(header, this.unified ? "columns-2" : "list", this.unified ? t("切换左右对比") : t("切换统一差异"), async () => { this.unified = !this.unified; await this.render(); });
+      button(header, "refresh-cw", t("刷新差异"), () => this.render());
+    }
     el(this.contentEl, "div", "vaultbranch-diff-description", this.area === "history" ? t`提交 ${this.file.commit.slice(0, 8)} · 相对第一父提交` : this.area === "staged" ? t("HEAD → 暂存区") : t("暂存区 → 工作区"));
     const body = el(this.contentEl, "div", "vaultbranch-diff-body");
+    if (draft) { this.renderEditor(header, body, draft, selection); return; }
     el(body, "div", "vaultbranch-empty", t("读取差异中…"));
     try {
       await this.plugin.ensureReady();
@@ -339,6 +366,112 @@ class DiffView extends GitView {
     } catch (error) {
       if (request === this.request) { body.replaceChildren(); el(body, "div", "vaultbranch-empty is-error", error.message); }
     }
+  }
+
+  async startEditing() {
+    const filePath = this.file.path;
+    await this.plugin.ensureReady();
+    const versions = await this.plugin.git.worktreeVersions(filePath);
+    if (this.file.path !== filePath || this.area !== "unstaged") return;
+    this.plugin.diffDrafts.set(filePath, { ...versions, text: versions.working.replace(/\r\n?/g, "\n") });
+    await this.render();
+    this.editorEl?.focus();
+  }
+
+  renderEditor(header, body, draft, selection) {
+    const dirty = () => draft.text !== draft.working.replace(/\r\n?/g, "\n");
+    const save = button(header, "save", t("保存文件 · Ctrl/Cmd+S"), () => this.saveEditor(), t("保存"));
+    const captions = el(body, "div", "vaultbranch-diff-captions");
+    el(captions, "span", "", t("暂存区（只读）"));
+    const status = el(captions, "span", "");
+    const panes = el(body, "div", "vaultbranch-edit-panes");
+    const left = el(panes, "textarea", "vaultbranch-text-editor is-readonly");
+    left.value = draft.index; left.readOnly = true; left.spellcheck = false;
+    left.setAttribute("aria-label", t("暂存区（只读）"));
+    const right = el(panes, "textarea", "vaultbranch-text-editor");
+    right.value = draft.text; right.spellcheck = false;
+    right.setAttribute("aria-label", t("工作区（可编辑）"));
+    right.disabled = this.saving || this.plugin.busy;
+    this.editorEl = right;
+    right.addEventListener("focus", () => this.app.keymap.pushScope(this.editScope));
+    right.addEventListener("blur", () => this.app.keymap.popScope(this.editScope));
+    const update = () => {
+      status.textContent = dirty() ? t("工作区 · 未保存") : t("工作区（可编辑）");
+      save.disabled = !dirty() || this.saving || this.plugin.busy;
+    };
+    right.addEventListener("input", () => {
+      draft.text = right.value;
+      this.plugin.app.workspace.requestSaveLayout();
+      update();
+    });
+    right.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault(); event.stopPropagation();
+        if (!save.disabled) save.click();
+      }
+    });
+    update();
+    if (selection && !right.disabled) this.restoreSelection(selection);
+  }
+
+  restoreSelection(selection) {
+    this.editorEl.focus();
+    this.editorEl.setSelectionRange(selection.start, selection.end);
+    this.editorEl.scrollTop = selection.top;
+    this.editorEl.scrollLeft = selection.left;
+  }
+
+  async saveEditor() {
+    if (this.saving || this.plugin.busy) return false;
+    const filePath = this.file.path;
+    const draft = this.plugin.diffDrafts.get(filePath);
+    if (!draft) return false;
+    const text = draft.text;
+    const selection = this.editorEl?.ownerDocument.activeElement === this.editorEl
+      ? { start: this.editorEl.selectionStart, end: this.editorEl.selectionEnd, top: this.editorEl.scrollTop, left: this.editorEl.scrollLeft } : null;
+    this.saving = true;
+    if (this.editorEl) this.editorEl.disabled = true;
+    try {
+      return await this.plugin.mutate(t("保存文件"), async () => {
+        // Recheck path/type/operation state before using Obsidian's atomic text processing.
+        const versions = await this.plugin.git.worktreeVersions(filePath);
+        const file = this.app.vault.getAbstractFileByPath(filePath);
+        if (!file || typeof file.extension !== "string") throw new Error(t("文件状态已改变，请刷新后重试。"));
+        const crlf = draft.working.includes("\r\n") && !/(?<!\r)\n/.test(draft.working);
+        const content = crlf ? text.replace(/\n/g, "\r\n") : text;
+        if (Buffer.byteLength(content, "utf8") > 2 * 1024 * 1024) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
+        await this.app.vault.process(file, (current) => {
+          if (current !== draft.working) throw new Error(t("文件已被其他编辑器修改。草稿已保留，请打开文件核对后再编辑。"));
+          return content;
+        });
+        draft.working = content;
+        draft.index = versions.index;
+        this.app.workspace.requestSaveLayout();
+      });
+    } finally {
+      this.saving = false;
+      if (this.file?.path === filePath) {
+        await this.render();
+        if (selection && this.editorEl?.isConnected) this.restoreSelection(selection);
+      }
+    }
+  }
+
+  async leaveEditor() {
+    const filePath = this.file.path;
+    const draft = this.plugin.diffDrafts.get(filePath);
+    const leave = async () => { this.plugin.diffDrafts.delete(filePath); await this.render(); this.app.workspace.requestSaveLayout(); };
+    if (!draft || draft.text === draft.working.replace(/\r\n?/g, "\n")) return leave();
+    const modal = new Modal(this.app);
+    modal.titleEl.textContent = t("保留未保存的编辑？");
+    el(modal.contentEl, "p", "", filePath);
+    const actions = el(modal.contentEl, "div", "vaultbranch-confirm-actions");
+    const cancel = button(actions, null, t("继续编辑"), () => modal.close(), t("继续编辑"));
+    button(actions, null, t("放弃草稿"), () => { modal.close(); return leave(); }, t("放弃草稿"));
+    button(actions, null, t("保存并查看差异"), async () => {
+      modal.close(); if (await this.saveEditor()) await leave();
+    }, t("保存并查看差异")).classList.add("mod-cta");
+    modal.open(); cancel.focus();
   }
 }
 
@@ -579,6 +712,7 @@ module.exports = class MyGitPlugin extends Plugin {
     this.lastOutput = "";
     this.draft = "";
     this.graphReturns = new Map();
+    this.diffDrafts = new Map();
     for (const [type, View] of Object.entries(VIEW_CLASSES)) this.registerView(type, (leaf) => new View(leaf, this));
     this.addSettingTab(new MyGitSettings(this.app, this));
     this.ribbonEl = this.addRibbonIcon("git-branch", t("VaultBranch · 源代码管理"), () => this.openSidebar());

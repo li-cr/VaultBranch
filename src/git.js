@@ -298,6 +298,33 @@ class GitService {
     return { patch, message: patch ? "" : emptyMessage };
   }
 
+  async worktreeVersions(filePath) {
+    this.checkPaths([filePath]);
+    this.assertNormal(await this.status());
+    const absolute = path.resolve(this.root, filePath);
+    const [stat, actual, root] = await Promise.all([fs.lstat(absolute), fs.realpath(absolute), fs.realpath(this.root)]);
+    const relative = path.relative(root, actual);
+    if (!stat.isFile() || stat.isSymbolicLink() || relative.startsWith("..") || path.isAbsolute(relative)) {
+      throw new Error(t("此文件不支持在差异视图中编辑。"));
+    }
+    const decode = (bytes) => {
+      if (bytes.length > MAX_PREVIEW || bytes.includes(0)) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
+      try { return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes); }
+      catch { throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。")); }
+    };
+    if (stat.size > MAX_PREVIEW) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
+    const working = decode(await fs.readFile(absolute));
+    const entry = (await this.run(["ls-files", "--stage", "-z", "--", filePath])).split("\0").find(Boolean);
+    let index = "";
+    if (entry) {
+      const hash = entry.split(" ")[1];
+      if (Number(await this.run(["cat-file", "-s", hash])) > MAX_PREVIEW) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
+      index = await this.run(["cat-file", "blob", hash]);
+      if (index.includes("\0") || index.includes("\ufffd")) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
+    }
+    return { index, working };
+  }
+
   async fetch() {
     return this.run(["fetch", "--all"], { timeout: 120000 });
   }

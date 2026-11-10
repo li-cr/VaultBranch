@@ -3,6 +3,22 @@
 // Chinese source strings are the fallback; tagged templates keep values out of translation keys.
 let language = "zh";
 const english = {
+  "此文件不支持在差异视图中编辑。": "This file cannot be edited in the diff view.",
+  "仅支持编辑 2 MB 以内的 UTF-8 文本文件。": "Editing supports UTF-8 text files up to 2 MB.",
+  "编辑工作区": "Edit working tree",
+  "查看差异": "View diff",
+  "保存文件 · Ctrl/Cmd+S": "Save file · Ctrl/Cmd+S",
+  "保存": "Save",
+  "保存文件": "Save file",
+  "暂存区（只读）": "Index (read-only)",
+  "工作区（可编辑）": "Working tree (editable)",
+  "工作区 · 未保存": "Working tree · Unsaved",
+  "文件已被其他编辑器修改。草稿已保留，请打开文件核对后再编辑。": "Another editor changed this file. Your draft is retained. Open the file to compare before editing again.",
+  "保留未保存的编辑？": "Keep unsaved edits?",
+  "继续编辑": "Keep editing",
+  "放弃草稿": "Discard draft",
+  "保存并查看差异": "Save and view diff",
+  "未保存的草稿会在本次会话中保留，重新打开此文件可继续编辑。": "Your unsaved draft is kept for this session. Reopen this file to continue editing.",
   "已暂存": "Staged",
   "未暂存": "Changes",
   "冲突": "Conflicts",
