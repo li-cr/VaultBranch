@@ -1,6 +1,6 @@
 {
   "name": "vaultbranch",
-  "version": "0.2.15",
+  "version": "0.2.16",
   "private": true,
   "description": "Git source control and a commit graph for Obsidian.",
   "license": "MIT",
