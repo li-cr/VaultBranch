@@ -3,6 +3,7 @@
 // Chinese source strings are the fallback; tagged templates keep values out of translation keys.
 let language = "zh";
 const english = {
+  "常规": "General",
   "请输入有效的本地分支名。": "Enter a valid local branch name.",
   "切换本地分支…": "Switch local branch…",
   "（当前分支）": " (current branch)",

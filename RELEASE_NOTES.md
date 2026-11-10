@@ -1,13 +1,11 @@
-VaultBranch 0.2.17 adds local branch management and avoids redundant history work.
+VaultBranch 0.2.18 organizes settings into tabs.
 
-- Create and switch local branches from Git Graph or the source-control More menu, using native Obsidian dialogs.
-- Create a branch from a selected commit through its context menu. Git protects local changes from being overwritten; unsaved manual diff drafts block branch operations.
-- Recheck refs, HEAD and the stash list on every history load, reuse one unchanged history page, and retain unchanged graph DOM. Manual refresh bypasses the cache.
-- Keep commit-file selection working after unchanged refreshes and prevent stale detail requests from appending results.
+- Group existing preferences under General, Git, Commit and Other, with icon tabs and an active underline.
+- Keep native Obsidian settings controls and existing saved values; retain the selected tab when redrawing settings.
+- Support ArrowLeft/ArrowRight, Home/End, and accessible tab/tabpanel roles. Allow horizontal tab scrolling in narrow windows.
+- Local branch creation and switching remain available, without a new feature toggle.
 
-Validated with 56 local automated tests and Obsidian UI checks for branch dialogs, selected-commit creation, draft protection, cache updates, hidden JSON editing and external-change protection.
-
-In a local warmed benchmark with 1,000 commits and 3 stashes, unchanged history reads used 2 Git subprocesses instead of 5. Five-sample median read time was 122.43 ms versus 246.96 ms. An isolated UI benchmark produced no child-list mutations on unchanged reloads. These results describe specific operations, not overall application performance. See docs/performance/0.2.17.md and the reproducible benchmark scripts.
+Validated with 15 Obsidian UI checks for all settings groups, saved input across tab changes, keyboard navigation, language updates, and branch toolbar availability. Build, syntax, CSS and relevant local regression checks pass. This is a settings UI update, with no performance improvement claimed.
 
 Release assets continue to include GitHub provenance attestations.
 

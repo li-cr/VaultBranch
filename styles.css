@@ -91,6 +91,13 @@
 .vaultbranch-recovery { display: flex; gap: 8px; padding: 5px 10px; }
 .vaultbranch-recovery[hidden] { display: none; }
 .vaultbranch-log { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 60vh; overflow: auto; font-size: 12px; }
+.vaultbranch-settings-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--background-modifier-border); overflow-x: auto; }
+.vaultbranch-settings .vaultbranch-settings-tabs button.vaultbranch-settings-tab { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1 0 auto; padding: 10px 14px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; box-shadow: none; background: transparent; color: var(--text-muted); font: inherit; white-space: nowrap; }
+.vaultbranch-settings .vaultbranch-settings-tabs button.vaultbranch-settings-tab:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+.vaultbranch-settings .vaultbranch-settings-tabs button.vaultbranch-settings-tab[aria-selected="true"] { color: var(--text-normal); border-bottom-color: var(--interactive-accent); }
+.vaultbranch-settings-tab-icon { display: inline-flex; }
+.vaultbranch-settings-tab-icon svg { width: 18px; height: 18px; }
+.vaultbranch-settings-panel > .setting-item:first-child { padding-top: 0; }
 .view-content.vaultbranch-history { display: flex; flex-direction: column; padding: 0; }
 .vaultbranch-history-toolbar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--background-modifier-border); }
 .vaultbranch-history-toolbar strong { font-size: var(--font-ui-small); margin-right: 8px; white-space: nowrap; }

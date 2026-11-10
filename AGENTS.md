@@ -5,6 +5,7 @@
 - 本仓库是 Obsidian 桌面 Git 插件 VaultBranch 的正式源码，远程仓库为 `li-cr/VaultBranch`。
 - `src/main.js`：Obsidian 生命周期、Git 操作协调、编辑会话和视图导航。
 - `src/views/`：侧栏 `source.js`、差异编辑 `diff.js`、提交图 `history.js`、冲突 `conflict.js`；`shared.js` 只放视图类型和共用 UI 辅助函数。`src/settings.js` 负责设置界面。
+- 设置使用“常规 / Git / 提交 / 其他”顶部标签，面板内复用原生 Setting；保留设置值与当前选中的标签，支持方向键、Home/End 和 tab/tabpanel 无障碍属性。不要添加分支功能默认关闭的开关。
 - `src/git.js`：Git 命令、状态解析、提交图数据、Stash 和冲突操作。
 - `src/branches.js`：原生 Obsidian 分支选择与创建对话框；分支变更通过现有 Git 操作协调，保留草稿检查和 Git 原生覆盖保护，不强制切换或自动 Stash。
 - `src/i18n.js`：中文与英文文案；使用 `t("文案")` 或带插值的标签模板，新增提示需补英文翻译。

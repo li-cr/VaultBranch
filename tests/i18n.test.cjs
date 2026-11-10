@@ -10,6 +10,7 @@ test("language selection translates controls and interpolated errors without alt
   setLanguage("en");
   assert.equal(t("撤销更改"), "Discard changes");
   assert.equal(t("界面语言"), "Language");
+  assert.equal(t("常规"), "General");
   assert.equal(t("切换本地分支…"), "Switch local branch…");
   assert.equal(t("从此提交创建分支…"), "Create branch from this commit…");
   assert.equal(t`正在进行 ${"rebase"}。请先解决冲突并继续，或中止当前操作。`, "A rebase is in progress. Resolve conflicts and continue, or abort the current operation.");
