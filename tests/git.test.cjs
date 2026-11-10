@@ -438,6 +438,96 @@ test("a vault nested inside another repository is rejected", async () => {
   await assert.rejects(() => nested.init(), /不是 Git 仓库根目录/);
 });
 
+test("history cache rechecks refs and HEAD, updates external changes and skips unchanged log queries", async () => {
+  const { root, service } = await fixture();
+  assert.deepEqual((await service.historyData()).commits, []);
+  await write(root, "note.md", "base\n"); await service.stage(["note.md"]); await service.commit("base");
+  const first = await service.historyData();
+  const commands = [], run = service.run.bind(service);
+  service.run = (args, options) => { commands.push(args[0]); return run(args, options); };
+  assert.equal(await service.historyData(), first);
+  assert.deepEqual(commands.sort(), ["show-ref", "stash"]);
+  assert.equal(first.currentBranch, "main");
+  git(root, "branch", "same-tip");
+  const added = await service.historyData();
+  assert.notEqual(added, first);
+  assert.ok(added.branches.includes("same-tip"));
+  git(root, "switch", "same-tip");
+  const switched = await service.historyData();
+  assert.notEqual(switched, added, "same-tip branch switch invalidates HEAD decorations");
+  assert.equal(switched.currentBranch, "same-tip");
+  assert.match(switched.commits[0].refs, /HEAD -> same-tip/);
+  git(root, "checkout", "--detach", "HEAD");
+  const detached = await service.historyData();
+  assert.equal(detached.currentBranch, "");
+  assert.notEqual(detached, switched);
+  git(root, "tag", "external-tag");
+  const tagged = await service.historyData();
+  assert.match(tagged.commits[0].refs, /external-tag/);
+  git(root, "update-ref", "refs/remotes/origin/new", "HEAD");
+  assert.ok((await service.historyData()).branches.includes("origin/new"));
+  const branchPage = await service.historyData(100, "refs/heads/main");
+  assert.equal(branchPage.commits.length, 1);
+  assert.notEqual(await service.historyData(10, "refs/heads/main"), branchPage);
+  const page = await service.historyData();
+  assert.notEqual(await service.historyData(100, "", true), page, "manual refresh bypasses the cache");
+});
+
+test("history cache observes older stash deletion even when refs/stash is unchanged", async () => {
+  const { root, service } = await fixture();
+  await write(root, "note.md", "base\n"); await service.stage(["note.md"]); await service.commit("base");
+  for (let i = 0; i < 3; i++) { await write(root, "note.md", `stash ${i}\n`); await service.stash(); }
+  const page = await service.historyData();
+  const tip = git(root, "rev-parse", "refs/stash");
+  git(root, "stash", "drop", "stash@{1}");
+  assert.equal(git(root, "rev-parse", "refs/stash"), tip);
+  const changed = await service.historyData();
+  assert.notEqual(changed, page);
+  assert.equal(changed.commits.filter(commit => commit.stash).length, 2);
+  assert.deepEqual(changed.commits.filter(commit => commit.stash).map(commit => commit.stashRef), ["stash@{0}", "stash@{1}"]);
+  assert.equal((await service.historyData(100, "stash")).commits.length, 2);
+  assert.equal((await service.historyData(100, "main")).commits.some(commit => commit.stash), false);
+});
+
+test("branch creation and switching preserve compatible staged and working changes", async () => {
+  const { root, service } = await fixture();
+  await write(root, "note.md", "base\n"); await service.stage(["note.md"]); await service.commit("base");
+  const head = git(root, "rev-parse", "HEAD").trim();
+  await write(root, "note.md", "staged\n"); await service.stage(["note.md"]); await write(root, "note.md", "working\n");
+  await write(root, "untracked.md", "keep\n");
+  await service.createBranch("feature/中文");
+  assert.equal(git(root, "branch", "--show-current").trim(), "feature/中文");
+  assert.equal(git(root, "rev-parse", "HEAD").trim(), head, "creation does not commit");
+  await service.switchBranch("main");
+  assert.equal(git(root, "show", ":note.md"), "staged\n");
+  assert.equal(await fs.readFile(path.join(root, "note.md"), "utf8"), "working\n");
+  assert.equal(await fs.readFile(path.join(root, "untracked.md"), "utf8"), "keep\n");
+  assert.deepEqual((await service.localBranches()).map(branch => [branch.name, branch.current]), [["feature/中文", false], ["main", true]]);
+});
+
+test("branch switching refuses overwrites, and creation from a selected commit does not reset existing branches", async () => {
+  const { root, service } = await fixture();
+  await write(root, "note.md", "base\n"); await service.stage(["note.md"]); await service.commit("base");
+  const base = git(root, "rev-parse", "HEAD").trim();
+  await service.createBranch("target");
+  await write(root, "note.md", "target\n"); await service.stage(["note.md"]); await service.commit("target");
+  await service.switchBranch("main"); await write(root, "note.md", "local\n");
+  await assert.rejects(service.switchBranch("target"), /overwritten|local changes/i);
+  assert.equal(git(root, "branch", "--show-current").trim(), "main");
+  assert.equal(await fs.readFile(path.join(root, "note.md"), "utf8"), "local\n");
+  await service.discard("note.md"); await service.switchBranch("target");
+  const target = git(root, "rev-parse", "HEAD").trim();
+  await service.createBranch("from-selected", base);
+  assert.equal(git(root, "rev-parse", "HEAD").trim(), base);
+  assert.equal(git(root, "rev-parse", "target").trim(), target);
+  await assert.rejects(service.createBranch("target"), /already exists/i);
+  for (const name of ["--force", "@{-1}", "HEAD", "refs/heads/main", "bad\0name", "bad name"]) await assert.rejects(service.switchBranch(name));
+  assert.equal(git(root, "branch", "--show-current").trim(), "from-selected");
+  await fs.writeFile(path.join(service.gitDir, "MERGE_HEAD"), target+"\n");
+  await assert.rejects(service.switchBranch("main"), /merge/);
+  await assert.rejects(service.createBranch("blocked"), /merge/);
+});
+
 test("history shows merge parents and branch lanes; commit details use the first parent", async () => {
   const { root, service } = await fixture();
   assert.deepEqual(await service.history(), []);

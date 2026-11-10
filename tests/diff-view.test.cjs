@@ -16,9 +16,9 @@ function load(file) {
   vm.runInNewContext(fs.readFileSync(file, "utf8"), {
     module, setTimeout, clearTimeout,
     require: (name) => {
-      if (name === "obsidian") return { Plugin: class {}, ItemView: class {}, PluginSettingTab: class {} };
+      if (name === "obsidian") return { Plugin: class {}, ItemView: class {}, PluginSettingTab: class {}, FuzzySuggestModal: class {} };
       const resolved = localRequire.resolve(name);
-      return resolved.startsWith(path.join(__dirname, "../src/views/")) || resolved === path.join(__dirname, "../src/settings.js") ? load(resolved) : localRequire(name);
+      return resolved.startsWith(path.join(__dirname, "../src/views/")) || ["settings.js", "branches.js"].some(name => resolved === path.join(__dirname, "../src/", name)) ? load(resolved) : localRequire(name);
     },
   }, { filename: file });
   return module.exports;

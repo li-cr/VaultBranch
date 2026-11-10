@@ -3,6 +3,18 @@
 // Chinese source strings are the fallback; tagged templates keep values out of translation keys.
 let language = "zh";
 const english = {
+  "请输入有效的本地分支名。": "Enter a valid local branch name.",
+  "切换本地分支…": "Switch local branch…",
+  "（当前分支）": " (current branch)",
+  "切换分支": "Switch branch",
+  "还没有本地分支，请先提交。": "No local branches yet. Create a commit first.",
+  "创建并切换分支": "Create and switch branch",
+  "起点：{0} · {1}": "Starting point: {0} · {1}",
+  "从当前提交创建新分支并切换，保留可兼容的工作区修改。": "Create a branch from the current commit and switch to it, keeping compatible working changes.",
+  "分支名": "Branch name",
+  "创建并切换": "Create and switch",
+  "创建分支": "Create branch",
+  "从此提交创建分支…": "Create branch from this commit…",
   "其他": "Other",
   "日期触发字符串": "Date trigger",
   "在笔记中输入此字符串后自动替换为当前日期时间。留空关闭；前面须为空格或行首。": "Type this string in a note to insert the current date and time. Leave blank to disable; start at a line or after whitespace.",

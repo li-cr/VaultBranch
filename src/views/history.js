@@ -3,6 +3,7 @@
 const { Menu } = require("obsidian");
 const { t } = require("../i18n.js");
 const { HISTORY_VIEW, el, button, GitView } = require("./shared.js");
+const { chooseBranch, createBranch } = require("../branches.js");
 
 function drawGraph(parent, commit, width) {
   const colors = ["blue", "green", "orange", "purple", "red"];
@@ -27,7 +28,7 @@ function drawGraph(parent, commit, width) {
 }
 
 class HistoryView extends GitView {
-  constructor(leaf, plugin) { super(leaf, plugin); this.limit = plugin.settings.historyLimit; this.selected = ""; this.query = ""; this.ref = ""; }
+  constructor(leaf, plugin) { super(leaf, plugin); this.limit = plugin.settings.historyLimit; this.selected = ""; this.query = ""; this.ref = ""; this.detailRequest = 0; }
   getViewType() { return HISTORY_VIEW; }
   getDisplayText() { return t("VaultBranch · 提交历史"); }
   getIcon() { return "git-fork"; }
@@ -40,35 +41,38 @@ class HistoryView extends GitView {
   captureNavigation() {
     return { leafId: this.leaf.id, state: this.getState(), scrollTop: this.bodyEl?.scrollTop || 0, scrollLeft: this.bodyEl?.scrollLeft || 0, detailTop: this.detailsEl?.scrollTop || 0 };
   }
-  async render() {
-    const scroll = { top: this.bodyEl?.scrollTop || 0, left: this.bodyEl?.scrollLeft || 0, detail: this.detailsEl?.scrollTop || 0 };
+  async onClose() { this.renderedData = null; await super.onClose(); }
+  async render(force = false) {
     const request = ++this.request;
-    this.contentEl.empty();
-    const toolbar = el(this.contentEl, "div", "vaultbranch-history-toolbar");
-    el(toolbar, "strong", "", "Git Graph");
-    const branch = el(toolbar, "select", "vaultbranch-history-filter");
-    branch.setAttribute("aria-label", t("历史分支"));
-    el(branch, "option", "", t("全部分支")).value = "";
-    const search = el(toolbar, "input", "vaultbranch-history-search");
-    search.type = "search"; search.placeholder = t("搜索提交…"); search.value = this.query;
-    search.setAttribute("aria-label", t("搜索提交"));
-    button(toolbar, "download", "Fetch", () => this.plugin.runGit("fetch"));
-    button(toolbar, "arrow-up", t("Push 当前分支"), () => this.plugin.runGit("push"));
-    button(toolbar, "archive", t("Stash 当前修改（含未跟踪文件）"), () => this.plugin.runGit("stash"));
-    button(toolbar, "refresh-cw", t("刷新历史"), () => this.render());
-    const body = el(this.contentEl, "div", "vaultbranch-history-body");
-    const details = el(this.contentEl, "div", "vaultbranch-history-details");
-    this.bodyEl = body; this.detailsEl = details;
-    el(body, "div", "vaultbranch-empty", t("读取历史…"));
     try {
       await this.plugin.ensureReady();
-      const [commits, refs, hasStash] = await Promise.all([
-        this.plugin.git.history(this.limit, this.ref),
-        this.plugin.git.run(["for-each-ref", "--format=%(refname:short)", "refs/heads/", "refs/remotes/"]),
-        this.plugin.git.stashExists(),
-      ]);
+      const data = await this.plugin.git.historyData(this.limit, this.ref, force);
       if (request !== this.request) return;
-      for (const ref of refs.trim().split("\n").filter(Boolean)) el(branch, "option", "", ref).value = ref;
+      const snapshot = JSON.stringify([this.plugin.settings.language, this.plugin.busy, this.selected, this.query, this.ref, this.limit]);
+      if (data === this.renderedData && snapshot === this.renderedSnapshot && this.bodyEl?.isConnected) return;
+      const scroll = { top: this.bodyEl?.scrollTop || 0, left: this.bodyEl?.scrollLeft || 0, detail: this.detailsEl?.scrollTop || 0 };
+      this.contentEl.empty();
+      const toolbar = el(this.contentEl, "div", "vaultbranch-history-toolbar");
+      el(toolbar, "strong", "", "Git Graph");
+      button(toolbar, "git-branch", t("切换本地分支…"), () => chooseBranch(this.plugin));
+      button(toolbar, "git-branch-plus", t("创建并切换分支"), () => createBranch(this.plugin));
+      const branch = el(toolbar, "select", "vaultbranch-history-filter");
+      branch.setAttribute("aria-label", t("历史分支"));
+      el(branch, "option", "", t("全部分支")).value = "";
+      const search = el(toolbar, "input", "vaultbranch-history-search");
+      search.type = "search"; search.placeholder = t("搜索提交…"); search.value = this.query;
+      search.setAttribute("aria-label", t("搜索提交"));
+      button(toolbar, "download", "Fetch", () => this.plugin.runGit("fetch"));
+      button(toolbar, "arrow-up", t("Push 当前分支"), () => this.plugin.runGit("push"));
+      button(toolbar, "archive", t("Stash 当前修改（含未跟踪文件）"), () => this.plugin.runGit("stash"));
+      button(toolbar, "refresh-cw", t("刷新历史"), () => this.render(true));
+      const body = el(this.contentEl, "div", "vaultbranch-history-body");
+      const details = el(this.contentEl, "div", "vaultbranch-history-details");
+      this.bodyEl = body; this.detailsEl = details;
+      el(body, "div", "vaultbranch-empty", t("读取历史…"));
+      const { commits, branches, hasStash } = data;
+      if (request !== this.request) return;
+      for (const ref of branches) el(branch, "option", "", ref).value = ref;
       if (hasStash) el(branch, "option", "", t("stash（临时修改）")).value = "stash";
       branch.value = this.ref;
       branch.addEventListener("change", () => { this.ref = branch.value; void this.render(); });
@@ -107,6 +111,7 @@ class HistoryView extends GitView {
         el(row, "span", "vaultbranch-history-author", commit.author);
         el(row, "code", "vaultbranch-history-hash", commit.short);
         row.onclick = async () => {
+          const detailRequest = ++this.detailRequest;
           this.selected = commit.hash;
           for (const item of rows) item.classList.toggle("is-selected", item === row);
           details.replaceChildren();
@@ -117,10 +122,10 @@ class HistoryView extends GitView {
           }
           try {
             const files = commit.stash ? await this.plugin.git.stashFiles(commit.hash) : await this.plugin.git.commitFiles(commit.hash);
-            if (this.selected !== commit.hash || request !== this.request) return;
+            if (detailRequest !== this.detailRequest || this.bodyEl !== body || !body.isConnected) return;
             for (const file of files) button(details, "file-diff", `${file.index} ${file.path}`, () => this.plugin.openDiff(file, "history", this.captureNavigation()), `${file.index}  ${file.path}`);
             if (!files.length) el(details, "div", "vaultbranch-empty", t("此提交相对第一父提交没有文件改动。"));
-          } catch (error) { if (this.selected === commit.hash && request === this.request) el(details, "div", "is-error", error.message); }
+          } catch (error) { if (detailRequest === this.detailRequest && this.bodyEl === body && body.isConnected) el(details, "div", "is-error", error.message); }
         };
         if (rows.length % 100 === 0) {
           body.appendChild(batch);
@@ -142,9 +147,17 @@ class HistoryView extends GitView {
       if (commits.length >= this.limit && this.limit < 1000) button(body, "chevrons-down", t("加载更多历史"), async () => { this.limit = Math.min(1000, this.limit + this.plugin.settings.historyLimit); await this.render(); }, t("加载更多"));
       const selectedRow = rows.find((row) => row.dataset.commit === this.selected);
       if (selectedRow) await selectedRow.onclick();
-      if (request === this.request) { body.scrollTop = scroll.top; body.scrollLeft = scroll.left; details.scrollTop = scroll.detail; }
+      if (request === this.request) {
+        body.scrollTop = scroll.top; body.scrollLeft = scroll.left; details.scrollTop = scroll.detail;
+        this.renderedData = data; this.renderedSnapshot = snapshot;
+      }
     } catch (error) {
-      if (request === this.request) { body.replaceChildren(); el(body, "div", "vaultbranch-empty is-error", error.message); }
+      if (request === this.request) {
+        this.renderedData = null;
+        this.contentEl.empty();
+        el(this.contentEl, "div", "vaultbranch-empty is-error", error.message);
+        button(this.contentEl, "git-branch", t("全部分支"), () => { this.ref = ""; return this.render(true); }, t("全部分支"));
+      }
     }
   }
 
@@ -155,6 +168,7 @@ class HistoryView extends GitView {
       { title: t("Pop 此 Stash（恢复并移除）"), icon: "archive-x", run: () => p.mutate("Pop Stash", () => p.git.stashPop(commit)) },
     ];
     return [
+      { title: t("从此提交创建分支…"), icon: "git-branch-plus", run: () => createBranch(p, commit) },
       { title: t("Rebase 当前分支到此提交…"), icon: "git-branch", run: () => p.confirmRebase(commit) },
       { title: t("Push 当前分支"), icon: "arrow-up", run: () => p.runGit("push") },
     ];

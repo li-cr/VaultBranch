@@ -3,6 +3,7 @@
 const { ItemView, Menu, Notice, setIcon } = require("obsidian");
 const { t } = require("../i18n.js");
 const { SOURCE_VIEW, LABELS, STATUS_LABELS, el, button } = require("./shared.js");
+const { chooseBranch, createBranch } = require("../branches.js");
 
 class SourceControlView extends ItemView {
   constructor(leaf, plugin) {
@@ -31,6 +32,8 @@ class SourceControlView extends ItemView {
     this.refreshButton = button(header, "refresh-cw", t("刷新文件状态"), () => this.plugin.refresh(true));
     button(header, "ellipsis", t("更多操作"), () => {
       const menu = new Menu();
+      menu.addItem((item) => item.setTitle(t("切换本地分支…")).setIcon("git-branch").setDisabled(this.plugin.busy).onClick(() => chooseBranch(this.plugin)));
+      menu.addItem((item) => item.setTitle(t("创建并切换分支")).setIcon("git-branch-plus").setDisabled(this.plugin.busy).onClick(() => createBranch(this.plugin)));
       menu.addItem((item) => item.setTitle("Fetch").setIcon("download").onClick(() => this.plugin.runGit("fetch")));
       menu.addItem((item) => item.setTitle(t("操作输出")).setIcon("scroll-text").onClick(() => this.plugin.showOutput()));
       menu.addItem((item) => item.setTitle(t("设置")).setIcon("settings").onClick(() => this.plugin.openSettings()));

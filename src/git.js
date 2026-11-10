@@ -271,6 +271,36 @@ class GitService {
     return this.run(["push", "--", remote, `HEAD:${target}`], { timeout: 120000 });
   }
 
+  async localBranches() {
+    return (await this.run(["for-each-ref", "--format=%(refname:strip=2)%00%(HEAD)", "refs/heads/"]))
+      .trimEnd().split("\n").filter(Boolean).map(line => {
+        const [name, head] = line.split("\0");
+        return { name, current: head === "*" };
+      });
+  }
+
+  async checkBranchName(name) {
+    if (typeof name !== "string" || !name || name.startsWith("-") || name.startsWith("refs/") || name.includes("\0") || name.includes("@{") || name === "HEAD") {
+      throw new Error(t("请输入有效的本地分支名。"));
+    }
+    await this.run(["check-ref-format", "--branch", name]);
+  }
+
+  async switchBranch(name) {
+    await this.checkBranchName(name);
+    this.assertNormal(await this.status());
+    await this.run(["show-ref", "--verify", `refs/heads/${name}`]);
+    // Native switch refuses overwrites and preserves compatible working changes.
+    return this.run(["switch", "--no-guess", "--", name]);
+  }
+
+  async createBranch(name, hash = "") {
+    await this.checkBranchName(name);
+    if (hash) this.checkCommit(hash);
+    this.assertNormal(await this.status());
+    return this.run(["switch", "--no-guess", "-c", name, ...(hash ? [hash] : [])]);
+  }
+
   async diff(file, area) {
     this.checkPaths([file.path]);
     if (file.untracked && area === "unstaged") {
@@ -408,11 +438,31 @@ class GitService {
     return entries;
   }
 
-  async history(limit = 100, ref = "") {
-    if (ref === "stash") return graphFor(await this.stashHistory(limit));
-    const refs = (await this.run(["show-ref", "--head"], { allowDiffExit: true })).split("\n")
-      .filter((line) => line && !line.endsWith(" refs/stash")).join("\n");
-    if (!refs) return [];
+  async history(limit = 100, ref = "") { return (await this.historyData(limit, ref)).commits; }
+
+  async historyData(limit = 100, ref = "", force = false) {
+    limit = Math.max(10, Math.min(1000, Number(limit) || 100));
+    const [refs, head, stashes] = await Promise.all([
+      this.run(["show-ref", "--head"], { allowDiffExit: true }),
+      fs.readFile(path.join(this.gitDir, "HEAD"), "utf8"),
+      this.stashHistory(limit),
+    ]);
+    // Re-read mutable refs, HEAD and the stash reflog every time. Bound the cache to one page.
+    const key = JSON.stringify([refs, head, stashes, limit, ref]);
+    if (!force && this.historyCache?.key === key) return this.historyCache.data;
+    const branches = refs.split("\n").map(line => line.slice(line.indexOf(" ")+1))
+      .filter(name => name.startsWith("refs/heads/") || name.startsWith("refs/remotes/"))
+      .map(name => name.replace(/^refs\/(heads|remotes)\//, ""));
+    const currentBranch = head.startsWith("ref: refs/heads/") ? head.trim().slice(16) : "";
+    const commits = ref === "stash" ? [] : await this.readHistory(limit, ref, refs);
+    if (!ref || ref === "stash") commits.unshift(...stashes);
+    const data = { commits: graphFor(commits), branches, hasStash: Boolean(stashes.length), currentBranch };
+    this.historyCache = { key, data };
+    return data;
+  }
+
+  async readHistory(limit, ref, refs) {
+    if (!refs.split("\n").some(line => line && !line.endsWith(" refs/stash"))) return [];
     const selection = ref ? (await this.run(["rev-parse", "--verify", "--end-of-options", `${ref}^{commit}`])).trim() : null;
     const output = await this.run(["log", ...(selection ? [selection] : ["--exclude=refs/stash", "--all"]), "--topo-order", `--max-count=${Math.max(10, Math.min(1000, Number(limit) || 100))}`,
       "--format=%H%x00%P%x00%h%x00%an%x00%aI%x00%D%x00%s%x00", "-z"]);
@@ -427,8 +477,7 @@ class GitService {
       commits.push({ hash, parents: parents ? parents.split(" ") : [], short, author, date, refs, subject });
       i += 7;
     }
-    if (!ref) commits.unshift(...await this.stashHistory(limit));
-    return graphFor(commits);
+    return commits;
   }
 
   checkCommit(hash) {
