@@ -1,8 +1,8 @@
-VaultBranch 0.2.9 documents the CSS rule for future updates.
+VaultBranch 0.2.10 fixes diff selection contrast.
 
-- Explicitly prohibit `!important` in AGENTS.md. Override styles with scoped selector specificity or CSS variables.
-- Require the existing CSS validation before release and prohibit bypassing lint warnings.
-- Plugin behavior and styles are unchanged.
+- Use theme-derived translucent selection backgrounds for focused and inactive diff editors, keeping selected text readable in dark and light themes.
+- Apply red/green backgrounds to changed lines and changed text using the correct CodeMirror merge selectors.
+- Use scoped selector specificity without `!important`.
 
 Release assets continue to include GitHub provenance attestations.
 

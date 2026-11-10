@@ -56,10 +56,17 @@
 .vaultbranch-edit-panes .cm-gutters { background: var(--background-secondary); border: 0; color: var(--text-faint); }
 .vaultbranch-edit-panes .cm-cursor { border-left-color: var(--text-normal); }
 .vaultbranch-edit-panes .cm-focused { outline: none; }
-.vaultbranch-edit-panes .cm-focused .cm-selectionBackground { background: var(--text-selection); }
+.view-content.vaultbranch-diff .vaultbranch-edit-panes .cm-editor > .cm-scroller > .cm-selectionLayer .cm-selectionBackground { background: color-mix(in srgb, var(--interactive-accent) 16%, transparent); }
+.view-content.vaultbranch-diff .vaultbranch-edit-panes .cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground { background: color-mix(in srgb, var(--interactive-accent) 28%, transparent); }
+.view-content.vaultbranch-diff .vaultbranch-edit-panes .cm-content::selection,
+.view-content.vaultbranch-diff .vaultbranch-edit-panes .cm-content ::selection { color: var(--text-normal); }
+.vaultbranch-edit-panes .cm-merge-a .cm-changedLine,
 .vaultbranch-edit-panes .cm-deletedLine { background: color-mix(in srgb, var(--color-red) 12%, transparent); }
+.vaultbranch-edit-panes .cm-merge-b .cm-changedLine,
 .vaultbranch-edit-panes .cm-insertedLine { background: color-mix(in srgb, var(--color-green) 12%, transparent); }
+.vaultbranch-edit-panes .cm-merge-a .cm-changedText,
 .vaultbranch-edit-panes .cm-deletedText { background: color-mix(in srgb, var(--color-red) 24%, transparent); }
+.vaultbranch-edit-panes .cm-merge-b .cm-changedText,
 .vaultbranch-edit-panes .cm-insertedText { background: color-mix(in srgb, var(--color-green) 24%, transparent); }
 .vaultbranch-editor-warning { padding: 8px 12px; color: var(--text-error); background: var(--background-secondary); font-size: var(--font-ui-small); }
 .vaultbranch-editor-warning[hidden] { display: none; }
