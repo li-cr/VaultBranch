@@ -1,9 +1,8 @@
-VaultBranch 0.2.4 simplifies the file-discard confirmation dialog.
+VaultBranch 0.2.5 tightens file-row action spacing.
 
-- Use a compact dialog with a file card, shorter explanations and right-aligned text buttons.
-- Use the theme accent for moving untracked files to trash; keep a warning button for discarding tracked-file edits.
-- Focus Cancel when opening the dialog.
-- Support Chinese, English and long filenames and paths.
+- Reduce stage and discard buttons to 22 pixels with a 2-pixel row gap.
+- Remove extra padding before the status letter and keep it aligned with the actions.
+- Document the requirement to publish a version tag for each update and remind users to update manually in Obsidian settings.
 
 Release assets continue to include GitHub provenance attestations.
 

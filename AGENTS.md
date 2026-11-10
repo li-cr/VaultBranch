@@ -54,9 +54,11 @@ Git 测试只使用隔离临时仓库和本地 remote，不在用户笔记库制
 ## Git 与发布
 
 - 只提交本仓库的相关改动，不在外层笔记库执行批量暂存或提交，不覆盖用户已有修改。
-- 一般文档和开发提交推送 `main` 即可，不为此创建版本标签。
+- 每次完成项目更新（包括代码、样式和文档）后，都要递增版本、提交并推送 `main`，创建并推送对应的新版本标签，等待 GitHub Release 发布成功。
 - 发布时同步 `manifest.json`、`package.json`、`package-lock.json`、`versions.json`，更新 `RELEASE_NOTES.md`。
 - 标签必须与清单版本完全相同，不带 `v`。现有标签和 Release 不强制覆盖。
 - `.github/workflows/release.yml` 负责检查、测试、构建、来源证明和发布。Release 自定义附件只包含 `main.js`、`manifest.json`、`styles.css`，不添加插件 ZIP。
 - 保留三个安装文件的 GitHub artifact attestations 生成与验证。发布后确认工作流成功、附件能下载且内容与构建一致，再报告发布完成。
+- 完成后告知用户发布版本和链接，并明确提醒手动更新：Obsidian 设置 → 第三方插件 → 检查更新 → 更新 VaultBranch。
+- 本地界面验证部署到 `note_test` 测试库；当前笔记库由用户通过设置手动更新，不自动覆盖其插件安装文件。
 - GitHub Release 与 Obsidian 社区市场审核是两件事；未经确认不要声称已经上架或能搜索到。

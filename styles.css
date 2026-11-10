@@ -30,7 +30,7 @@
 .vaultbranch-file-row.is-selected { background: var(--background-modifier-hover); }
 .vaultbranch-file-open { display: flex; align-items: center; justify-content: flex-start; gap: 5px; flex: 1; min-width: 0; height: 29px; padding: 0; text-align: left; font-size: inherit; font-weight: normal; }
 .vaultbranch-file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.vaultbranch-file-status { margin-left: auto; padding-left: 5px; width: 19px; flex-shrink: 0; font-size: 11px; font-weight: 650; text-align: center; }
+.vaultbranch-file-status { width: 16px; flex-shrink: 0; font-size: 11px; font-weight: 650; text-align: center; }
 .vaultbranch-file-status.status-M, .vaultbranch-file-status.status-R, .vaultbranch-file-status.status-T { color: var(--color-orange); }
 .vaultbranch-file-status.status-A, .vaultbranch-file-status.status-untracked { color: var(--color-green); }
 .vaultbranch-file-status.status-D, .vaultbranch-file-status.status-U { color: var(--color-red); }
@@ -187,12 +187,12 @@
 .vaultbranch-folder { min-height: 27px; padding: 2px 6px; color: var(--text-muted); }
 .vaultbranch-folder:hover,
 .vaultbranch-file-row:hover { background: var(--background-secondary) !important; }
-.vaultbranch-file-row { min-height: 28px; padding: 0 5px; }
+.vaultbranch-file-row { min-height: 28px; padding: 0 5px; gap: 2px; }
 .vaultbranch-file-row.is-selected { background: rgba(var(--interactive-accent-rgb), .12); box-shadow: inset 2px 0 var(--interactive-accent); }
 .vaultbranch-file-open { height: 27px; }
 .vaultbranch-file-icon { color: var(--text-faint); }
 .vaultbranch-file-status { font-weight: 700; }
-.vaultbranch-row-action { border-radius: 4px !important; }
+.vaultbranch-row-action { width: 22px; height: 22px; min-width: 22px; padding: 3px; margin: 0; border-radius: 4px !important; }
 .vaultbranch-clean { margin: 14px 8px; border: 1px solid var(--background-modifier-border); background: var(--background-secondary); }
 
 .vaultbranch-diff-header {
