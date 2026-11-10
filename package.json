@@ -1,17 +1,26 @@
 {
   "name": "vaultbranch",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "private": true,
   "description": "Git source control and a commit graph for Obsidian.",
   "license": "MIT",
   "author": "li-cr",
-  "repository": { "type": "git", "url": "https://github.com/li-cr/VaultBranch.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/li-cr/VaultBranch.git"
+  },
   "scripts": {
-    "check": "node --check src/main.js && node --check src/git.js && node --check src/i18n.js && node scripts/validate.cjs",
+    "check": "node --check src/main.js && node --check src/git.js && node --check src/i18n.js && node --check src/autosave.js && node scripts/validate.cjs",
     "test": "node --test tests/*.test.cjs",
     "build": "node scripts/build.cjs"
   },
   "devDependencies": {
     "esbuild": "0.25.12"
+  },
+  "dependencies": {
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/merge": "6.12.3",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.15"
   }
 }

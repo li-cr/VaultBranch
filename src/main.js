@@ -4,6 +4,11 @@ const { t, setLanguage } = require("./i18n.js");
 
 const { Plugin, ItemView, Notice, setIcon, Platform, PluginSettingTab, Setting, Modal, Menu, Scope, moment } = require("obsidian");
 const { hostname } = require("node:os");
+const { MergeView } = require("@codemirror/merge");
+const { EditorState, Compartment, Transaction } = require("@codemirror/state");
+const { EditorView, keymap, lineNumbers, drawSelection } = require("@codemirror/view");
+const { history, historyKeymap, defaultKeymap, indentWithTab } = require("@codemirror/commands");
+const { Autosave, normalize, conflictMessage } = require("./autosave.js");
 
 const SOURCE_VIEW = "vaultbranch-source-control";
 const DIFF_VIEW = "vaultbranch-diff";
@@ -275,6 +280,7 @@ class DiffView extends GitView {
     this.area = "unstaged";
     this.unified = false;
     this.graphReturn = null;
+    this.editable = new Compartment();
     this.editScope = new Scope(this.app.scope);
     this.editScope.register(["Mod"], "s", () => {
       void this.saveEditor().catch((error) => new Notice(error.message));
@@ -287,6 +293,8 @@ class DiffView extends GitView {
   getIcon() { return "git-compare"; }
   getState() { return { file: this.file, area: this.area, unified: this.unified, graphReturn: this.graphReturn, editDraft: this.area === "unstaged" ? this.plugin.diffDrafts.get(this.file?.path) : undefined }; }
   async setState(state, result) {
+    await this.session?.flush();
+    this.destroyEditor();
     this.file = state.file || null;
     this.area = LABELS[state.area] ? state.area : "unstaged";
     this.unified = Boolean(state.unified);
@@ -301,6 +309,8 @@ class DiffView extends GitView {
   }
 
   async onClose() {
+    await this.session?.flush();
+    this.destroyEditor();
     this.app.keymap.popScope(this.editScope);
     const draft = this.plugin.diffDrafts.get(this.file?.path);
     if (draft && draft.text !== draft.working.replace(/\r\n?/g, "\n")) {
@@ -310,9 +320,12 @@ class DiffView extends GitView {
   }
 
   async render() {
+    if (this.merge && this.session) {
+      this.updateEditor();
+      await this.session.sync();
+      return;
+    }
     const request = ++this.request;
-    const selection = this.editorEl?.isConnected && this.editorEl.ownerDocument.activeElement === this.editorEl
-      ? { start: this.editorEl.selectionStart, end: this.editorEl.selectionEnd, top: this.editorEl.scrollTop, left: this.editorEl.scrollLeft } : null;
     this.app.keymap.popScope(this.editScope);
     this.contentEl.empty();
     if (!this.file) { el(this.contentEl, "div", "vaultbranch-empty", t("在 VaultBranch 侧栏选择文件查看差异。")); return; }
@@ -321,19 +334,30 @@ class DiffView extends GitView {
     el(header, "div", "vaultbranch-diff-path", this.file.path);
     el(header, "span", "vaultbranch-tag", t(LABELS[this.area]));
     button(header, "file-pen-line", t("打开文件"), () => this.plugin.openFile(this.file.path, this.graphReturn));
-    const draft = this.area === "unstaged" ? this.plugin.diffDrafts.get(this.file.path) : null;
     const editable = this.area === "unstaged" && typeof this.app.vault.getAbstractFileByPath(this.file.path)?.extension === "string" && this.file.worktree !== "D";
-    if (editable || draft) button(header, draft ? "git-compare" : "pencil", draft ? t("查看差异") : t("编辑工作区"), () => draft ? this.leaveEditor() : this.startEditing(), draft ? t("查看差异") : t("编辑工作区")).disabled = this.saving || this.plugin.busy;
-    if (!draft) {
+    if (!editable) {
       button(header, this.unified ? "columns-2" : "list", this.unified ? t("切换左右对比") : t("切换统一差异"), async () => { this.unified = !this.unified; await this.render(); });
       button(header, "refresh-cw", t("刷新差异"), () => this.render());
     }
     el(this.contentEl, "div", "vaultbranch-diff-description", this.area === "history" ? t`提交 ${this.file.commit.slice(0, 8)} · 相对第一父提交` : this.area === "staged" ? t("HEAD → 暂存区") : t("暂存区 → 工作区"));
     const body = el(this.contentEl, "div", "vaultbranch-diff-body");
-    if (draft) { this.renderEditor(header, body, draft, selection); return; }
     el(body, "div", "vaultbranch-empty", t("读取差异中…"));
     try {
       await this.plugin.ensureReady();
+      if (editable) {
+        try {
+          const session = await this.plugin.editorSession(this.file.path);
+          if (request !== this.request) return;
+          this.session = session;
+          body.replaceChildren();
+          this.renderEditor(body);
+          await session.sync();
+          return;
+        } catch (error) {
+          if (request !== this.request) return;
+          el(this.contentEl, "div", "vaultbranch-editor-warning", error.message);
+        }
+      }
       const result = this.area === "history" ? await this.plugin.git.commitDiff(this.file) : await this.plugin.git.diff(this.file, this.area);
       if (request !== this.request) return;
       body.replaceChildren();
@@ -368,110 +392,90 @@ class DiffView extends GitView {
     }
   }
 
-  async startEditing() {
-    const filePath = this.file.path;
-    await this.plugin.ensureReady();
-    const versions = await this.plugin.git.worktreeVersions(filePath);
-    if (this.file.path !== filePath || this.area !== "unstaged") return;
-    this.plugin.diffDrafts.set(filePath, { ...versions, text: versions.working.replace(/\r\n?/g, "\n") });
-    await this.render();
-    this.editorEl?.focus();
+  destroyEditor() {
+    this.session?.listeners.delete(this.editorListener);
+    this.merge?.destroy();
+    this.merge = null;
+    this.session = null;
+    this.app.keymap.popScope(this.editScope);
   }
 
-  renderEditor(header, body, draft, selection) {
-    const dirty = () => draft.text !== draft.working.replace(/\r\n?/g, "\n");
-    const save = button(header, "save", t("保存文件 · Ctrl/Cmd+S"), () => this.saveEditor(), t("保存"));
+  renderEditor(body) {
+    body.classList.add("has-editor");
+    this.warningEl = el(body, "div", "vaultbranch-editor-warning");
     const captions = el(body, "div", "vaultbranch-diff-captions");
-    el(captions, "span", "", t("暂存区（只读）"));
-    const status = el(captions, "span", "");
+    this.leftCaption = el(captions, "span");
+    this.rightCaption = el(captions, "span");
     const panes = el(body, "div", "vaultbranch-edit-panes");
-    const left = el(panes, "textarea", "vaultbranch-text-editor is-readonly");
-    left.value = draft.index; left.readOnly = true; left.spellcheck = false;
-    left.setAttribute("aria-label", t("暂存区（只读）"));
-    const right = el(panes, "textarea", "vaultbranch-text-editor");
-    right.value = draft.text; right.spellcheck = false;
-    right.setAttribute("aria-label", t("工作区（可编辑）"));
-    right.disabled = this.saving || this.plugin.busy;
-    this.editorEl = right;
-    right.addEventListener("focus", () => this.app.keymap.pushScope(this.editScope));
-    right.addEventListener("blur", () => this.app.keymap.popScope(this.editScope));
-    const update = () => {
-      status.textContent = dirty() ? t("工作区 · 未保存") : t("工作区（可编辑）");
-      save.disabled = !dirty() || this.saving || this.plugin.busy;
-    };
-    right.addEventListener("input", () => {
-      draft.text = right.value;
-      this.plugin.app.workspace.requestSaveLayout();
-      update();
+    const common = [lineNumbers(), drawSelection(), EditorState.tabSize.of(4)];
+    this.merge = new MergeView({
+      parent: panes, root: body.ownerDocument,
+      a: { doc: normalize(this.session.draft.index), extensions: [common, EditorState.readOnly.of(true), EditorView.editable.of(false)] },
+      b: { doc: this.session.draft.text, extensions: [common, history(),
+        keymap.of([{ key: "Mod-s", run: () => { void this.saveEditor(); return true; } }, ...defaultKeymap, ...historyKeymap, indentWithTab]),
+        this.editable.of(this.editorAccess()),
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged && !this.syncingEditor) this.session.edit(update.state.doc.toString());
+        }),
+        EditorView.domEventHandlers({
+          focus: () => { this.app.keymap.pushScope(this.editScope); },
+          blur: () => { this.app.keymap.popScope(this.editScope); },
+        }),
+      ] },
+      highlightChanges: true, gutter: true,
     });
-    right.addEventListener("keydown", (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
-        event.preventDefault(); event.stopPropagation();
-        if (!save.disabled) save.click();
-      }
-    });
-    update();
-    if (selection && !right.disabled) this.restoreSelection(selection);
+    this.editorListener = () => this.updateEditor();
+    this.session.listeners.add(this.editorListener);
+    this.updateEditor();
   }
 
-  restoreSelection(selection) {
-    this.editorEl.focus();
-    this.editorEl.setSelectionRange(selection.start, selection.end);
-    this.editorEl.scrollTop = selection.top;
-    this.editorEl.scrollLeft = selection.left;
+  editorAccess() {
+    const locked = Boolean(this.plugin.busy || this.plugin.mutationPending);
+    return [EditorState.readOnly.of(locked), EditorView.editable.of(!locked)];
   }
 
-  async saveEditor() {
-    if (this.saving || this.plugin.busy) return false;
-    const filePath = this.file.path;
-    const draft = this.plugin.diffDrafts.get(filePath);
-    if (!draft) return false;
-    const text = draft.text;
-    const selection = this.editorEl?.ownerDocument.activeElement === this.editorEl
-      ? { start: this.editorEl.selectionStart, end: this.editorEl.selectionEnd, top: this.editorEl.scrollTop, left: this.editorEl.scrollLeft } : null;
-    this.saving = true;
-    if (this.editorEl) this.editorEl.disabled = true;
+  updateEditor() {
+    if (!this.merge || !this.session) return;
+    const { draft, error, saving, dirty } = this.session;
+    this.syncingEditor = true;
     try {
-      return await this.plugin.mutate(t("保存文件"), async () => {
-        // Recheck path/type/operation state before using Obsidian's atomic text processing.
-        const versions = await this.plugin.git.worktreeVersions(filePath);
-        const file = this.app.vault.getAbstractFileByPath(filePath);
-        if (!file || typeof file.extension !== "string") throw new Error(t("文件状态已改变，请刷新后重试。"));
-        const crlf = draft.working.includes("\r\n") && !/(?<!\r)\n/.test(draft.working);
-        const content = crlf ? text.replace(/\n/g, "\r\n") : text;
-        if (Buffer.byteLength(content, "utf8") > 2 * 1024 * 1024) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
-        await this.app.vault.process(file, (current) => {
-          if (current !== draft.working) throw new Error(t("文件已被其他编辑器修改。草稿已保留，请打开文件核对后再编辑。"));
-          return content;
-        });
-        draft.working = content;
-        draft.index = versions.index;
-        this.app.workspace.requestSaveLayout();
-      });
-    } finally {
-      this.saving = false;
-      if (this.file?.path === filePath) {
-        await this.render();
-        if (selection && this.editorEl?.isConnected) this.restoreSelection(selection);
+      for (const [editor, text] of [[this.merge.a, normalize(draft.index)], [this.merge.b, draft.text]]) {
+        if (editor.state.doc.toString() !== text) {
+          editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: text }, annotations: Transaction.addToHistory.of(false) });
+        }
+      }
+      const locked = Boolean(this.plugin.busy || this.plugin.mutationPending);
+      if (this.merge.b.state.readOnly !== locked) this.merge.b.dispatch({ effects: this.editable.reconfigure(this.editorAccess()) });
+    } finally { this.syncingEditor = false; }
+    this.leftCaption.textContent = t("暂存区（只读）");
+    this.rightCaption.textContent = saving ? t("工作区 · 正在保存…") : dirty ? t("工作区 · 未保存") : t("工作区 · 已自动保存");
+    this.merge.a.contentDOM.setAttribute("aria-label", t("暂存区（只读）"));
+    this.merge.b.contentDOM.setAttribute("aria-label", t("工作区（可编辑）"));
+    this.warningEl.hidden = !error;
+    if (this.warningEl.dataset.error !== error || this.warningEl.dataset.language !== this.plugin.settings.language) {
+      this.warningEl.dataset.error = error;
+      this.warningEl.dataset.language = this.plugin.settings.language;
+      this.warningEl.replaceChildren();
+      if (error) {
+        el(this.warningEl, "span", "", error);
+        button(this.warningEl, "file-text", t("核对磁盘文件"), () => this.plugin.openFile(this.file.path), t("核对磁盘文件"));
+        button(this.warningEl, "refresh-cw", t("重试自动保存"), () => this.session.retry(), t("重试自动保存"));
+        button(this.warningEl, "undo-2", t("放弃草稿并重新载入"), () => this.reloadEditor(), t("放弃草稿并重新载入"));
       }
     }
   }
 
-  async leaveEditor() {
-    const filePath = this.file.path;
-    const draft = this.plugin.diffDrafts.get(filePath);
-    const leave = async () => { this.plugin.diffDrafts.delete(filePath); await this.render(); this.app.workspace.requestSaveLayout(); };
-    if (!draft || draft.text === draft.working.replace(/\r\n?/g, "\n")) return leave();
+  saveEditor() { return this.session?.flush() || Promise.resolve(true); }
+
+  reloadEditor() {
+    const session = this.session;
     const modal = new Modal(this.app);
-    modal.titleEl.textContent = t("保留未保存的编辑？");
-    el(modal.contentEl, "p", "", filePath);
+    modal.titleEl.textContent = t("放弃草稿并重新载入？");
+    el(modal.contentEl, "p", "", t("保留磁盘上的文件，放弃此差异编辑器中尚未保存的输入。"));
     const actions = el(modal.contentEl, "div", "vaultbranch-confirm-actions");
-    const cancel = button(actions, null, t("继续编辑"), () => modal.close(), t("继续编辑"));
-    button(actions, null, t("放弃草稿"), () => { modal.close(); return leave(); }, t("放弃草稿"));
-    button(actions, null, t("保存并查看差异"), async () => {
-      modal.close(); if (await this.saveEditor()) await leave();
-    }, t("保存并查看差异")).classList.add("mod-cta");
-    modal.open(); cancel.focus();
+    button(actions, null, t("取消"), () => modal.close(), t("取消"));
+    button(actions, null, t("放弃草稿"), async () => { modal.close(); await session.reload(); }, t("放弃草稿")).classList.add("mod-warning");
+    modal.open();
   }
 }
 
@@ -713,6 +717,8 @@ module.exports = class MyGitPlugin extends Plugin {
     this.draft = "";
     this.graphReturns = new Map();
     this.diffDrafts = new Map();
+    this.editSessions = new Map();
+    this.editorTasks = new Map();
     for (const [type, View] of Object.entries(VIEW_CLASSES)) this.registerView(type, (leaf) => new View(leaf, this));
     this.addSettingTab(new MyGitSettings(this.app, this));
     this.ribbonEl = this.addRibbonIcon("git-branch", t("VaultBranch · 源代码管理"), () => this.openSidebar());
@@ -723,7 +729,10 @@ module.exports = class MyGitPlugin extends Plugin {
       if (!checking) void this.returnToGraph(context.graphReturn);
       return true;
     } });
-    this.registerEvent(this.app.workspace.on("active-leaf-change", (leaf) => this.updateEditorReturn(leaf)));
+    this.registerEvent(this.app.workspace.on("active-leaf-change", (leaf) => {
+      for (const view of this.views(DIFF_VIEW)) if (view.leaf !== leaf) void view.saveEditor();
+      this.updateEditorReturn(leaf);
+    }));
     this.registerEvent(this.app.workspace.on("file-open", () => this.updateEditorReturn(this.app.workspace.activeLeaf)));
     const navigateBack = (event) => {
       const context = this.activeGraphReturn();
@@ -738,8 +747,14 @@ module.exports = class MyGitPlugin extends Plugin {
       if (event.key !== "BrowserBack" && !(event.altKey && event.key === "ArrowLeft")) return;
       navigateBack(event);
     }, true);
-    for (const event of ["modify", "create", "delete", "rename"]) this.registerEvent(this.app.vault.on(event, () => this.scheduleRefresh()));
-    this.registerDomEvent(window, "focus", () => this.scheduleRefresh());
+    for (const event of ["modify", "create", "delete", "rename"]) this.registerEvent(this.app.vault.on(event, (file, oldPath) => {
+      this.scheduleRefresh();
+      for (const path of new Set([file.path, oldPath])) void this.editSessions.get(path)?.sync();
+    }));
+    this.registerDomEvent(window, "focus", () => {
+      this.scheduleRefresh();
+      for (const view of this.views(DIFF_VIEW)) void view.session?.sync();
+    });
     this.registerInterval(window.setInterval(() => {
       if (!document.hidden && this.app.workspace.getLeavesOfType(SOURCE_VIEW).length && Date.now() - (this.lastAutoRefresh || 0) >= this.settings.refreshSeconds * 1000) {
         this.lastAutoRefresh = Date.now(); void this.refresh();
@@ -756,6 +771,7 @@ module.exports = class MyGitPlugin extends Plugin {
     window.clearTimeout(this.refreshTimer);
     document.querySelectorAll(".vaultbranch-editor-return").forEach((node) => node.remove());
     this.graphReturns?.clear();
+    for (const session of this.editSessions.values()) session.stop();
   }
 
   configureGit() {
@@ -884,6 +900,31 @@ module.exports = class MyGitPlugin extends Plugin {
     await this.initTask;
   }
 
+  async editorSession(filePath) {
+    if (this.editSessions.has(filePath)) return this.editSessions.get(filePath);
+    if (!this.editorTasks.has(filePath)) this.editorTasks.set(filePath, (async () => {
+      const versions = await this.git.worktreeVersions(filePath);
+      const draft = this.diffDrafts.get(filePath) || { ...versions, text: normalize(versions.working) };
+      this.diffDrafts.set(filePath, draft);
+      const session = new Autosave(draft, {
+        read: () => this.git.worktreeVersions(filePath),
+        write: async (expected, content) => {
+          const file = this.app.vault.getAbstractFileByPath(filePath);
+          if (!file || typeof file.extension !== "string") throw new Error(t("文件状态已改变，请刷新后重试。"));
+          await this.app.vault.process(file, (current) => {
+            if (current !== expected) throw new Error(conflictMessage());
+            return content;
+          });
+        },
+        changed: () => this.app.workspace.requestSaveLayout(),
+        saved: () => this.scheduleRefresh(),
+      });
+      this.editSessions.set(filePath, session);
+      return session;
+    })().finally(() => this.editorTasks.delete(filePath)));
+    return this.editorTasks.get(filePath);
+  }
+
   scheduleRefresh() {
     if (this.unloaded) return;
     window.clearTimeout(this.refreshTimer);
@@ -919,8 +960,18 @@ module.exports = class MyGitPlugin extends Plugin {
   }
 
   async mutate(label, action) {
-    if (this.busy) { new Notice(t("已有 Git 操作执行中，请稍候。")); return false; }
+    if (this.busy || this.mutationPending) { new Notice(t("已有 Git 操作执行中，请稍候。")); return false; }
+    this.mutationPending = true;
+    for (const view of this.views(DIFF_VIEW)) view.updateEditor();
+    const saved = await Promise.all([...this.editSessions.values()].map((session) => session.flush()));
+    this.mutationPending = false;
+    if (saved.some((success) => !success)) {
+      for (const view of this.views(DIFF_VIEW)) view.updateEditor();
+      new Notice(t("存在未保存的差异编辑，请先处理自动保存提示，再执行 Git 操作。"), 8000);
+      return false;
+    }
     this.busy = true;
+    for (const view of this.views(DIFF_VIEW)) view.updateEditor();
     this.busyLabel = label;
     this.error = "";
     this.renderViews();

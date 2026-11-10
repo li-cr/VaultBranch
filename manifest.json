@@ -1,7 +1,7 @@
 {
   "id": "vaultbranch",
   "name": "VaultBranch",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "minAppVersion": "1.5.0",
   "description": "Manage Git changes, browse a commit graph, restore stashes, and resolve conflicts in your vault.",
   "author": "li-cr",

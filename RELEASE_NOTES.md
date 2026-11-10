@@ -1,14 +1,11 @@
-VaultBranch 0.2.7 adds working-tree editing to the diff view.
+VaultBranch 0.2.8 adds direct diff editing with autosave.
 
-- Choose **Edit working tree** in an unstaged diff to edit the full file on the right, with the index on the left for reference.
-- Save using the toolbar or Ctrl/Cmd+S. Saving updates only the working tree, without staging or committing.
-- Keep staged and historical diffs read-only.
-- Preserve drafts across view refreshes and language changes, with save/discard controls when returning to the diff.
-- Refuse to overwrite external edits; retain the draft for comparison.
-- Preserve UTF-8 BOM and CRLF and reject binary, oversized or unsafe file paths.
+- Click an unstaged file and edit immediately in the right pane, with live red/green differences against the read-only index.
+- Automatically save after 500 ms of idle typing and before switching files or running Git operations. Ctrl/Cmd+S also saves immediately.
+- Saving changes only the working tree. Staged and historical diffs remain read-only.
+- Preserve editor focus, undo history, UTF-8 BOM and CRLF through autosaves.
+- Synchronize clean external changes. When external edits overlap an unsaved draft, pause saving and retain local input, with compare, retry and confirmed discard/reload actions.
 
 Release assets continue to include GitHub provenance attestations.
 
 Desktop only. Requires Git installed separately. Git authentication and commit identity use the local Git configuration.
-
-Until approved in the Obsidian Community directory, install from these release assets or with BRAT using `li-cr/VaultBranch`. This release does not imply directory approval.

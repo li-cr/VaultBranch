@@ -3,6 +3,15 @@
 // Chinese source strings are the fallback; tagged templates keep values out of translation keys.
 let language = "zh";
 const english = {
+  "工作区 · 正在保存…": "Working tree · Saving…",
+  "工作区 · 已自动保存": "Working tree · Autosaved",
+  "文件已被其他编辑器修改。自动保存已暂停，你的输入已保留。请核对文件，或放弃草稿并重新载入。": "Another editor changed this file. Autosave is paused and your input is retained. Compare the file, or discard your draft and reload.",
+  "核对磁盘文件": "Compare disk file",
+  "重试自动保存": "Retry autosave",
+  "放弃草稿并重新载入": "Discard draft and reload",
+  "放弃草稿并重新载入？": "Discard draft and reload?",
+  "保留磁盘上的文件，放弃此差异编辑器中尚未保存的输入。": "Keep the file on disk and discard unsaved input in this diff editor.",
+  "存在未保存的差异编辑，请先处理自动保存提示，再执行 Git 操作。": "Unsaved diff edits remain. Resolve the autosave warning before running Git operations.",
   "此文件不支持在差异视图中编辑。": "This file cannot be edited in the diff view.",
   "仅支持编辑 2 MB 以内的 UTF-8 文本文件。": "Editing supports UTF-8 text files up to 2 MB.",
   "编辑工作区": "Edit working tree",

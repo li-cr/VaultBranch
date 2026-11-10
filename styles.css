@@ -45,12 +45,25 @@
 .vaultbranch-tag { flex-shrink: 0; color: var(--text-muted); font-size: var(--font-ui-smaller); background: var(--background-secondary); border-radius: 4px; padding: 2px 6px; }
 .vaultbranch-diff-description { padding: 7px 16px; color: var(--text-muted); font-size: var(--font-ui-smaller); border-bottom: 1px solid var(--background-modifier-border); }
 .vaultbranch-diff-body { flex: 1; min-height: 0; overflow: auto; user-select: text; }
-.vaultbranch-diff-body:has(.vaultbranch-edit-panes) { display: flex; flex-direction: column; overflow: hidden; }
-.vaultbranch-edit-panes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); flex: 1; min-height: 0; }
-.vaultbranch-edit-panes .vaultbranch-text-editor { display: block; width: 100%; height: 100%; min-height: 180px; margin: 0; padding: 12px; resize: none; border: 0; border-radius: 0; background: var(--background-primary); color: var(--text-normal); box-shadow: none; font: var(--font-smaller)/1.65 var(--font-monospace); tab-size: 4; }
-.vaultbranch-edit-panes .vaultbranch-text-editor + .vaultbranch-text-editor { border-left: 1px solid var(--background-modifier-border); }
-.vaultbranch-edit-panes .vaultbranch-text-editor.is-readonly { background: var(--background-secondary); color: var(--text-muted); }
-.vaultbranch-edit-panes .vaultbranch-text-editor:focus-visible { outline: 1px solid var(--interactive-accent); outline-offset: -1px; }
+.vaultbranch-diff-body.has-editor { display: flex; flex-direction: column; overflow: hidden; }
+.vaultbranch-edit-panes { flex: 1; min-height: 0; overflow: auto; }
+.vaultbranch-edit-panes .cm-mergeView { min-height: 100%; background: var(--background-primary); }
+.vaultbranch-edit-panes .cm-mergeViewEditors { min-height: 100%; }
+.vaultbranch-edit-panes .cm-editor { flex: 1; min-width: 0; background: var(--background-primary); color: var(--text-normal); }
+.vaultbranch-edit-panes .cm-editor:first-child { border-right: 1px solid var(--background-modifier-border); }
+.vaultbranch-edit-panes .cm-scroller { font: var(--font-smaller)/1.65 var(--font-monospace); }
+.vaultbranch-edit-panes .cm-content { padding: 12px 0; caret-color: var(--text-normal); }
+.vaultbranch-edit-panes .cm-gutters { background: var(--background-secondary); border: 0; color: var(--text-faint); }
+.vaultbranch-edit-panes .cm-cursor { border-left-color: var(--text-normal); }
+.vaultbranch-edit-panes .cm-focused { outline: none; }
+.vaultbranch-edit-panes .cm-focused .cm-selectionBackground { background: var(--text-selection); }
+.vaultbranch-edit-panes .cm-deletedLine { background: color-mix(in srgb, var(--color-red) 12%, transparent); }
+.vaultbranch-edit-panes .cm-insertedLine { background: color-mix(in srgb, var(--color-green) 12%, transparent); }
+.vaultbranch-edit-panes .cm-deletedText { background: color-mix(in srgb, var(--color-red) 24%, transparent); }
+.vaultbranch-edit-panes .cm-insertedText { background: color-mix(in srgb, var(--color-green) 24%, transparent); }
+.vaultbranch-editor-warning { padding: 8px 12px; color: var(--text-error); background: var(--background-secondary); font-size: var(--font-ui-small); }
+.vaultbranch-editor-warning[hidden] { display: none; }
+.vaultbranch-editor-warning .vaultbranch-button { display: inline-flex; margin: 6px 6px 0 0; }
 .vaultbranch-diff-captions { display: grid; grid-template-columns: 1fr 1fr; position: sticky; top: 0; z-index: 1; background: var(--background-secondary); border-bottom: 1px solid var(--background-modifier-border); }
 .vaultbranch-diff-captions span { padding: 8px 14px; color: var(--text-muted); font-size: var(--font-ui-smaller); }
 .vaultbranch-diff-captions span + span { border-left: 1px solid var(--background-modifier-border); }
