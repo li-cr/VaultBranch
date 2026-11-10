@@ -141,3 +141,36 @@ test("a clean deleted file does not block unrelated Git actions", async () => {
   assert.equal(await f.session.flush(), true);
   assert.equal(f.session.dirty, false);
 });
+
+test("a burst of sync events shares a read without redundant change notifications", async () => {
+  let reads = 0;
+  let notifications = 0;
+  const f = fixture("old\n", {
+    read: async () => { reads++; return { index: "staged\n", working: "old\n" }; },
+    changed: () => { notifications++; },
+  });
+  await Promise.all(Array.from({ length: 20 }, () => f.session.sync()));
+  assert.equal(reads, 1);
+  assert.equal(notifications, 0);
+});
+
+test("an external event arriving during a sync triggers one fresh read of the latest content", async () => {
+  let begin, release;
+  const started = new Promise((resolve) => { begin = resolve; });
+  const blocked = new Promise((resolve) => { release = resolve; });
+  let reads = 0;
+  const f = fixture("old\n", { read: async () => {
+    const snapshot = f.disk;
+    if (++reads === 1) { begin(); await blocked; }
+    return { index: "staged\n", working: snapshot };
+  } });
+  const initial = f.session.sync();
+  await started;
+  f.disk = "latest external\n";
+  const pending = Array.from({ length: 20 }, () => f.session.sync());
+  release();
+  await Promise.all([initial, ...pending]);
+  assert.equal(reads, 2);
+  assert.equal(f.draft.text, "latest external\n");
+  assert.equal(f.session.dirty, false);
+});

@@ -2,7 +2,7 @@
 
 const { t, setLanguage } = require("./i18n.js");
 
-const { Plugin, ItemView, Notice, setIcon, Platform, PluginSettingTab, Setting, Modal, Menu, Scope, moment } = require("obsidian");
+const { Plugin, ItemView, Notice, setIcon, Platform, PluginSettingTab, Setting, Modal, Menu, Scope, moment, debounce } = require("obsidian");
 const { hostname } = require("node:os");
 const { MergeView } = require("@codemirror/merge");
 const { EditorState, Compartment, Transaction } = require("@codemirror/state");
@@ -76,6 +76,7 @@ class SourceControlView extends ItemView {
   getIcon() { return "git-branch"; }
 
   async onOpen() {
+    this.renderSnapshot = null;
     this.contentEl.empty();
     this.contentEl.addClass("vaultbranch-source");
     const header = el(this.contentEl, "div", "vaultbranch-header");
@@ -148,6 +149,9 @@ class SourceControlView extends ItemView {
     if (!this.treeEl) return;
     const { status, busy, error } = this.plugin;
     this.updateButtons();
+    const snapshot = JSON.stringify([status, busy, error, this.selected, [...this.collapsed], this.plugin.settings.language]);
+    if (this.renderSnapshot === snapshot) return;
+    this.renderSnapshot = snapshot;
     this.branchEl.replaceChildren();
     setIcon(el(this.branchEl, "span", "vaultbranch-branch-icon"), "git-branch");
     el(this.branchEl, "span", "vaultbranch-branch-name", status?.branch || t("读取仓库中…"));
@@ -423,7 +427,10 @@ class DiffView extends GitView {
         keymap.of([{ key: "Mod-s", run: () => { void this.saveEditor(); return true; } }, ...defaultKeymap, ...historyKeymap, indentWithTab]),
         this.editable.of(this.editorAccess()),
         EditorView.updateListener.of((update) => {
-          if (update.docChanged && !this.syncingEditor) this.session.edit(update.state.doc.toString());
+          if (update.docChanged && !this.syncingEditor) {
+            this.editorText = update.state.doc.toString();
+            this.session.edit(this.editorText);
+          }
         }),
         EditorView.domEventHandlers({
           focus: () => { this.app.keymap.pushScope(this.editScope); },
@@ -432,6 +439,8 @@ class DiffView extends GitView {
       ] },
       highlightChanges: true, gutter: true,
     });
+    this.editorText = this.session.draft.text;
+    this.editorIndex = this.session.draft.index;
     this.editorListener = () => this.updateEditor();
     this.session.listeners.add(this.editorListener);
     this.updateEditor();
@@ -447,10 +456,13 @@ class DiffView extends GitView {
     const { draft, error, saving, dirty } = this.session;
     this.syncingEditor = true;
     try {
-      for (const [editor, text] of [[this.merge.a, normalize(draft.index)], [this.merge.b, draft.text]]) {
-        if (editor.state.doc.toString() !== text) {
-          editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: text }, annotations: Transaction.addToHistory.of(false) });
-        }
+      if (this.editorIndex !== draft.index) {
+        this.merge.a.dispatch({ changes: { from: 0, to: this.merge.a.state.doc.length, insert: normalize(draft.index) }, annotations: Transaction.addToHistory.of(false) });
+        this.editorIndex = draft.index;
+      }
+      if (this.editorText !== draft.text) {
+        this.merge.b.dispatch({ changes: { from: 0, to: this.merge.b.state.doc.length, insert: draft.text }, annotations: Transaction.addToHistory.of(false) });
+        this.editorText = draft.text;
       }
       const locked = Boolean(this.plugin.busy || this.plugin.mutationPending);
       if (this.merge.b.state.readOnly !== locked) this.merge.b.dispatch({ effects: this.editable.reconfigure(this.editorAccess()) });
@@ -816,7 +828,7 @@ module.exports = class MyGitPlugin extends Plugin {
 
   onunload() {
     this.unloaded = true;
-    window.clearTimeout(this.refreshTimer);
+    this.refreshSoon?.cancel();
     window.clearTimeout(this.dateTimer);
     document.querySelectorAll(".vaultbranch-editor-return").forEach((node) => node.remove());
     this.graphReturns?.clear();
@@ -860,6 +872,7 @@ module.exports = class MyGitPlugin extends Plugin {
 
   async updateSetting(key, value) {
     if (this.busy) { new Notice(t("Git 操作执行中，请稍后修改设置。")); return false; }
+    if (this.settings[key] === value) return true;
     this.settings[key] = value;
     await this.saveData(this.settings);
     if (key === "diffAutosave") for (const session of this.editSessions.values()) session.setEnabled(value);
@@ -867,8 +880,10 @@ module.exports = class MyGitPlugin extends Plugin {
     if (key === "gitPath" || key === "pullMethod") {
       if (this.refreshTask) await this.refreshTask;
       this.configureGit();
+      await this.refresh();
+    } else {
+      this.renderViews();
     }
-    await this.refresh();
     return true;
   }
 
@@ -983,8 +998,8 @@ module.exports = class MyGitPlugin extends Plugin {
 
   scheduleRefresh() {
     if (this.unloaded) return;
-    window.clearTimeout(this.refreshTimer);
-    this.refreshTimer = window.setTimeout(() => { if (!this.unloaded) void this.refresh(); }, 650);
+    this.refreshSoon ||= debounce(() => { if (!this.unloaded) void this.refresh(); }, 650, true);
+    this.refreshSoon();
   }
 
   views(...types) {

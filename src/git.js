@@ -194,11 +194,11 @@ class GitService {
     return null;
   }
 
-  async status() {
+  async status({ includeStash = true } = {}) {
     const [output, operation, stash] = await Promise.all([
       this.run(["status", "--porcelain=v1", "-z", "--branch", "--untracked-files=all"]),
       this.operation(),
-      this.stashExists(),
+      includeStash ? this.stashExists() : false,
     ]);
     const status = parseStatus(output);
     status.operation = operation;
@@ -300,7 +300,7 @@ class GitService {
 
   async worktreeVersions(filePath) {
     this.checkPaths([filePath]);
-    this.assertNormal(await this.status());
+    this.assertNormal(await this.status({ includeStash: false }));
     const absolute = path.resolve(this.root, filePath);
     const [stat, actual, root] = await Promise.all([fs.lstat(absolute), fs.realpath(absolute), fs.realpath(this.root)]);
     const relative = path.relative(root, actual);
@@ -318,9 +318,14 @@ class GitService {
     let index = "";
     if (entry) {
       const hash = entry.split(" ")[1];
-      if (Number(await this.run(["cat-file", "-s", hash])) > MAX_PREVIEW) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
-      index = await this.run(["cat-file", "blob", hash]);
-      if (index.includes("\0") || index.includes("\ufffd")) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
+      if (this.previewBlob?.hash === hash) index = this.previewBlob.text;
+      else {
+        if (Number(await this.run(["cat-file", "-s", hash])) > MAX_PREVIEW) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
+        index = await this.run(["cat-file", "blob", hash]);
+        if (index.includes("\0") || index.includes("\ufffd")) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
+        // Blobs are immutable by hash. Keep only one, bounded by MAX_PREVIEW.
+        this.previewBlob = { hash, text: index };
+      }
     }
     return { index, working };
   }

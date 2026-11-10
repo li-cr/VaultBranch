@@ -20,7 +20,14 @@ class Autosave {
     this.saving = false;
   }
 
-  get dirty() { return this.draft.text !== normalize(this.draft.working); }
+  get savedText() {
+    if (this.savedWorking !== this.draft.working) {
+      this.savedWorking = this.draft.working;
+      this.normalizedWorking = normalize(this.draft.working);
+    }
+    return this.normalizedWorking;
+  }
+  get dirty() { return this.draft.text !== this.savedText; }
   notify() { this.changed(); for (const listener of this.listeners) listener(); }
   enqueue(action) {
     const task = this.task.then(action).catch((error) => { this.error = error.message; this.notify(); return false; });
@@ -65,20 +72,28 @@ class Autosave {
     });
   }
   sync() {
-    return this.enqueue(async () => {
-      const versions = await this.read();
-      this.draft.index = versions.index;
-      if (versions.working !== this.draft.working) {
-        if (this.dirty) this.error = conflictMessage();
-        else {
-          this.draft.working = versions.working;
-          this.draft.text = normalize(versions.working);
-          this.error = "";
+    this.syncAgain = true;
+    if (this.syncTask) return this.syncTask;
+    this.syncTask = this.enqueue(async () => {
+      do {
+        this.syncAgain = false;
+        const versions = await this.read();
+        let changed = this.draft.index !== versions.index;
+        this.draft.index = versions.index;
+        if (versions.working !== this.draft.working) {
+          changed = true;
+          if (this.dirty) this.error = conflictMessage();
+          else {
+            this.draft.working = versions.working;
+            this.draft.text = normalize(versions.working);
+            this.error = "";
+          }
         }
-      }
-      this.notify();
+        if (changed) this.notify();
+      } while (this.syncAgain);
       return !this.error;
-    });
+    }).finally(() => { this.syncTask = null; });
+    return this.syncTask;
   }
   retry() { this.error = ""; return this.flush(); }
   reload() {

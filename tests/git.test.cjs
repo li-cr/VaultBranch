@@ -305,6 +305,25 @@ test("editable versions load complete index and worktree content without staging
   assert.equal(await fs.readFile(path.join(root, name), "utf8"), working);
 });
 
+test("editable snapshots reuse immutable index blobs and reload them after staging new content", async () => {
+  const { root, service } = await fixture();
+  await write(root, "note.md", "index one\n");
+  await service.stage(["note.md"]);
+  const originalRun = service.run;
+  let commands = [];
+  service.run = function (args, ...rest) { commands.push(args[0]); return originalRun.call(this, args, ...rest); };
+  assert.equal((await service.worktreeVersions("note.md")).index, "index one\n");
+  commands = [];
+  await write(root, "note.md", "working change\n");
+  const snapshot = await service.worktreeVersions("note.md");
+  assert.equal(snapshot.index, "index one\n");
+  assert.equal(snapshot.working, "working change\n");
+  assert.deepEqual(commands, ["status", "ls-files"]);
+  await service.stage(["note.md"]);
+  assert.equal((await service.worktreeVersions("note.md")).index, "working change\n");
+  assert.equal(commands.filter((cmd) => cmd === "cat-file").length, 2);
+});
+
 test("editable versions handle untracked empty files and retain CRLF and UTF-8 BOM", async () => {
   const { root, service } = await fixture();
   await write(root, "empty.md", "");

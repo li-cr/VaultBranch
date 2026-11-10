@@ -18,6 +18,7 @@
 ## 实现约定
 
 - 使用现有 CommonJS JavaScript 和 esbuild，保持实现简洁，避免无必要的依赖或框架。
+- 性能优化优先使用 Obsidian debounce 和 CodeMirror 更新机制；合并重复文件通知，无变化时不重建目录树。Git 文本缓存按不可变 blob 哈希匹配并限制容量；保留实时索引、工作区、路径和冲突检查，不缓存可变工作区状态。
 - 支持 Windows、Linux、macOS 桌面端；路径使用 `node:path`，默认从 PATH 调用 `git`，不硬编码个人路径或假定可执行文件一定叫 `git.exe`。
 - Obsidian 桌面端提供 Node.js 运行环境，用户需要另行安装 Git；当前实现不支持移动端。
 - Git 使用 `execFile`、参数数组、`shell: false`，不拼接 shell 命令。保留超时、输出大小限制和错误处理。

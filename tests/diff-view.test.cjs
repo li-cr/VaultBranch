@@ -81,3 +81,21 @@ test("hidden JSON uses adapter processing without a TFile and preserves the inde
   assert.equal(disk, '{"value":"external"}\n');
   assert.equal(processes, 1);
 });
+
+test("non-Git settings update without refreshing the repository or rewriting unchanged preferences", async () => {
+  const plugin = new Plugin();
+  plugin.settings = { dateFormat: "YYYY", gitPath: "" };
+  let saved = 0, refreshed = 0, rendered = 0;
+  plugin.saveData = async () => { saved++; };
+  plugin.refresh = async () => { refreshed++; };
+  plugin.renderViews = () => { rendered++; };
+  plugin.configureGit = () => {};
+  assert.equal(await plugin.updateSetting("dateFormat", "YYYY-MM-DD"), true);
+  assert.equal(saved, 1);
+  assert.equal(refreshed, 0);
+  assert.equal(rendered, 1);
+  await plugin.updateSetting("dateFormat", "YYYY-MM-DD");
+  assert.equal(saved, 1);
+  await plugin.updateSetting("gitPath", "git-custom");
+  assert.equal(refreshed, 1);
+});
