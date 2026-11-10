@@ -9,10 +9,7 @@ const SOURCE_VIEW = "vaultbranch-source-control";
 const DIFF_VIEW = "vaultbranch-diff";
 const HISTORY_VIEW = "vaultbranch-history";
 const CONFLICT_VIEW = "vaultbranch-conflict";
-const DEFAULT_SETTINGS = {
-  language: "zh", gitPath: "", refreshSeconds: 5, historyLimit: 100, pullMethod: "rebase", openOnStartup: true,
-  commitMessage: "{{date}} {{hostname}} : ", commitDateFormat: "YYYY-MM-DD HH:mm:ss", hostname: "",
-};
+const DEFAULT_SETTINGS = require("../default-settings.json");
 const LABELS = { staged: "已暂存", unstaged: "未暂存", conflicts: "冲突", history: "历史" };
 const STATUS_LABELS = { M: "已修改", A: "新增", D: "删除", R: "重命名", C: "复制", T: "类型改变", U: "冲突", "?": "未跟踪" };
 
@@ -570,7 +567,7 @@ module.exports = class MyGitPlugin extends Plugin {
     if (Platform.isMobile) { new Notice(t("VaultBranch 当前只支持桌面端。")); return; }
     const savedSettings = await this.loadData();
     this.settings = { ...DEFAULT_SETTINGS, ...savedSettings };
-    this.settings.language = this.settings.language === "en" ? "en" : "zh";
+    if (!["en", "zh"].includes(this.settings.language)) this.settings.language = DEFAULT_SETTINGS.language;
     setLanguage(this.settings.language);
     if (Object.keys(DEFAULT_SETTINGS).some((key) => !Object.hasOwn(savedSettings || {}, key))) await this.saveData(this.settings);
     this.core = require("./git.js");

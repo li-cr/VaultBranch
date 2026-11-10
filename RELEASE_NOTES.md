@@ -1,13 +1,12 @@
-VaultBranch 0.2.2 adds language selection and file discard actions.
+VaultBranch 0.2.3 updates the defaults for new installations.
 
-- Switch between Chinese and English in settings, including views, tooltips and plugin validation messages.
-- Discard a file's unstaged changes after confirmation, preserving its staged content.
-- Move untracked files to Obsidian's local trash after confirmation.
-- Simplify file rows: stage/unstage, discard arrow, then status. Remove the separate open-file button.
-- Preserve commit and conflict-resolution drafts when changing language.
-- Use platform-neutral Git executable instructions.
+- Use English by default.
+- Keep the sidebar closed on startup.
+- Leave the commit message prefix empty.
+- Share one default-settings file between the source and the bundled plugin.
+- Preserve existing saved preferences when upgrading.
 
-The 25 automated tests pass. Release assets continue to include GitHub provenance attestations.
+Release assets continue to include GitHub provenance attestations.
 
 Desktop only. Requires Git installed separately. Git authentication and commit identity use the local Git configuration.
 
