@@ -188,6 +188,12 @@ class SourceControlView extends ItemView {
     for (const file of [...tree.files].sort((a, b) => compare(a.path, b.path))) {
       const row = el(parent, "div", "vaultbranch-file-row");
       row.dataset.path = file.path;
+      row.addEventListener("contextmenu", event => {
+        event.preventDefault(); event.stopPropagation();
+        const menu = new Menu();
+        this.plugin.addFileHistoryMenu(menu, file.path);
+        menu.showAtMouseEvent(event);
+      });
       row.setAttribute("role", "treeitem");
       row.setAttribute("aria-level", String(depth + 1));
       el(row, "span", "vaultbranch-chevron vaultbranch-file-spacer").setAttribute("aria-hidden", "true");

@@ -6,12 +6,13 @@ const SOURCE_VIEW = "vaultbranch-source-control";
 const DIFF_VIEW = "vaultbranch-diff";
 const HISTORY_VIEW = "vaultbranch-history";
 const CONFLICT_VIEW = "vaultbranch-conflict";
+const FILE_HISTORY_VIEW = "vaultbranch-file-history";
 const DEFAULT_SETTINGS = require("../../default-settings.json");
 const LABELS = { staged: "已暂存", unstaged: "未暂存", conflicts: "冲突", history: "历史" };
 const STATUS_LABELS = { M: "已修改", A: "新增", D: "删除", R: "重命名", C: "复制", T: "类型改变", U: "冲突", "?": "未跟踪" };
 
 function el(parent, tag, cls, text) {
-  const node = document.createElement(tag);
+  const node = parent.ownerDocument.createElement(tag);
   if (cls) node.className = cls;
   if (text !== undefined) node.textContent = text;
   parent.appendChild(node);
@@ -38,4 +39,4 @@ class GitView extends ItemView {
   async onClose() { this.request++; }
 }
 
-module.exports = { SOURCE_VIEW, DIFF_VIEW, HISTORY_VIEW, CONFLICT_VIEW, DEFAULT_SETTINGS, LABELS, STATUS_LABELS, el, button, GitView };
+module.exports = { SOURCE_VIEW, DIFF_VIEW, HISTORY_VIEW, CONFLICT_VIEW, FILE_HISTORY_VIEW, DEFAULT_SETTINGS, LABELS, STATUS_LABELS, el, button, GitView };

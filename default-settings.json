@@ -10,5 +10,6 @@
   "hostname": "",
   "dateTrigger": "@date",
   "dateFormat": "YYYY-MM-DD HH:mm:ss",
-  "diffAutosave": false
+  "diffAutosave": false,
+  "collapseUnchanged": true
 }

@@ -1,12 +1,11 @@
-VaultBranch 0.2.18 organizes settings into tabs.
+VaultBranch 0.2.19 adds file history and native diff folding.
 
-- Group existing preferences under General, Git, Commit and Other, with icon tabs and an active underline.
-- Keep native Obsidian settings controls and existing saved values; retain the selected tab when redrawing settings.
-- Support ArrowLeft/ArrowRight, Home/End, and accessible tab/tabpanel roles. Allow horizontal tab scrolling in narrow windows.
-- Local branch creation and switching remain available, without a new feature toggle.
+- Open File history from a file explorer, editor or Git sidebar context menu, or the View current file history command.
+- Browse commits on the left and a read-only parent-to-commit comparison on the right. Follow Git-detected renames and display historical paths, including deleted files opened from the Git sidebar.
+- Start with the current branch and 50 commits; switch to all branches or load more, up to 1,000 entries. Include forks made before a detected rename. Stashes remain in Git Graph.
+- Use CodeMirror MergeView's native collapseUnchanged for editable, staged and history comparisons. Enabled by default with three context lines; disable under Other. Clicking a collapsed region expands both panes. Changing the setting preserves editable drafts, selection and undo.
+- Keep manual save as the default. Partial staging and chunk revert controls are not included.
 
-Validated with 15 Obsidian UI checks for all settings groups, saved input across tab changes, keyboard navigation, language updates, and branch toolbar availability. Build, syntax, CSS and relevant local regression checks pass. This is a settings UI update, with no performance improvement claimed.
+Validated with 62 local automated tests and Obsidian UI checks covering rename paths, root and merge commits, pagination, branch scope, native folding, rapid selection, close-during-load cleanup, context menus, readonly index comparisons, draft/undo preservation, hidden JSON switching and autosave. No performance improvement is claimed. Reproducible UI scripts are in tests/manual; run only in the note_test vault.
 
-Release assets continue to include GitHub provenance attestations.
-
-Desktop only. Requires Git installed separately. Git authentication and commit identity use the local Git configuration.
+Release assets retain GitHub provenance attestations. Desktop only; requires Git installed separately.

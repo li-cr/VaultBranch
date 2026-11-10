@@ -1,0 +1,8 @@
+# Obsidian UI checks
+
+Build and install VaultBranch into a disposable Obsidian vault named `note_test`. Enable the plugin, open the developer console, and paste one script at a time. Each script returns its passed assertions and captured runtime errors. Do not run scripts concurrently.
+
+- `file-history-ui.js`: creates an isolated temporary Git repository and temporarily points the plugin at it. Checks 50-entry pagination, renamed files, branch scope, read-only comparisons, native collapse/expand, keyboard selection, rapid requests, sidebar context menu, index preservation and editor cleanup. Restores the plugin's repository afterward.
+- `history-editor-ui.js`: creates one temporary note in `note_test` and stages only that file. Checks editable draft/selection/undo preservation and native editor/file-explorer menus. Removes that index entry, trashes its note and restores preferences afterward.
+
+Both scripts refuse to run in a vault with a different name. They require a working Git executable and the normal file explorer enabled. Use a clean test session with no existing unsaved diff drafts. The normal `npm test` suite does not require Obsidian.

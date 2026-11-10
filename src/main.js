@@ -5,14 +5,15 @@ const { hostname } = require("node:os");
 const { t, setLanguage } = require("./i18n.js");
 const { Autosave, normalize, conflictMessage } = require("./autosave.js");
 const { dateTriggerRange } = require("./date.js");
-const { SOURCE_VIEW, DIFF_VIEW, HISTORY_VIEW, CONFLICT_VIEW, DEFAULT_SETTINGS, el, button } = require("./views/shared.js");
+const { SOURCE_VIEW, DIFF_VIEW, HISTORY_VIEW, CONFLICT_VIEW, FILE_HISTORY_VIEW, DEFAULT_SETTINGS, el, button } = require("./views/shared.js");
 const { SourceControlView } = require("./views/source.js");
 const { DiffView } = require("./views/diff.js");
 const { HistoryView } = require("./views/history.js");
 const { ConflictView } = require("./views/conflict.js");
+const { FileHistoryView } = require("./views/file-history.js");
 const { MyGitSettings } = require("./settings.js");
 
-const VIEW_CLASSES = { [SOURCE_VIEW]: SourceControlView, [DIFF_VIEW]: DiffView, [HISTORY_VIEW]: HistoryView, [CONFLICT_VIEW]: ConflictView };
+const VIEW_CLASSES = { [SOURCE_VIEW]: SourceControlView, [DIFF_VIEW]: DiffView, [HISTORY_VIEW]: HistoryView, [CONFLICT_VIEW]: ConflictView, [FILE_HISTORY_VIEW]: FileHistoryView };
 
 module.exports = class MyGitPlugin extends Plugin {
   async onload() {
@@ -40,6 +41,19 @@ module.exports = class MyGitPlugin extends Plugin {
     this.ribbonEl = this.addRibbonIcon("git-branch", t("VaultBranch · 源代码管理"), () => this.openSidebar());
     this.localizedCommands = this.commandDefinitions().map(([id, name, callback]) => this.addCommand({ id, name: t(name), callback }));
     this.dateCommand = this.addCommand({ id: "insert-date", name: t("插入当前日期时间"), editorCallback: (editor) => editor.replaceSelection(this.formatDate()) });
+    this.fileHistoryCommand = this.addCommand({ id: "file-history", name: t("查看当前文件历史"), checkCallback: checking => {
+      const view = this.app.workspace.activeLeaf?.view;
+      const path = view?.file?.path || view?.filePath;
+      if (!path) return false;
+      if (!checking) void this.openFileHistory(path).catch(error => new Notice(error.message));
+      return true;
+    } });
+    this.registerEvent(this.app.workspace.on("file-menu", (menu, file) => {
+      if (typeof file?.extension === "string") this.addFileHistoryMenu(menu, file.path);
+    }));
+    this.registerEvent(this.app.workspace.on("editor-menu", (menu, editor, view) => {
+      if (view.file) this.addFileHistoryMenu(menu, view.file.path);
+    }));
     this.registerDomEvent(document, "beforeinput", (event) => {
       this.dateInput = event.inputType === "insertText" || event.inputType === "insertCompositionText";
     }, true);
@@ -120,6 +134,7 @@ module.exports = class MyGitPlugin extends Plugin {
       view.stateRequest++; view.request++;
       view.destroyEditor();
     }
+    for (const view of this.views(FILE_HISTORY_VIEW)) { view.request++; view.detailRequest++; view.destroyMerge(); }
     for (const session of this.editSessions.values()) session.stop();
   }
 
@@ -148,6 +163,7 @@ module.exports = class MyGitPlugin extends Plugin {
     this.localizedCommands.forEach((command, index) => { command.name = `${this.manifest.name}: ${t(names[index][1])}`; });
     this.returnCommand.name = `${this.manifest.name}: ${t("返回 Git Graph")}`;
     this.dateCommand.name = `${this.manifest.name}: ${t("插入当前日期时间")}`;
+    this.fileHistoryCommand.name = `${this.manifest.name}: ${t("查看当前文件历史")}`;
     this.ribbonEl.setAttribute("aria-label", t("VaultBranch · 源代码管理"));
     for (const view of this.views(...Object.keys(VIEW_CLASSES))) {
       if (view instanceof SourceControlView) await view.onOpen();
@@ -164,6 +180,7 @@ module.exports = class MyGitPlugin extends Plugin {
     this.settings[key] = value;
     await this.saveData(this.settings);
     if (key === "diffAutosave") for (const session of this.editSessions.values()) session.setEnabled(value);
+    if (key === "collapseUnchanged") for (const view of this.views(DIFF_VIEW, FILE_HISTORY_VIEW)) view.updateCollapse();
     if (key === "language") await this.applyLanguage();
     if (key === "gitPath" || key === "pullMethod") {
       if (this.refreshTask) await this.refreshTask;
@@ -367,7 +384,7 @@ module.exports = class MyGitPlugin extends Plugin {
       if (this.refreshTask) await this.refreshTask;
       await this.refresh(false, true);
       this.busy = false;
-      this.renderViews([SOURCE_VIEW, DIFF_VIEW, HISTORY_VIEW]);
+      this.renderViews([SOURCE_VIEW, DIFF_VIEW, HISTORY_VIEW, FILE_HISTORY_VIEW]);
     }
     return success;
   }
@@ -418,6 +435,14 @@ module.exports = class MyGitPlugin extends Plugin {
 
   openSidebar() { return this.openView(SOURCE_VIEW); }
   openHistory() { return this.openView(HISTORY_VIEW); }
+  openFileHistory(filePath) {
+    const open = () => this.openView(FILE_HISTORY_VIEW, { filePath });
+    this.fileHistoryNavigation = (this.fileHistoryNavigation || Promise.resolve()).then(open, open);
+    return this.fileHistoryNavigation;
+  }
+  addFileHistoryMenu(menu, filePath) {
+    menu.addItem(item => item.setTitle(t("文件历史")).setIcon("history").onClick(() => this.openFileHistory(filePath).catch(error => new Notice(error.message))));
+  }
   openConflict(filePath) { return this.openView(CONFLICT_VIEW, { filePath }); }
 
   async openDiff(file, area, graphReturn = null) {

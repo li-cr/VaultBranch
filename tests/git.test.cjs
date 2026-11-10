@@ -34,6 +34,116 @@ async function write(root, file, text) {
   await fs.writeFile(path.join(root, file), text);
 }
 
+test("file history follows renames and previews root, modification, rename and deletion without changing index", async () => {
+  const { root, service } = await fixture();
+  const oldPath = "笔记/旧 名称.md", newPath = "笔记/新 名称.json";
+  const base = Array.from({ length: 20 }, (_, i) => `line ${i}\n`).join("");
+  await write(root, oldPath, base);
+  git(root, "add", "."); git(root, "commit", "-m", "created");
+  await write(root, oldPath, base + "added\n");
+  git(root, "commit", "-am", "edited");
+  git(root, "mv", oldPath, newPath); git(root, "commit", "-m", "renamed");
+  git(root, "rm", newPath); git(root, "commit", "-m", "deleted");
+  await write(root, "unrelated.md", "staged only\n"); await service.stage(["unrelated.md"]);
+  const index = git(root, "write-tree");
+  const data = await service.fileHistory(newPath);
+  assert.deepEqual(data.commits.map(c => c.subject), ["deleted", "renamed", "edited", "created"]);
+  assert.equal(data.hasMore, false);
+  const [deleted, renamed, edited, created] = data.commits;
+  assert.equal(renamed.oldPath, oldPath); assert.equal(renamed.path, newPath);
+  assert.equal(edited.path, oldPath);
+  assert.deepEqual(await service.comparisonVersions(created, "history"), { left: "", right: base });
+  assert.deepEqual(await service.comparisonVersions(edited, "history"), { left: base, right: base + "added\n" });
+  assert.deepEqual(await service.comparisonVersions(renamed, "history"), { left: base + "added\n", right: base + "added\n" });
+  assert.deepEqual(await service.comparisonVersions(deleted, "history"), { left: base + "added\n", right: "" });
+  assert.equal(git(root, "write-tree"), index);
+  assert.equal(await fs.readFile(path.join(root, "unrelated.md"), "utf8"), "staged only\n");
+});
+
+test("file history pagination and branch scope exclude stash and preserve paths on a fork before rename", async () => {
+  const { root, service } = await fixture();
+  const base = "one\ntwo\nthree\nfour\nfive\n";
+  await write(root, "old.md", base); git(root, "add", "."); git(root, "commit", "-m", "base");
+  git(root, "branch", "side");
+  git(root, "mv", "old.md", "new.md"); git(root, "commit", "-m", "rename");
+  await write(root, "new.md", base + "main\n"); git(root, "commit", "-am", "main change");
+  git(root, "switch", "side");
+  await write(root, "old.md", base + "side\n"); git(root, "commit", "-am", "side change");
+  git(root, "switch", "main");
+  await write(root, "new.md", base + "stash\n"); await service.stash();
+  const current = await service.fileHistory("new.md");
+  assert.equal(current.commits.some(c => c.subject === "side change"), false);
+  const all = await service.fileHistory("new.md", { all: true });
+  const side = all.commits.find(c => c.subject === "side change");
+  assert.ok(side); assert.equal(side.path, "old.md");
+  assert.deepEqual(await service.comparisonVersions(side, "history"), { left: base, right: base + "side\n" });
+  assert.equal(all.commits.some(c => /WIP|On main|index on/.test(c.subject)), false);
+  const page = await service.fileHistory("new.md", { limit: 2 });
+  assert.equal(page.commits.length, 2); assert.equal(page.hasMore, true);
+  const more = await service.fileHistory("new.md", { limit: 50 });
+  assert.equal(more.commits.length, 3); assert.equal(more.hasMore, false);
+});
+
+test("file history handles hidden JSON, literal pathspecs, unborn and binary content", async () => {
+  const { root, service } = await fixture();
+  assert.deepEqual(await service.fileHistory("missing.json"), { commits: [], hasMore: false });
+  assert.deepEqual(await service.fileHistory("missing.json", { all: true }), { commits: [], hasMore: false });
+  const name = ".obsidian/data [1].json";
+  await write(root, name, '{"value":1}\n');
+  await write(root, "binary.dat", Buffer.from([0, 1, 2]));
+  git(root, "add", "."); git(root, "commit", "-m", "root");
+  assert.equal((await service.fileHistory(name)).commits[0].path, name);
+  assert.equal((await service.fileHistory(".obsidian/data*.json")).commits.length, 0);
+  const entry = (await service.fileHistory("binary.dat")).commits[0];
+  await assert.rejects(service.comparisonVersions(entry, "history"), /UTF-8/);
+  await assert.rejects(service.fileHistory("../outside.md"), /路径/);
+  assert.deepEqual(await service.fileHistory("not-tracked.md"), { commits: [], hasMore: false });
+});
+
+test("staged comparison reads HEAD and index including an unborn branch and staged rename, never later working edits", async () => {
+  const { root, service } = await fixture();
+  await write(root, "old.md", "initial\n"); await service.stage(["old.md"]);
+  assert.deepEqual(await service.comparisonVersions({ path: "old.md" }, "staged"), { left: "", right: "initial\n" });
+  git(root, "commit", "-m", "initial");
+  git(root, "mv", "old.md", "new.md");
+  await write(root, "new.md", "working draft\n");
+  assert.deepEqual(await service.comparisonVersions({ path: "new.md", oldPath: "old.md" }, "staged"), { left: "initial\n", right: "initial\n" });
+  assert.equal(git(root, "show", ":new.md"), "initial\n");
+});
+
+test("file history loads the first 50 entries and then older commits with no duplicates", async () => {
+  const { root, service } = await fixture();
+  let input = "";
+  for (let n = 1; n <= 53; n++) {
+    const text = `version ${n}\n`, message = `change ${n}\n`;
+    input += `commit refs/heads/main\ncommitter Test <test@example.invalid> ${1700000000 + n} +0000\ndata ${Buffer.byteLength(message)}\n${message}M 100644 inline history.md\ndata ${Buffer.byteLength(text)}\n${text}\n`;
+  }
+  execFileSync("git", ["fast-import", "--quiet"], { cwd: root, input, encoding: "utf8", windowsHide: true, stdio: ["pipe", "pipe", "pipe"] });
+  const first = await service.fileHistory("history.md");
+  assert.equal(first.commits.length, 50); assert.equal(first.hasMore, true);
+  assert.equal(first.commits[0].subject, "change 53");
+  const more = await service.fileHistory("history.md", { limit: 100 });
+  assert.equal(more.commits.length, 53); assert.equal(more.hasMore, false);
+  assert.equal(new Set(more.commits.map(c => c.hash)).size, 53);
+  assert.deepEqual(more.commits.slice(0, 50), first.commits);
+});
+
+test("merge history previews the actual first parent and reads newline paths on supported systems", async () => {
+  const { root, service } = await fixture();
+  const name = process.platform === "win32" ? "-file [1].md" : "line\nbreak [1].md";
+  await write(root, name, "base\n"); git(root, "add", "."); git(root, "commit", "-m", "base");
+  git(root, "switch", "-c", "side");
+  await write(root, name, "side\n"); git(root, "commit", "-am", "side");
+  git(root, "switch", "main");
+  await write(root, "unrelated.md", "main\n"); git(root, "add", "."); git(root, "commit", "-m", "main");
+  git(root, "merge", "--no-ff", "side", "-m", "merge");
+  const data = await service.fileHistory(name);
+  const entry = data.commits.find(c => c.subject === "merge");
+  assert.ok(entry);
+  assert.equal(entry.path, name);
+  assert.deepEqual(await service.comparisonVersions(entry, "history"), { left: "base\n", right: "side\n" });
+});
+
 test("status parsing preserves Chinese, spaces, newline names, mixed states and rename order", () => {
   const state = parseStatus("## main...origin/main [ahead 2, behind 3]\0MM 笔记/中文 空格.md\0R  新名字.md\0旧名字.md\0?? 换\n行.md\0UU 冲突.md\0");
   assert.equal(state.branch, "main");

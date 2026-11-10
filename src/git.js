@@ -489,6 +489,94 @@ class GitService {
     return (await this.run(["rev-list", "--parents", "-n", "1", hash])).trim().split(" ")[1];
   }
 
+  async fileHistory(filePath, { all = false, limit = 50 } = {}) {
+    this.checkPaths([filePath]);
+    limit = Math.max(1, Math.min(1000, Number(limit) || 50));
+    const head = (await this.run(["rev-parse", "--verify", "--quiet", "HEAD"], { allowDiffExit: true })).trim();
+    if (!head && !all) return { commits: [], hasMore: false };
+    const refs = all ? ["--branches", "--remotes", ...(head ? [head] : [])] : [head];
+    if (!head && !(await this.run(["for-each-ref", "--format=%(refname)", "refs/heads", "refs/remotes"])).trim()) return { commits: [], hasMore: false };
+    const paths = new Set([filePath]);
+    if (all && head) {
+      // A combined --follow walk can miss forks made before a rename. Seed it with
+      // the current lineage's old names, including renames beyond this page.
+      const renames = (await this.run(["log", head, "--follow", "--find-renames", "--diff-filter=R", "--max-count=1000", "--name-status", "-z", "--format=", "--", filePath])).split("\0").filter(Boolean);
+      for (let n = 0; n + 2 < renames.length; n += 3) {
+        this.checkPaths([renames[n + 1], renames[n + 2]]);
+        paths.add(renames[n + 1]); paths.add(renames[n + 2]);
+      }
+    }
+    const entries = new Map();
+    for (const name of paths) for (const commit of await this.readFileHistory(name, refs, limit + 1)) {
+      if (!entries.has(commit.hash)) entries.set(commit.hash, commit);
+    }
+    const commits = [...entries.values()].sort((a, b) => b.timestamp - a.timestamp);
+    return { commits: commits.slice(0, limit), hasMore: commits.length > limit && limit < 1000 };
+  }
+
+  async readFileHistory(filePath, refs, limit) {
+    const fields = (await this.run(["log", ...refs, "--follow", "--find-renames", "--diff-merges=first-parent", "--date-order",
+      `--max-count=${limit}`, "--name-status", "-z", "--format=%H%x00%P%x00%an%x00%aI%x00%ct%x00%s", "--", filePath])).split("\0");
+    const commits = [];
+    let i = 0;
+    while (i < fields.length && fields[i]) {
+      const [hash, parents, author, date, timestamp, subject] = fields.slice(i, i + 6);
+      this.checkCommit(hash);
+      i += 6;
+      let file;
+      while (/^\n?[A-Z][0-9]*$/.test(fields[i] || "")) {
+        const status = fields[i++].trim();
+        const first = fields[i++];
+        const renamed = status[0] === "R" || status[0] === "C";
+        const current = renamed ? fields[i++] : first;
+        this.checkPaths([current, ...(renamed ? [first] : [])]);
+        file = { path: current, oldPath: renamed ? first : null, index: status[0], worktree: " ", commit: hash };
+      }
+      if (file) commits.push({ hash, parents: parents.split(" ").filter(Boolean), short: hash.slice(0, 7), author, date, timestamp: Number(timestamp), subject, ...file });
+    }
+    return commits;
+  }
+
+  async textBlob(hash) {
+    if (!hash) return "";
+    this.checkCommit(hash);
+    if (Number(await this.run(["cat-file", "-s", hash])) > MAX_PREVIEW) throw new Error(t("文件超过 2 MB，请在外部编辑器中查看。"));
+    const text = await this.run(["cat-file", "blob", hash]);
+    if (text.includes("\0") || text.includes("\ufffd")) throw new Error(t("此版本不是可预览的 UTF-8 文本。"));
+    return text;
+  }
+
+  async revisionText(hash, filePath) {
+    if (!hash) return "";
+    this.checkCommit(hash);
+    this.checkPaths([filePath]);
+    const entry = (await this.run(["ls-tree", "-z", hash, "--", filePath])).split("\0").find(Boolean);
+    if (!entry) return "";
+    const match = entry.match(/^\d+ blob ([a-f0-9]+)\t/);
+    if (!match) throw new Error(t("此版本不是可预览的 UTF-8 文本。"));
+    return this.textBlob(match[1]);
+  }
+
+  async comparisonVersions(file, area) {
+    this.checkPaths([file.path, ...(file.oldPath ? [file.oldPath] : [])]);
+    if (area === "history") {
+      const parent = await this.firstParent(file.commit);
+      const [left, right] = await Promise.all([
+        this.revisionText(parent, file.oldPath || file.path), this.revisionText(file.commit, file.path),
+      ]);
+      return { left, right };
+    }
+    if (area !== "staged") return null;
+    const head = (await this.run(["rev-parse", "--verify", "--quiet", "HEAD"], { allowDiffExit: true })).trim();
+    const entries = (await this.run(["ls-files", "--stage", "-z", "--", file.path])).split("\0").filter(Boolean);
+    const entry = entries.find(line => /^\d+ [a-f0-9]+ 0\t/.test(line));
+    if (entries.length && !entry) throw new Error(t("请先解决冲突。"));
+    const [left, right] = await Promise.all([
+      this.revisionText(head, file.oldPath || file.path), this.textBlob(entry?.split(" ")[1]),
+    ]);
+    return { left, right };
+  }
+
   async commitFiles(hash) {
     const parent = await this.firstParent(hash);
     const args = ["diff-tree", "--no-commit-id", "--name-status", "-r", "-z", "--no-renames"];

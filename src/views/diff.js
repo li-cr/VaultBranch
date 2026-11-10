@@ -8,6 +8,7 @@ const { history, historyKeymap, defaultKeymap, indentWithTab } = require("@codem
 const { normalize } = require("../autosave.js");
 const { t } = require("../i18n.js");
 const { DIFF_VIEW, LABELS, el, button, GitView } = require("./shared.js");
+const { collapseOptions, updateCollapse, readOnlyMerge } = require("./merge.js");
 
 class DiffView extends GitView {
   constructor(leaf, plugin) {
@@ -67,6 +68,7 @@ class DiffView extends GitView {
       await this.session.sync();
       return;
     }
+    this.destroyEditor();
     const request = ++this.request;
     this.app.keymap.popScope(this.editScope);
     this.contentEl.empty();
@@ -95,6 +97,19 @@ class DiffView extends GitView {
           body.replaceChildren();
           this.renderEditor(body);
           await session.sync();
+          return;
+        } catch (error) {
+          if (request !== this.request) return;
+          el(this.contentEl, "div", "vaultbranch-editor-warning", error.message);
+        }
+      }
+      if (!this.unified && ["history", "staged"].includes(this.area)) {
+        try {
+          const versions = await this.plugin.git.comparisonVersions(this.file, this.area);
+          if (request !== this.request) return;
+          body.replaceChildren();
+          this.merge = readOnlyMerge(body, versions, this.area === "history" ? [t("父提交"), t("当前提交")] : ["HEAD", t("暂存区（只读）")], this.plugin.settings);
+          this.collapseEnabled = Boolean(this.plugin.settings.collapseUnchanged);
           return;
         } catch (error) {
           if (request !== this.request) return;
@@ -173,8 +188,9 @@ class DiffView extends GitView {
           blur: () => { this.app.keymap.popScope(this.editScope); },
         }),
       ] },
-      highlightChanges: true, gutter: true,
+      highlightChanges: true, gutter: true, ...collapseOptions(this.plugin.settings),
     });
+    this.collapseEnabled = Boolean(this.plugin.settings.collapseUnchanged);
     this.editorText = this.session.draft.text;
     this.editorIndex = this.session.draft.index;
     this.editorListener = () => this.updateEditor();
@@ -188,6 +204,7 @@ class DiffView extends GitView {
   }
 
   updateEditor() {
+    updateCollapse(this);
     if (!this.merge || !this.session) return;
     const { draft, error, saving, dirty } = this.session;
     this.syncingEditor = true;
@@ -221,6 +238,8 @@ class DiffView extends GitView {
       }
     }
   }
+
+  updateCollapse() { updateCollapse(this); }
 
   saveEditor(automatic = false) { return (automatic ? this.session?.autoFlush() : this.session?.flush()) || Promise.resolve(true); }
 

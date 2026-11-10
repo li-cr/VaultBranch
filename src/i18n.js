@@ -3,6 +3,20 @@
 // Chinese source strings are the fallback; tagged templates keep values out of translation keys.
 let language = "zh";
 const english = {
+  "文件历史": "File history",
+  "查看当前文件历史": "View current file history",
+  "请选择文件查看历史。": "Select a file to view its history.",
+  "历史范围": "History scope",
+  "当前分支": "Current branch",
+  "刷新文件历史": "Refresh file history",
+  "读取历史中…": "Loading history…",
+  "没有文件历史。": "No file history.",
+  "相对第一父提交，只读": "Compared with the first parent, read-only",
+  "父提交（只读）": "Parent commit (read-only)",
+  "当前提交（只读）": "Selected commit (read-only)",
+  "此版本不是可预览的 UTF-8 文本。": "This version is not previewable UTF-8 text.",
+  "折叠未修改内容": "Collapse unchanged lines",
+  "默认开启，使用 CodeMirror 原生 collapseUnchanged，改动前后各保留 3 行。点击折叠提示可展开。": "On by default. Uses CodeMirror's native collapseUnchanged with 3 context lines. Click the collapsed region to expand.",
   "常规": "General",
   "请输入有效的本地分支名。": "Enter a valid local branch name.",
   "切换本地分支…": "Switch local branch…",

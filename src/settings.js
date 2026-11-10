@@ -97,6 +97,7 @@ class MyGitSettings extends PluginSettingTab {
         if (typeof tab?.setQuery === "function") tab.setQuery(`${p.manifest.name}: ${t("插入当前日期时间")}`);
       }));
       new Setting(containerEl).setName("Diff autosave").setDesc(t("默认关闭。开启后停止输入 500 ms 自动保存；关闭时按 Ctrl/Cmd+S 或点击保存。切换文件保留草稿，Git 操作前请先保存。")).addToggle((input) => input.setValue(p.settings.diffAutosave).onChange((value) => p.updateSetting("diffAutosave", value)));
+      new Setting(containerEl).setName(t("折叠未修改内容")).setDesc(t("默认开启，使用 CodeMirror 原生 collapseUnchanged，改动前后各保留 3 行。点击折叠提示可展开。")).addToggle(input => input.setValue(p.settings.collapseUnchanged).onChange(value => p.updateSetting("collapseUnchanged", value)));
     }
   }
 }
