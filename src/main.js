@@ -26,8 +26,7 @@ function button(parent, icon, title, action, text) {
   node.type = "button";
   node.title = title;
   node.setAttribute("aria-label", title);
-  const glyph = el(node, "span", "vaultbranch-button-icon");
-  setIcon(glyph, icon);
+  if (icon) setIcon(el(node, "span", "vaultbranch-button-icon"), icon);
   if (text) el(node, "span", "", text);
   node.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -693,13 +692,25 @@ module.exports = class MyGitPlugin extends Plugin {
 
   confirmDiscard(file) {
     const modal = new Modal(this.app);
-    modal.titleEl.textContent = file.untracked ? t("将新文件移入回收站？") : t("撤销未暂存的更改？");
-    el(modal.contentEl, "p", "", file.path);
-    el(modal.contentEl, "p", "", file.untracked
-      ? t("此文件尚未被 Git 跟踪，将移入 Obsidian 回收站。")
-      : t("此文件未暂存的改动将被丢弃，恢复到暂存区版本。已暂存的内容会保留。此操作不能通过 Git 撤销。"));
-    button(modal.contentEl, "x", t("取消"), () => modal.close(), t("取消"));
-    const confirm = button(modal.contentEl, "undo-2", t("确认撤销"), () => {
+    modal.modalEl.addClass("vaultbranch-confirm");
+    modal.titleEl.textContent = file.untracked ? t("移入回收站") : t("撤销更改");
+    const card = el(modal.contentEl, "div", "vaultbranch-confirm-file");
+    setIcon(el(card, "span", "vaultbranch-confirm-file-icon"), "file-text");
+    const details = el(card, "div", "vaultbranch-confirm-file-details");
+    const name = el(details, "div", "vaultbranch-confirm-file-name", file.path.split("/").at(-1));
+    name.title = file.path;
+    const directory = file.path.includes("/") ? file.path.slice(0, file.path.lastIndexOf("/")) : "";
+    if (directory) el(details, "div", "vaultbranch-confirm-file-directory", directory);
+    el(modal.contentEl, "p", "vaultbranch-confirm-description", file.untracked
+      ? t("此文件尚未被 Git 跟踪，将移入回收站。")
+      : t("丢弃此文件未暂存的改动，保留已暂存内容。"));
+    el(modal.contentEl, "p", "vaultbranch-confirm-hint", file.untracked
+      ? t("可从笔记库的 .trash 文件夹恢复。")
+      : t("未暂存的改动无法通过 Git 恢复。"));
+    const actions = el(modal.contentEl, "div", "vaultbranch-confirm-actions");
+    const cancel = button(actions, null, t("取消"), () => modal.close(), t("取消"));
+    const label = file.untracked ? t("移入回收站") : t("撤销更改");
+    const confirm = button(actions, null, label, () => {
       modal.close();
       return this.mutate(t("撤销更改"), async () => {
         if (!file.untracked) return this.git.discard(file.path);
@@ -713,9 +724,10 @@ module.exports = class MyGitPlugin extends Plugin {
         if (entry && typeof entry.extension === "string") await this.app.vault.trash(entry, false);
         else await this.app.vault.adapter.trashLocal(file.path);
       });
-    }, file.untracked ? t("移入回收站") : t("撤销更改"));
-    confirm.classList.add("mod-warning");
+    }, label);
+    confirm.classList.add(file.untracked ? "mod-cta" : "mod-warning");
     modal.open();
+    cancel.focus();
   }
 
   confirmRebase(commit) {
