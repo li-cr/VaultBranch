@@ -7,5 +7,8 @@
   "openOnStartup": false,
   "commitMessage": "",
   "commitDateFormat": "YYYY-MM-DD HH:mm:ss",
-  "hostname": ""
+  "hostname": "",
+  "dateTrigger": "@date",
+  "dateFormat": "YYYY-MM-DD HH:mm:ss",
+  "diffAutosave": false
 }

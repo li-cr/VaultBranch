@@ -1,6 +1,6 @@
 {
   "name": "vaultbranch",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "private": true,
   "description": "Git source control and a commit graph for Obsidian.",
   "license": "MIT",
@@ -10,7 +10,7 @@
     "url": "https://github.com/li-cr/VaultBranch.git"
   },
   "scripts": {
-    "check": "node --check src/main.js && node --check src/git.js && node --check src/i18n.js && node --check src/autosave.js && node scripts/validate.cjs",
+    "check": "node --check src/main.js && node --check src/git.js && node --check src/i18n.js && node --check src/autosave.js && node --check src/date.js && node scripts/validate.cjs",
     "test": "node --test tests/*.test.cjs",
     "build": "node scripts/build.cjs"
   },

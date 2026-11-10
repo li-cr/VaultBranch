@@ -1,10 +1,9 @@
-VaultBranch 0.2.11 fixes hidden JSON editing and file switching.
+VaultBranch 0.2.12 adds Other settings for date insertion and diff autosave.
 
-- Open unstaged text files in the diff editor without filtering by extension or Obsidian's file index.
-- Edit and autosave hidden configuration JSON through Obsidian's adapter processing, preserving external-change checks and the Git index.
-- Synchronize hidden-file changes through raw file events.
-- Process file-open requests in click order so rapid MD/JSON switching ends on the latest selection.
-- Remove green underline effects while retaining green change backgrounds.
+- Type `@date` in a note to insert the current date and time. Customize the trigger and Moment format under Other, or configure the Insert current date and time command hotkey.
+- Diff autosave is now off by default, including upgrades without an existing preference. Use Save or Ctrl/Cmd+S to save explicitly.
+- In manual mode, switching files retains drafts and Git operations wait for you to save. Enabling autosave restores saving after 500 ms idle and before file switches or Git operations.
+- Preserve external-change protection in both saving modes.
 
 Release assets continue to include GitHub provenance attestations.
 

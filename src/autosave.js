@@ -6,13 +6,14 @@ const conflictMessage = () => t("文件已被其他编辑器修改。自动保�
 
 // One session per path serializes saves and file notifications, including across views.
 class Autosave {
-  constructor(draft, { read, write, changed = () => {}, saved = () => {}, delay = 500 }) {
+  constructor(draft, { read, write, changed = () => {}, saved = () => {}, delay = 500, enabled = true }) {
     this.draft = draft;
     this.read = read;
     this.write = write;
     this.changed = changed;
     this.saved = saved;
     this.delay = delay;
+    this.enabled = enabled;
     this.listeners = new Set();
     this.task = Promise.resolve();
     this.error = "";
@@ -29,9 +30,16 @@ class Autosave {
   edit(text) {
     this.draft.text = text;
     clearTimeout(this.timer);
-    if (!this.error) this.timer = setTimeout(() => { void this.flush(); }, this.delay);
+    if (this.enabled && !this.error) this.timer = setTimeout(() => { void this.flush(); }, this.delay);
     this.notify();
   }
+  setEnabled(enabled) {
+    this.enabled = enabled;
+    clearTimeout(this.timer);
+    if (enabled && this.dirty && !this.error) this.timer = setTimeout(() => { void this.flush(); }, this.delay);
+    this.notify();
+  }
+  autoFlush() { return this.enabled ? this.flush() : Promise.resolve(!this.dirty); }
   flush() {
     clearTimeout(this.timer);
     return this.enqueue(async () => {

@@ -9,6 +9,7 @@ const { EditorState, Compartment, Transaction } = require("@codemirror/state");
 const { EditorView, keymap, lineNumbers, drawSelection } = require("@codemirror/view");
 const { history, historyKeymap, defaultKeymap, indentWithTab } = require("@codemirror/commands");
 const { Autosave, normalize, conflictMessage } = require("./autosave.js");
+const { dateTriggerRange } = require("./date.js");
 
 const SOURCE_VIEW = "vaultbranch-source-control";
 const DIFF_VIEW = "vaultbranch-diff";
@@ -296,7 +297,7 @@ class DiffView extends GitView {
   async setState(state, result) {
     const request = ++this.stateRequest;
     this.request++;
-    await this.session?.flush();
+    await this.session?.autoFlush();
     if (request !== this.stateRequest) return;
     this.destroyEditor();
     this.file = state.file || null;
@@ -315,7 +316,7 @@ class DiffView extends GitView {
   async onClose() {
     this.stateRequest++;
     this.request++;
-    await this.session?.flush();
+    await this.session?.autoFlush();
     this.destroyEditor();
     this.app.keymap.popScope(this.editScope);
     const draft = this.plugin.diffDrafts.get(this.file?.path);
@@ -409,6 +410,7 @@ class DiffView extends GitView {
   renderEditor(body) {
     body.classList.add("has-editor");
     this.warningEl = el(body, "div", "vaultbranch-editor-warning");
+    this.saveButton = button(this.contentEl.querySelector(".vaultbranch-diff-header"), "save", t("保存文件 · Ctrl/Cmd+S"), () => this.saveEditor(), t("保存"));
     const captions = el(body, "div", "vaultbranch-diff-captions");
     this.leftCaption = el(captions, "span");
     this.rightCaption = el(captions, "span");
@@ -454,7 +456,8 @@ class DiffView extends GitView {
       if (this.merge.b.state.readOnly !== locked) this.merge.b.dispatch({ effects: this.editable.reconfigure(this.editorAccess()) });
     } finally { this.syncingEditor = false; }
     this.leftCaption.textContent = t("暂存区（只读）");
-    this.rightCaption.textContent = saving ? t("工作区 · 正在保存…") : dirty ? t("工作区 · 未保存") : t("工作区 · 已自动保存");
+    this.rightCaption.textContent = saving ? t("工作区 · 正在保存…") : dirty ? t("工作区 · 未保存") : this.session.enabled ? t("工作区 · 已自动保存") : t("工作区 · 已保存");
+    this.saveButton.disabled = !dirty || saving || this.plugin.busy || this.plugin.mutationPending;
     this.merge.a.contentDOM.setAttribute("aria-label", t("暂存区（只读）"));
     this.merge.b.contentDOM.setAttribute("aria-label", t("工作区（可编辑）"));
     this.warningEl.hidden = !error;
@@ -471,7 +474,7 @@ class DiffView extends GitView {
     }
   }
 
-  saveEditor() { return this.session?.flush() || Promise.resolve(true); }
+  saveEditor(automatic = false) { return (automatic ? this.session?.autoFlush() : this.session?.flush()) || Promise.resolve(true); }
 
   reloadEditor() {
     const session = this.session;
@@ -699,6 +702,18 @@ class MyGitSettings extends PluginSettingTab {
     new Setting(containerEl).setName(t("检查 Git")).setDesc(t("插件和 data.json 可随笔记库迁移。新电脑需要安装 Git，并配置提交身份和 SSH / HTTPS 凭据。")).addButton((input) => input.setButtonText(t("检查")).onClick(async () => {
       try { new Notice((await p.git.run(["--version"])).trim()); } catch (error) { new Notice(error.message, 8000); }
     }));
+    new Setting(containerEl).setName(t("其他")).setHeading();
+    new Setting(containerEl).setName(t("日期触发字符串")).setDesc(t("在笔记中输入此字符串后自动替换为当前日期时间。留空关闭；前面须为空格或行首。")).addText((input) => input.setPlaceholder("@date").setValue(p.settings.dateTrigger).onChange((value) => p.updateSetting("dateTrigger", value.trim())));
+    const datePreview = new Setting(containerEl).setName(t("日期时间格式"));
+    const showDatePreview = () => datePreview.setDesc(t`Moment 格式，预览：${p.formatDate()}`);
+    datePreview.addText((input) => input.setPlaceholder(DEFAULT_SETTINGS.dateFormat).setValue(p.settings.dateFormat).onChange(async (value) => { await p.updateSetting("dateFormat", value); showDatePreview(); }));
+    showDatePreview();
+    new Setting(containerEl).setName(t("插入日期时间快捷键")).setDesc(t("为 VaultBranch 的“插入当前日期时间”命令设置快捷键。")).addButton((input) => input.setButtonText(t("配置快捷键")).onClick(() => {
+      this.app.setting.openTabById("hotkeys");
+      const tab = this.app.setting.activeTab;
+      if (typeof tab?.setQuery === "function") tab.setQuery(`${p.manifest.name}: ${t("插入当前日期时间")}`);
+    }));
+    new Setting(containerEl).setName("Diff autosave").setDesc(t("默认关闭。开启后停止输入 500 ms 自动保存；关闭时按 Ctrl/Cmd+S 或点击保存。切换文件保留草稿，Git 操作前请先保存。")).addToggle((input) => input.setValue(p.settings.diffAutosave).onChange((value) => p.updateSetting("diffAutosave", value)));
   }
 }
 
@@ -729,6 +744,25 @@ module.exports = class MyGitPlugin extends Plugin {
     this.addSettingTab(new MyGitSettings(this.app, this));
     this.ribbonEl = this.addRibbonIcon("git-branch", t("VaultBranch · 源代码管理"), () => this.openSidebar());
     this.localizedCommands = this.commandDefinitions().map(([id, name, callback]) => this.addCommand({ id, name: t(name), callback }));
+    this.dateCommand = this.addCommand({ id: "insert-date", name: t("插入当前日期时间"), editorCallback: (editor) => editor.replaceSelection(this.formatDate()) });
+    this.registerDomEvent(document, "beforeinput", (event) => {
+      this.dateInput = event.inputType === "insertText" || event.inputType === "insertCompositionText";
+    }, true);
+    this.registerEvent(this.app.workspace.on("editor-change", (editor, info) => {
+      if (!this.dateInput || this.expandingDate || this.composingDate || info?.getViewType?.() !== "markdown") return;
+      this.dateInput = false;
+      window.clearTimeout(this.dateTimer);
+      this.dateTimer = window.setTimeout(() => {
+        if (this.unloaded || this.composingDate || this.app.workspace.activeLeaf?.view.editor !== editor) return;
+        const range = dateTriggerRange(editor, this.settings.dateTrigger);
+        if (!range) return;
+        this.expandingDate = true;
+        try { editor.replaceRange(this.formatDate(), range.from, range.to); }
+        finally { this.expandingDate = false; }
+      }, 0);
+    }));
+    this.registerDomEvent(document, "compositionstart", () => { this.composingDate = true; });
+    this.registerDomEvent(document, "compositionend", () => { this.composingDate = false; });
     this.returnCommand = this.addCommand({ id: "return-to-graph", name: t("返回 Git Graph"), checkCallback: (checking) => {
       const context = this.activeGraphReturn();
       if (!context) return false;
@@ -736,7 +770,7 @@ module.exports = class MyGitPlugin extends Plugin {
       return true;
     } });
     this.registerEvent(this.app.workspace.on("active-leaf-change", (leaf) => {
-      for (const view of this.views(DIFF_VIEW)) if (view.leaf !== leaf) void view.saveEditor();
+      for (const view of this.views(DIFF_VIEW)) if (view.leaf !== leaf) void view.saveEditor(true);
       this.updateEditorReturn(leaf);
     }));
     this.registerEvent(this.app.workspace.on("file-open", () => this.updateEditorReturn(this.app.workspace.activeLeaf)));
@@ -783,6 +817,7 @@ module.exports = class MyGitPlugin extends Plugin {
   onunload() {
     this.unloaded = true;
     window.clearTimeout(this.refreshTimer);
+    window.clearTimeout(this.dateTimer);
     document.querySelectorAll(".vaultbranch-editor-return").forEach((node) => node.remove());
     this.graphReturns?.clear();
     for (const session of this.editSessions.values()) session.stop();
@@ -812,6 +847,7 @@ module.exports = class MyGitPlugin extends Plugin {
     const names = this.commandDefinitions();
     this.localizedCommands.forEach((command, index) => { command.name = `${this.manifest.name}: ${t(names[index][1])}`; });
     this.returnCommand.name = `${this.manifest.name}: ${t("返回 Git Graph")}`;
+    this.dateCommand.name = `${this.manifest.name}: ${t("插入当前日期时间")}`;
     this.ribbonEl.setAttribute("aria-label", t("VaultBranch · 源代码管理"));
     for (const view of this.views(...Object.keys(VIEW_CLASSES))) {
       if (view instanceof SourceControlView) await view.onOpen();
@@ -826,6 +862,7 @@ module.exports = class MyGitPlugin extends Plugin {
     if (this.busy) { new Notice(t("Git 操作执行中，请稍后修改设置。")); return false; }
     this.settings[key] = value;
     await this.saveData(this.settings);
+    if (key === "diffAutosave") for (const session of this.editSessions.values()) session.setEnabled(value);
     if (key === "language") await this.applyLanguage();
     if (key === "gitPath" || key === "pullMethod") {
       if (this.refreshTask) await this.refreshTask;
@@ -838,6 +875,8 @@ module.exports = class MyGitPlugin extends Plugin {
   openSettings() {
     this.app.setting.open(); this.app.setting.openTabById(this.manifest.id);
   }
+
+  formatDate() { return moment().format(this.settings.dateFormat || DEFAULT_SETTINGS.dateFormat); }
 
   showOutput() {
     const modal = new Modal(this.app);
@@ -921,6 +960,7 @@ module.exports = class MyGitPlugin extends Plugin {
       const draft = this.diffDrafts.get(filePath) || { ...versions, text: normalize(versions.working) };
       this.diffDrafts.set(filePath, draft);
       const session = new Autosave(draft, {
+        enabled: this.settings.diffAutosave,
         read: () => this.git.worktreeVersions(filePath),
         write: async (expected, content) => {
           const file = this.app.vault.getAbstractFileByPath(filePath);
@@ -979,11 +1019,11 @@ module.exports = class MyGitPlugin extends Plugin {
     if (this.busy || this.mutationPending) { new Notice(t("已有 Git 操作执行中，请稍候。")); return false; }
     this.mutationPending = true;
     for (const view of this.views(DIFF_VIEW)) view.updateEditor();
-    const saved = await Promise.all([...this.editSessions.values()].map((session) => session.flush()));
+    const saved = await Promise.all([...this.editSessions.values()].map((session) => session.autoFlush()));
     this.mutationPending = false;
     if (saved.some((success) => !success)) {
       for (const view of this.views(DIFF_VIEW)) view.updateEditor();
-      new Notice(t("存在未保存的差异编辑，请先处理自动保存提示，再执行 Git 操作。"), 8000);
+      new Notice(t("存在未保存的差异编辑。请按 Ctrl/Cmd+S 保存，或处理保存错误后再执行 Git 操作。"), 8000);
       return false;
     }
     this.busy = true;

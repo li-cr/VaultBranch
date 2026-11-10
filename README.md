@@ -5,7 +5,8 @@
 A Git sidebar and commit graph for Obsidian.
 
 - View changed files, diffs and commit history.
-- Edit directly in the right diff pane with live highlighting and autosave, without staging it.
+- Edit directly in the right diff pane with live highlighting; save with Ctrl/Cmd+S or enable optional autosave.
+- Insert dates with `@date` or a configured hotkey; customize the format under Other.
 - Switch between Chinese and English in settings.
 - Discard unstaged changes with the undo arrow; move untracked files to trash.
 - **Pull**: pull remote changes.

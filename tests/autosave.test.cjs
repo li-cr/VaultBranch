@@ -21,6 +21,29 @@ function fixture(working = "old\n", options = {}) {
 }
 const tick = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+test("manual mode retains drafts across idle and navigation until explicit save", async () => {
+  const f = fixture("old\n", { enabled: false });
+  f.session.edit("manual draft\n");
+  await tick(40);
+  assert.equal(await f.session.autoFlush(), false);
+  assert.equal(f.disk, "old\n");
+  assert.equal(f.draft.text, "manual draft\n");
+  assert.deepEqual(f.writes, []);
+  assert.equal(await f.session.flush(), true);
+  assert.equal(f.disk, "manual draft\n");
+});
+
+test("turning off autosave cancels its timer; enabling it schedules retained drafts", async () => {
+  const f = fixture();
+  f.session.edit("retained\n");
+  f.session.setEnabled(false);
+  await tick(40);
+  assert.deepEqual(f.writes, []);
+  f.session.setEnabled(true);
+  await tick(40); await f.session.task;
+  assert.deepEqual(f.writes, ["retained\n"]);
+});
+
 test("idle autosave combines rapid edits and leaves the index unchanged", async () => {
   const f = fixture();
   f.session.edit("one\n"); f.session.edit("two\n"); f.session.edit("three\n");

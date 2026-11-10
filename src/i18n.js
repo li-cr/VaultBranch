@@ -3,6 +3,18 @@
 // Chinese source strings are the fallback; tagged templates keep values out of translation keys.
 let language = "zh";
 const english = {
+  "其他": "Other",
+  "日期触发字符串": "Date trigger",
+  "在笔记中输入此字符串后自动替换为当前日期时间。留空关闭；前面须为空格或行首。": "Type this string in a note to insert the current date and time. Leave blank to disable; start at a line or after whitespace.",
+  "日期时间格式": "Date and time format",
+  "Moment 格式，预览：{0}": "Moment format. Preview: {0}",
+  "插入日期时间快捷键": "Date insertion hotkey",
+  "为 VaultBranch 的“插入当前日期时间”命令设置快捷键。": "Assign a hotkey to VaultBranch's Insert current date and time command.",
+  "配置快捷键": "Configure hotkey",
+  "插入当前日期时间": "Insert current date and time",
+  "默认关闭。开启后停止输入 500 ms 自动保存；关闭时按 Ctrl/Cmd+S 或点击保存。切换文件保留草稿，Git 操作前请先保存。": "Off by default. When enabled, save after 500 ms idle. Otherwise use Ctrl/Cmd+S or Save. Switching files retains drafts; save before Git operations.",
+  "工作区 · 已保存": "Working tree · Saved",
+  "存在未保存的差异编辑。请按 Ctrl/Cmd+S 保存，或处理保存错误后再执行 Git 操作。": "Unsaved diff edits remain. Press Ctrl/Cmd+S to save, or resolve save errors before running Git operations.",
   "工作区 · 正在保存…": "Working tree · Saving…",
   "工作区 · 已自动保存": "Working tree · Autosaved",
   "文件已被其他编辑器修改。自动保存已暂停，你的输入已保留。请核对文件，或放弃草稿并重新载入。": "Another editor changed this file. Autosave is paused and your input is retained. Compare the file, or discard your draft and reload.",

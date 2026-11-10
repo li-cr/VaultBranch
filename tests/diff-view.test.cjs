@@ -53,6 +53,7 @@ test("an unsuccessful file open does not prevent a later JSON request from openi
 test("hidden JSON uses adapter processing without a TFile and preserves the index", async () => {
   const plugin = new Plugin();
   const filePath = ".obsidian/plugins/example/data.json";
+  plugin.settings = { diffAutosave: false };
   const index = '{"value":"index"}\n';
   let disk = '{"value":"working"}\n';
   let processes = 0;
