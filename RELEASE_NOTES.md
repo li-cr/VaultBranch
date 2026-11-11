@@ -1,9 +1,10 @@
-VaultBranch 0.2.22 avoids unnecessary background Git status refreshes.
+VaultBranch 0.2.23 enables native change-block revert controls in editable diffs.
 
-- Suspend automatic sidebar status refreshes when the sidebar is closed, collapsed, behind another tab or in a hidden document. Check both native DOM visibility and the sidebar root's collapsed state.
-- Refresh current status when the sidebar becomes visible. Keep explicit refresh, Git actions and independent editor synchronization/conflict safety checks available.
-- Recheck visibility when a queued event refresh runs; use the existing interval as a fallback for visibility transitions.
+- Use the arrow between panes to restore one working-copy change block to its staged version through CodeMirror MergeView's native a-to-b revert operation. Other change blocks and the staged index stay intact.
+- Keep reverts in the existing editor session: Ctrl/Cmd+Z undoes them, manual mode waits for Save or Ctrl/Cmd+S, and optional autosave uses the normal save path. This does not stage content.
+- Support mouse and keyboard/assistive button activation, translated labels and theme-aware styling. Remove controls while Git operations lock editing; block stale controls and non-primary mouse presses.
+- Keep staged and historical comparisons read-only without revert controls. For untracked text, restoring the empty index creates an empty editable draft rather than deleting the file.
 
-In a local Obsidian 1.15.0 test vault, a burst of 20 refresh requests triggered 0 Git subprocesses instead of 2 with the sidebar closed, collapsed or on an inactive tab; visible refresh remained at 2. The benchmark preserved the Git index. These are deterministic background-operation counts, not a cold-start timing improvement. See docs/performance/0.2.22.md and scripts/benchmark-background-refresh.js for scope, environment, raw results and reproduction.
+Validated with 70 local automated tests and 56 Obsidian UI checks: 24 native chunk-revert checks, 24 diff-navigation checks and 8 folding/editor checks. The reproducible script is tests/manual/chunk-revert-ui.js; run only in the note_test vault. Syntax, CSS and build checks pass. No performance improvement is claimed. Syntax highlighting configuration is not included in this release.
 
-Validated with 70 local automated tests and 58 Obsidian UI assertions covering visibility/polling, restored workspaces, manual drafts, autosave, hidden JSON, external-change protection and cleanup. Release assets retain GitHub provenance attestations. Desktop only; requires Git installed separately.
+Release assets retain GitHub provenance attestations. Desktop only; requires Git installed separately.

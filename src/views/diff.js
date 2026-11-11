@@ -1,6 +1,6 @@
 "use strict";
 
-const { Notice, Scope, Modal } = require("obsidian");
+const { Notice, Scope, Modal, setIcon } = require("obsidian");
 const { MergeView } = require("@codemirror/merge");
 const { EditorState, Compartment, Transaction } = require("@codemirror/state");
 const { EditorView, keymap, lineNumbers, drawSelection } = require("@codemirror/view");
@@ -156,6 +156,7 @@ class DiffView extends GitView {
     session?.listeners.delete(this.editorListener);
     this.merge?.destroy();
     this.merge = null;
+    this.revertLocked = null;
     this.updateDiffNavigation();
     this.session = null;
     this.editorText = this.editorIndex = this.editorListener = null;
@@ -191,6 +192,25 @@ class DiffView extends GitView {
         }),
       ] },
       highlightChanges: true, gutter: true, ...collapseOptions(this.plugin.settings),
+      revertControls: "a-to-b",
+      renderRevertControl: () => {
+        const control = body.ownerDocument.createElement("button");
+        control.type = "button";
+        control.title = t("将此差异块恢复为暂存区版本");
+        control.setAttribute("aria-label", control.title);
+        setIcon(control, "arrow-right");
+        control.addEventListener("mousedown", event => {
+          if (event.button !== 0 || this.plugin.busy || this.plugin.mutationPending) {
+            event.preventDefault(); event.stopPropagation();
+          }
+        });
+        // MergeView handles mouse presses; native button activation also needs
+        // to reach that handler for Enter/Space and assistive technologies.
+        control.addEventListener("click", event => {
+          if (event.detail === 0) control.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
+        });
+        return control;
+      },
     });
     this.collapseEnabled = Boolean(this.plugin.settings.collapseUnchanged);
     this.editorText = this.session.draft.text;
@@ -221,8 +241,16 @@ class DiffView extends GitView {
       }
       const locked = Boolean(this.plugin.busy || this.plugin.mutationPending);
       if (this.merge.b.state.readOnly !== locked) this.merge.b.dispatch({ effects: this.editable.reconfigure(this.editorAccess()) });
+      if (this.revertLocked !== locked) {
+        this.merge.reconfigure({ revertControls: locked ? undefined : "a-to-b" });
+        this.revertLocked = locked;
+      }
     } finally { this.syncingEditor = false; }
     this.updateDiffNavigation();
+    for (const control of this.merge.dom.querySelectorAll(".cm-merge-revert button")) {
+      control.title = t("将此差异块恢复为暂存区版本");
+      control.setAttribute("aria-label", control.title);
+    }
     this.leftCaption.textContent = t("暂存区（只读）");
     this.rightCaption.textContent = saving ? t("工作区 · 正在保存…") : dirty ? t("工作区 · 未保存") : this.session.enabled ? t("工作区 · 已自动保存") : t("工作区 · 已保存");
     this.saveButton.disabled = !dirty || saving || this.plugin.busy || this.plugin.mutationPending;

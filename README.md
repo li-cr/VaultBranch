@@ -8,6 +8,7 @@ A Git sidebar and commit graph for Obsidian.
 - Right-click a file to browse its history, including Git-detected renames; compare each commit with its parent.
 - Create and switch local branches; create a branch from a selected graph commit.
 - Edit directly in the right diff pane with live highlighting; save with Ctrl/Cmd+S or enable optional autosave.
+- Restore one unstaged change block from the staged version using the arrow between panes; undo with Ctrl/Cmd+Z. Manual mode keeps the result as a draft until saved; autosave follows the existing setting. This does not stage content. Staged and historical comparisons remain read-only.
 - Unchanged lines fold by default; configure native CodeMirror folding under Other.
 - Jump between changes with ↑ / ↓; show or hide the buttons under Other.
 - Insert dates with `@date` or a configured hotkey; customize the format under Other.

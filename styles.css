@@ -50,6 +50,10 @@
 .vaultbranch-edit-panes { flex: 1; min-height: 0; overflow: auto; }
 .vaultbranch-edit-panes .cm-mergeView { min-height: 100%; background: var(--background-primary); }
 .vaultbranch-edit-panes .cm-mergeViewEditors { min-height: 100%; }
+.vaultbranch-edit-panes .cm-merge-revert { background: var(--background-secondary); }
+.vaultbranch-edit-panes .cm-merge-revert button { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 3px; border: 1px solid var(--background-modifier-border); border-radius: 4px; color: var(--text-muted); background: var(--background-primary); cursor: pointer; }
+.vaultbranch-edit-panes .cm-merge-revert button:hover { color: var(--text-accent); background: var(--background-modifier-hover); }
+.vaultbranch-edit-panes .cm-merge-revert button:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
 .vaultbranch-edit-panes .cm-editor { flex: 1; min-width: 0; background: var(--background-primary); color: var(--text-normal); }
 .vaultbranch-edit-panes .cm-editor:first-child { border-right: 1px solid var(--background-modifier-border); }
 .vaultbranch-edit-panes .cm-scroller { font: var(--font-smaller)/1.65 var(--font-monospace); }

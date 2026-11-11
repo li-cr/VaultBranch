@@ -3,6 +3,7 @@
 // Chinese source strings are the fallback; tagged templates keep values out of translation keys.
 let language = "zh";
 const english = {
+  "将此差异块恢复为暂存区版本": "Restore this change to the staged version",
   "上一处差异": "Previous change",
   "下一处差异": "Next change",
   "显示差异跳转按钮": "Show diff navigation buttons",
