@@ -1,0 +1,1410 @@
+{
+  "before": {
+    "version": "0.2.27",
+    "environment": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+      "platform": "win32",
+      "versions": {
+        "node": "24.22.1",
+        "acorn": "8.18.0",
+        "ada": "4.0.0",
+        "amaro": "1.1.11",
+        "ares": "1.34.9",
+        "brotli": "1.2.0",
+        "cldr": "48.0",
+        "icu": "78.2",
+        "llhttp": "9.4.3",
+        "merve": "1.2.2",
+        "modules": "148",
+        "napi": "10",
+        "nbytes": "0.1.4",
+        "ncrypto": "0.0.1",
+        "nghttp2": "1.70.0",
+        "nghttp3": "",
+        "ngtcp2": "",
+        "openssl": "0.0.0",
+        "simdjson": "4.6.11",
+        "simdutf": "7.7.0",
+        "sqlite": "3.53.4",
+        "tz": "2026e",
+        "undici": "7.30.1",
+        "unicode": "17.0",
+        "uv": "1.52.1",
+        "uvwasi": "0.0.23",
+        "v8": "15.0.245.31-electron.0",
+        "zlib": "1.3.2.1-motley",
+        "zstd": "1.6.0",
+        "electron": "43.8.4",
+        "chrome": "150.0.7871.250"
+      }
+    },
+    "summary": [
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "samples": 5,
+        "median": 410.5999999642372,
+        "range": [
+          396.39999997615814,
+          526.1000000238419
+        ],
+        "blankFrames": 80,
+        "loadingFrames": 80,
+        "incompleteStates": 5,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "samples": 5,
+        "median": 467,
+        "range": [
+          449.89999997615814,
+          516.8000000119209
+        ],
+        "blankFrames": 77,
+        "loadingFrames": 77,
+        "incompleteStates": 5,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "samples": 5,
+        "median": 410,
+        "range": [
+          407.10000002384186,
+          442.9000000357628
+        ],
+        "blankFrames": 75,
+        "loadingFrames": 75,
+        "incompleteStates": 5,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "samples": 5,
+        "median": 450.39999997615814,
+        "range": [
+          433.9000000357628,
+          550.0999999642372
+        ],
+        "blankFrames": 81,
+        "loadingFrames": 81,
+        "incompleteStates": 5,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      }
+    ],
+    "samples": [
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 450.39999997615814,
+        "blankFrames": 16,
+        "loadingFrames": 16,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 449.89999997615814,
+        "blankFrames": 14,
+        "loadingFrames": 14,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 407.10000002384186,
+        "blankFrames": 15,
+        "loadingFrames": 15,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 433.9000000357628,
+        "blankFrames": 15,
+        "loadingFrames": 15,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 410.5999999642372,
+        "blankFrames": 14,
+        "loadingFrames": 14,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 465.89999997615814,
+        "blankFrames": 16,
+        "loadingFrames": 16,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 407.69999998807907,
+        "blankFrames": 15,
+        "loadingFrames": 15,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 500.39999997615814,
+        "blankFrames": 16,
+        "loadingFrames": 16,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 396.39999997615814,
+        "blankFrames": 14,
+        "loadingFrames": 14,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 499.80000001192093,
+        "blankFrames": 16,
+        "loadingFrames": 16,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 410,
+        "blankFrames": 14,
+        "loadingFrames": 14,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 550.0999999642372,
+        "blankFrames": 20,
+        "loadingFrames": 20,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 408.69999998807907,
+        "blankFrames": 15,
+        "loadingFrames": 15,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 516.8000000119209,
+        "blankFrames": 17,
+        "loadingFrames": 17,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 442.9000000357628,
+        "blankFrames": 16,
+        "loadingFrames": 16,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 450.0999999642372,
+        "blankFrames": 15,
+        "loadingFrames": 15,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 526.1000000238419,
+        "blankFrames": 21,
+        "loadingFrames": 21,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 467,
+        "blankFrames": 14,
+        "loadingFrames": 14,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 427.5999999642372,
+        "blankFrames": 15,
+        "loadingFrames": 15,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 450.39999997615814,
+        "blankFrames": 15,
+        "loadingFrames": 15,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      }
+    ]
+  },
+  "after": {
+    "version": "0.2.27",
+    "environment": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+      "platform": "win32",
+      "versions": {
+        "node": "24.22.1",
+        "acorn": "8.18.0",
+        "ada": "4.0.0",
+        "amaro": "1.1.11",
+        "ares": "1.34.9",
+        "brotli": "1.2.0",
+        "cldr": "48.0",
+        "icu": "78.2",
+        "llhttp": "9.4.3",
+        "merve": "1.2.2",
+        "modules": "148",
+        "napi": "10",
+        "nbytes": "0.1.4",
+        "ncrypto": "0.0.1",
+        "nghttp2": "1.70.0",
+        "nghttp3": "",
+        "ngtcp2": "",
+        "openssl": "0.0.0",
+        "simdjson": "4.6.11",
+        "simdutf": "7.7.0",
+        "sqlite": "3.53.4",
+        "tz": "2026e",
+        "undici": "7.30.1",
+        "unicode": "17.0",
+        "uv": "1.52.1",
+        "uvwasi": "0.0.23",
+        "v8": "15.0.245.31-electron.0",
+        "zlib": "1.3.2.1-motley",
+        "zstd": "1.6.0",
+        "electron": "43.8.4",
+        "chrome": "150.0.7871.250"
+      }
+    },
+    "summary": [
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "samples": 5,
+        "median": 443,
+        "range": [
+          329.69999998807907,
+          1024.800000011921
+        ],
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "samples": 5,
+        "median": 450.10000002384186,
+        "range": [
+          400.5,
+          889
+        ],
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "samples": 5,
+        "median": 393.80000001192093,
+        "range": [
+          327.7000000476837,
+          676.8999999761581
+        ],
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "samples": 5,
+        "median": 600.1999999880791,
+        "range": [
+          366.69999998807907,
+          1166.3999999761581
+        ],
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      }
+    ],
+    "samples": [
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 333.69999998807907,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 450.10000002384186,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 393.80000001192093,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 383,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 329.69999998807907,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 416.9000000357628,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 327.7000000476837,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 366.69999998807907,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 443,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 400.5,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 378.30000001192093,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 600.1999999880791,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 545.5,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 889,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 676.8999999761581,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 1166.3999999761581,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 1024.800000011921,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 816.5,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 618.4000000357628,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 700.3000000119209,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      }
+    ]
+  },
+  "beforeRecheck": {
+    "version": "0.2.27",
+    "environment": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+      "platform": "win32",
+      "versions": {
+        "node": "24.22.1",
+        "acorn": "8.18.0",
+        "ada": "4.0.0",
+        "amaro": "1.1.11",
+        "ares": "1.34.9",
+        "brotli": "1.2.0",
+        "cldr": "48.0",
+        "icu": "78.2",
+        "llhttp": "9.4.3",
+        "merve": "1.2.2",
+        "modules": "148",
+        "napi": "10",
+        "nbytes": "0.1.4",
+        "ncrypto": "0.0.1",
+        "nghttp2": "1.70.0",
+        "nghttp3": "",
+        "ngtcp2": "",
+        "openssl": "0.0.0",
+        "simdjson": "4.6.11",
+        "simdutf": "7.7.0",
+        "sqlite": "3.53.4",
+        "tz": "2026e",
+        "undici": "7.30.1",
+        "unicode": "17.0",
+        "uv": "1.52.1",
+        "uvwasi": "0.0.23",
+        "v8": "15.0.245.31-electron.0",
+        "zlib": "1.3.2.1-motley",
+        "zstd": "1.6.0",
+        "electron": "43.8.4",
+        "chrome": "150.0.7871.250"
+      }
+    },
+    "summary": [
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "samples": 5,
+        "median": 445,
+        "range": [
+          391.30000001192093,
+          539.4000000357628
+        ],
+        "blankFrames": 86,
+        "loadingFrames": 86,
+        "incompleteStates": 5,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "samples": 5,
+        "median": 517.2999999523163,
+        "range": [
+          466.69999998807907,
+          700.8999999761581
+        ],
+        "blankFrames": 86,
+        "loadingFrames": 86,
+        "incompleteStates": 5,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "samples": 5,
+        "median": 426.69999998807907,
+        "range": [
+          394.39999997615814,
+          603
+        ],
+        "blankFrames": 89,
+        "loadingFrames": 89,
+        "incompleteStates": 5,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "samples": 5,
+        "median": 567,
+        "range": [
+          449.80000001192093,
+          706.3999999761581
+        ],
+        "blankFrames": 96,
+        "loadingFrames": 96,
+        "incompleteStates": 5,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      }
+    ],
+    "samples": [
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 533.6999999880791,
+        "blankFrames": 20,
+        "loadingFrames": 20,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 634.6999999880791,
+        "blankFrames": 18,
+        "loadingFrames": 18,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 603,
+        "blankFrames": 25,
+        "loadingFrames": 25,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 567,
+        "blankFrames": 19,
+        "loadingFrames": 19,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 426.30000001192093,
+        "blankFrames": 16,
+        "loadingFrames": 16,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 517.2999999523163,
+        "blankFrames": 16,
+        "loadingFrames": 16,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 426.69999998807907,
+        "blankFrames": 16,
+        "loadingFrames": 16,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 466.80000001192093,
+        "blankFrames": 16,
+        "loadingFrames": 16,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 391.30000001192093,
+        "blankFrames": 15,
+        "loadingFrames": 15,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 466.69999998807907,
+        "blankFrames": 16,
+        "loadingFrames": 16,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 394.39999997615814,
+        "blankFrames": 14,
+        "loadingFrames": 14,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 449.80000001192093,
+        "blankFrames": 14,
+        "loadingFrames": 14,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 445,
+        "blankFrames": 16,
+        "loadingFrames": 16,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 466.9000000357628,
+        "blankFrames": 14,
+        "loadingFrames": 14,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 425,
+        "blankFrames": 15,
+        "loadingFrames": 15,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 666.6999999880791,
+        "blankFrames": 21,
+        "loadingFrames": 21,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 539.4000000357628,
+        "blankFrames": 19,
+        "loadingFrames": 19,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 700.8999999761581,
+        "blankFrames": 22,
+        "loadingFrames": 22,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 554.6999999880791,
+        "blankFrames": 19,
+        "loadingFrames": 19,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 706.3999999761581,
+        "blankFrames": 26,
+        "loadingFrames": 26,
+        "incompleteStates": 1,
+        "headerRange": [
+          42,
+          44.66666793823242
+        ]
+      }
+    ]
+  },
+  "afterRecheck": {
+    "version": "0.2.27",
+    "environment": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+      "platform": "win32",
+      "versions": {
+        "node": "24.22.1",
+        "acorn": "8.18.0",
+        "ada": "4.0.0",
+        "amaro": "1.1.11",
+        "ares": "1.34.9",
+        "brotli": "1.2.0",
+        "cldr": "48.0",
+        "icu": "78.2",
+        "llhttp": "9.4.3",
+        "merve": "1.2.2",
+        "modules": "148",
+        "napi": "10",
+        "nbytes": "0.1.4",
+        "ncrypto": "0.0.1",
+        "nghttp2": "1.70.0",
+        "nghttp3": "",
+        "ngtcp2": "",
+        "openssl": "0.0.0",
+        "simdjson": "4.6.11",
+        "simdutf": "7.7.0",
+        "sqlite": "3.53.4",
+        "tz": "2026e",
+        "undici": "7.30.1",
+        "unicode": "17.0",
+        "uv": "1.52.1",
+        "uvwasi": "0.0.23",
+        "v8": "15.0.245.31-electron.0",
+        "zlib": "1.3.2.1-motley",
+        "zstd": "1.6.0",
+        "electron": "43.8.4",
+        "chrome": "150.0.7871.250"
+      }
+    },
+    "summary": [
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "samples": 5,
+        "median": 361.9000000357628,
+        "range": [
+          345.30000001192093,
+          450.4000000357628
+        ],
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "samples": 5,
+        "median": 400,
+        "range": [
+          366.7000000476837,
+          517.5
+        ],
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "samples": 5,
+        "median": 361,
+        "range": [
+          328.0999999642372,
+          454
+        ],
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "samples": 5,
+        "median": 367.5999999642372,
+        "range": [
+          366.80000001192093,
+          434
+        ],
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      }
+    ],
+    "samples": [
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 450.4000000357628,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 517.5,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 454,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 434,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 345.30000001192093,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 433.89999997615814,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 328.0999999642372,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 366.80000001192093,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 362.7999999523163,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 367,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 361,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 367.5999999642372,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 361.9000000357628,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 400,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 376.19999998807907,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 366.80000001192093,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "bytes": 29,
+        "elapsed": 346.30000001192093,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "elapsed": 366.7000000476837,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 31,
+        "elapsed": 345.80000001192093,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "elapsed": 416.9000000357628,
+        "blankFrames": 0,
+        "loadingFrames": 0,
+        "incompleteStates": 0,
+        "headerRange": [
+          44.66666793823242,
+          44.66666793823242
+        ]
+      }
+    ]
+  }
+}

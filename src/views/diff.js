@@ -36,7 +36,6 @@ class DiffView extends GitView {
     this.request++;
     await this.session?.autoFlush();
     if (request !== this.stateRequest) return;
-    this.destroyEditor();
     this.file = state.file || null;
     this.area = LABELS[state.area] ? state.area : "unstaged";
     this.unified = Boolean(state.unified);
@@ -46,7 +45,7 @@ class DiffView extends GitView {
       this.plugin.diffDrafts.set(this.file.path, draft);
     }
     this.plugin.setGraphReturn(this.leaf, this.file?.path, this.graphReturn);
-    await this.render();
+    await this.render(true);
     await super.setState(state, result);
   }
 
@@ -63,16 +62,45 @@ class DiffView extends GitView {
     await super.onClose();
   }
 
-  async render() {
-    if (this.merge && this.session) {
+  async readComparison(file, area, unified) {
+    await this.plugin.ensureReady();
+    const warnings = [];
+    if (area === "unstaged" && file.worktree !== "D") {
+      try { return { session: await this.plugin.editorSession(file.path, true), warnings }; }
+      catch (error) { warnings.push(error.message); }
+    }
+    if (!unified && ["history", "staged"].includes(area)) {
+      try { return { versions: await this.plugin.git.comparisonVersions(file, area), warnings }; }
+      catch (error) { warnings.push(error.message); }
+    }
+    return { result: area === "history" ? await this.plugin.git.commitDiff(file) : await this.plugin.git.diff(file, area), warnings };
+  }
+
+  async render(replace = false) {
+    if (this.loading && !replace) return;
+    if (this.merge && this.session && !replace) {
       this.updateEditor();
       await this.session.sync();
       return;
     }
-    this.destroyEditor();
     const request = ++this.request;
-    this.app.keymap.popScope(this.editScope);
+    const file = this.file;
+    this.loading = true;
+    this.contentEl.inert = true;
+    this.contentEl.setAttribute("aria-busy", "true");
+    let loaded;
+    try { loaded = file ? await this.readComparison(file, this.area, this.unified) : {}; }
+    catch (error) { loaded = { error }; }
+    if (request !== this.request) {
+      if (loaded.session) this.plugin.releaseEditorSession(file.path, loaded.session);
+      return;
+    }
+    // Commit the complete page in one task, before the browser can paint it.
+    this.loading = false;
+    this.destroyEditor();
     this.contentEl.empty();
+    this.contentEl.inert = false;
+    this.contentEl.removeAttribute("aria-busy");
     if (!this.file) { el(this.contentEl, "div", "vaultbranch-empty", t("在 VaultBranch 侧栏选择文件查看差异。")); return; }
     const header = el(this.contentEl, "div", "vaultbranch-diff-header");
     if (this.area === "history") button(header, "arrow-left", t("返回 Git Graph"), () => this.plugin.returnToGraph(this.graphReturn), "Git Graph");
@@ -86,42 +114,24 @@ class DiffView extends GitView {
     }
     el(this.contentEl, "div", "vaultbranch-diff-description", this.area === "history" ? t`提交 ${this.file.commit.slice(0, 8)} · 相对第一父提交` : this.area === "staged" ? t("HEAD → 暂存区") : t("暂存区 → 工作区"));
     const body = el(this.contentEl, "div", "vaultbranch-diff-body");
-    el(body, "div", "vaultbranch-empty", t("读取差异中…"));
     try {
-      await this.plugin.ensureReady();
-      if (editable) {
-        try {
-          const filePath = this.file.path;
-          const session = await this.plugin.editorSession(filePath, true);
-          if (request !== this.request) { this.plugin.releaseEditorSession(filePath, session); return; }
-          this.session = session;
-          body.replaceChildren();
-          this.renderEditor(body);
-          await session.sync();
-          return;
-        } catch (error) {
-          if (request !== this.request) return;
-          el(this.contentEl, "div", "vaultbranch-editor-warning", error.message);
-        }
+      if (loaded.error) throw loaded.error;
+      for (const warning of loaded.warnings) el(this.contentEl, "div", "vaultbranch-editor-warning", warning);
+      if (loaded.session) {
+        this.session = loaded.session;
+        this.sessionPath = file.path;
+        this.renderEditor(body);
+        await this.session.sync();
+        return;
       }
-      if (!this.unified && ["history", "staged"].includes(this.area)) {
-        try {
-          const versions = await this.plugin.git.comparisonVersions(this.file, this.area);
-          if (request !== this.request) return;
-          body.replaceChildren();
-          this.merge = readOnlyMerge(body, versions, this.area === "history" ? [t("父提交"), t("当前提交")] : ["HEAD", t("暂存区（只读）")], this.plugin.settings);
-          this.collapseEnabled = Boolean(this.plugin.settings.collapseUnchanged);
-          this.updateDiffNavigation();
-          void this.updateSyntaxHighlight();
-          return;
-        } catch (error) {
-          if (request !== this.request) return;
-          el(this.contentEl, "div", "vaultbranch-editor-warning", error.message);
-        }
+      if (loaded.versions) {
+        this.merge = readOnlyMerge(body, loaded.versions, this.area === "history" ? [t("父提交"), t("当前提交")] : ["HEAD", t("暂存区（只读）")], this.plugin.settings);
+        this.collapseEnabled = Boolean(this.plugin.settings.collapseUnchanged);
+        this.updateDiffNavigation();
+        void this.updateSyntaxHighlight();
+        return;
       }
-      const result = this.area === "history" ? await this.plugin.git.commitDiff(this.file) : await this.plugin.git.diff(this.file, this.area);
-      if (request !== this.request) return;
-      body.replaceChildren();
+      const result = loaded.result;
       if (result.message) el(body, "div", "vaultbranch-empty", result.message);
       if (!result.patch) return;
       if (this.unified || this.area === "conflicts") {
@@ -163,7 +173,8 @@ class DiffView extends GitView {
     this.session = null;
     this.editorText = this.editorIndex = this.editorListener = null;
     this.warningEl = this.saveButton = this.leftCaption = this.rightCaption = null;
-    if (session) this.plugin.releaseEditorSession(this.file.path, session);
+    if (session) this.plugin.releaseEditorSession(this.sessionPath, session);
+    this.sessionPath = null;
     this.app.keymap.popScope(this.editScope);
   }
 
@@ -228,6 +239,7 @@ class DiffView extends GitView {
   }
 
   updateEditor() {
+    if (this.loading) return;
     updateCollapse(this);
     if (!this.merge || !this.session) return;
     const { draft, error, saving, dirty } = this.session;

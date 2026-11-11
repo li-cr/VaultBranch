@@ -16,7 +16,7 @@ function load(file) {
   vm.runInNewContext(fs.readFileSync(file, "utf8"), {
     module, setTimeout, clearTimeout,
     require: (name) => {
-      if (name === "obsidian") return { Plugin: class {}, ItemView: class {}, PluginSettingTab: class {}, FuzzySuggestModal: class {} };
+      if (name === "obsidian") return { Plugin: class {}, ItemView: class {}, PluginSettingTab: class {}, FuzzySuggestModal: class {}, setIcon() {} };
       const resolved = localRequire.resolve(name);
       return resolved.startsWith(path.join(__dirname, "../src/views/")) || ["settings.js", "branches.js"].some(name => resolved === path.join(__dirname, "../src/", name)) ? load(resolved) : localRequire(name);
     },
@@ -175,4 +175,101 @@ test("return-context cleanup visits every leaf and only removes closed leaves", 
   } } };
   plugin.pruneGraphReturns();
   assert.deepEqual([...plugin.graphReturns.keys()], ["first", "second"]);
+});
+
+const { DiffView } = load(path.resolve(__dirname, "../src/views/diff.js"));
+const deferred = () => {
+  let resolve;
+  const promise = new Promise(done => { resolve = done; });
+  return { promise, resolve };
+};
+
+function loadingFixture() {
+  const document = { createElement: () => node() };
+  function node() {
+    return {
+      ownerDocument: document, children: [], attributes: {},
+      appendChild(child) { this.children.push(child); },
+      empty() { this.children = []; }, replaceChildren() { this.empty(); },
+      setAttribute(key, value) { this.attributes[key] = value; },
+      removeAttribute(key) { delete this.attributes[key]; },
+      addEventListener() {}, querySelector() { return null; },
+    };
+  }
+  const view = Object.create(DiffView.prototype), released = [], gate = deferred();
+  const session = { listeners: new Set(), sync: async () => {}, autoFlush: async () => {} };
+  view.contentEl = node();
+  view.contentEl.children.push("complete previous page");
+  Object.assign(view, { request: 0, stateRequest: 0, file: { path: "new.json" }, area: "unstaged", app: { keymap: { popScope() {} } } });
+  view.plugin = {
+    settings: {}, diffDrafts: new Map(), ensureReady: async () => {},
+    editorSession: () => gate.promise,
+    releaseEditorSession: (filePath, session) => released.push({ filePath, session }),
+    setGraphReturn() {},
+  };
+  view.updateDiffNavigation = () => {};
+  view.renderEditor = body => { body.appendChild("complete editor"); };
+  return { view, session, gate, released };
+}
+
+test("diff loading commits a complete page only after data arrives and ignores refreshes while pending", async () => {
+  const { view, session, gate } = loadingFixture();
+  const opening = view.render(true);
+  await Promise.resolve();
+  assert.deepEqual(view.contentEl.children, ["complete previous page"]);
+  assert.equal(view.contentEl.inert, true);
+  assert.equal(view.contentEl.attributes["aria-busy"], "true");
+  const request = view.request;
+  await view.render();
+  assert.equal(view.request, request, "background refresh must not replace the pending navigation");
+  gate.resolve(session); await opening;
+  assert.equal(view.contentEl.inert, false);
+  assert.equal(view.contentEl.attributes["aria-busy"], undefined);
+  assert.equal(view.contentEl.children[0].className, "vaultbranch-diff-header");
+  assert.equal(view.contentEl.children[2].children[0], "complete editor");
+});
+
+test("switching releases the displayed session under its original path", async () => {
+  const { view, session, gate, released } = loadingFixture();
+  const old = { listeners: new Set() };
+  view.session = old; view.sessionPath = "old.md";
+  const opening = view.render(true);
+  gate.resolve(session); await opening;
+  assert.equal(released.length, 1);
+  assert.equal(released[0].filePath, "old.md");
+  assert.equal(released[0].session, old);
+  assert.equal(view.sessionPath, "new.json");
+});
+
+test("closing a pending diff releases the late session without replacing the closed page", async () => {
+  const { view, session, gate, released } = loadingFixture();
+  const opening = view.render(true);
+  await Promise.resolve();
+  view.request++;
+  gate.resolve(session); await opening;
+  assert.deepEqual(view.contentEl.children, ["complete previous page"]);
+  assert.equal(released.length, 1);
+  assert.equal(released[0].filePath, "new.json");
+  assert.equal(released[0].session, session);
+});
+
+test("a failed diff load clears busy state and allows a subsequent file to load", async () => {
+  const { view, session } = loadingFixture();
+  view.plugin.ensureReady = async () => { throw Error("unavailable"); };
+  await view.render(true);
+  assert.equal(view.contentEl.inert, false);
+  assert.equal(view.contentEl.children[2].children[0].textContent, "unavailable");
+  view.plugin.ensureReady = async () => {};
+  view.plugin.editorSession = async () => session;
+  await view.render(true);
+  assert.equal(view.contentEl.children[2].children[0], "complete editor");
+});
+
+test("uneditable files still fall back to patch previews after preparation", async () => {
+  const { view } = loadingFixture();
+  view.plugin.editorSession = async () => { throw Error("size limit"); };
+  view.plugin.git = { diff: async () => ({ message: "patch preview", patch: "" }) };
+  await view.render(true);
+  assert.equal(view.contentEl.children[2].children[0].textContent, "patch preview");
+  assert.equal(view.contentEl.children[3].textContent, "size limit");
 });
