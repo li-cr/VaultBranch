@@ -15,20 +15,22 @@ const CONFLICTS = new Set(["DD", "AU", "UD", "UA", "DU", "AA", "UU"]);
 function graphFor(commits) {
   let lanes = [];
   return commits.map((commit) => {
-    if (!lanes.includes(commit.hash)) lanes.push(commit.hash);
+    const parents = commit.graphParents || commit.parents;
+    const incoming = lanes.includes(commit.hash);
+    if (!incoming) lanes.push(commit.hash);
     const before = [...lanes];
     const column = lanes.indexOf(commit.hash);
     lanes.splice(column, 1);
-    for (let i = 0; i < commit.parents.length; i++) {
-      const parent = commit.parents[i];
+    for (let i = 0; i < parents.length; i++) {
+      const parent = parents[i];
       if (!lanes.includes(parent)) lanes.splice(Math.min(column + i, lanes.length), 0, parent);
     }
     const edges = [];
     for (let i = 0; i < before.length; i++) {
       if (i !== column) edges.push({ from: i, to: lanes.indexOf(before[i]), through: true });
     }
-    for (const parent of commit.parents) edges.push({ from: column, to: lanes.indexOf(parent), through: false });
-    return { ...commit, column, before, after: [...lanes], edges, width: Math.max(before.length, lanes.length, 1) };
+    for (const parent of parents) edges.push({ from: column, to: lanes.indexOf(parent), through: false });
+    return { ...commit, column, incoming, before, after: [...lanes], edges, width: Math.max(before.length, lanes.length, 1) };
   });
 }
 
@@ -524,7 +526,7 @@ class GitService {
     return (await this.run(["rev-list", "--parents", "-n", "1", hash], { timing })).trim().split(" ")[1];
   }
 
-  async fileHistory(filePath, { all = false, limit = 50 } = {}) {
+  async fileHistory(filePath, { all = false, limit = 50, graph = false } = {}) {
     this.checkPaths([filePath]);
     limit = Math.max(1, Math.min(1000, Number(limit) || 50));
     const head = (await this.run(["rev-parse", "--verify", "--quiet", "HEAD"], { allowDiffExit: true })).trim();
@@ -546,7 +548,42 @@ class GitService {
       if (!entries.has(commit.hash)) entries.set(commit.hash, commit);
     }
     const commits = [...entries.values()].sort((a, b) => b.timestamp - a.timestamp);
-    return { commits: commits.slice(0, limit), hasMore: commits.length > limit && limit < 1000 };
+    const page = commits.slice(0, limit);
+    return { commits: graph && page.length ? await this.fileHistoryGraph(page, refs, all) : page, hasMore: commits.length > limit && limit < 1000 };
+  }
+
+  async fileHistoryGraph(commits, refs, all) {
+    // The current branch is one ancestry line when there are no visible merges.
+    // Project skipped unrelated commits onto displayed rows without another process.
+    if (!all && commits.every(commit => commit.parents.length <= 1)) {
+      return graphFor(commits.map((commit, index) => ({ ...commit,
+        graphParents: index + 1 < commits.length ? [commits[index + 1].hash] : [],
+      })));
+    }
+    const paths = [...new Set(commits.flatMap(commit => [commit.path, commit.oldPath].filter(Boolean)))];
+    // Git rewrites parents across commits hidden by path filtering. Retain merge
+    // connectors, then project them onto visible file-history entries in one read.
+    const output = await this.run(["rev-list", "--parents", "--topo-order", "--full-history", "--max-count=10000", ...refs, "--", ...paths]);
+    const topology = new Map(output.trim().split("\n").filter(Boolean).map(line => {
+      const [hash, ...parents] = line.trim().split(" "); return [hash, parents];
+    }));
+    const visible = new Set(commits.map(commit => commit.hash));
+    const nearest = hash => {
+      const found = new Set(), seen = new Set(), pending = [hash];
+      while (pending.length) {
+        const current = pending.pop();
+        if (seen.has(current)) continue;
+        seen.add(current);
+        if (visible.has(current) || !topology.has(current)) found.add(current);
+        else pending.push(...topology.get(current));
+      }
+      // Preserve an ancestry continuation below this page instead of inventing a root.
+      return found.size ? [...found] : [hash];
+    };
+    const order = new Map([...topology.keys()].map((hash, index) => [hash, index]));
+    return graphFor(commits.map(commit => ({ ...commit,
+      graphParents: [...new Set((topology.get(commit.hash) || commit.parents).flatMap(nearest))],
+    })).sort((a, b) => (order.get(a.hash) ?? Infinity) - (order.get(b.hash) ?? Infinity)));
   }
 
   async readFileHistory(filePath, refs, limit) {

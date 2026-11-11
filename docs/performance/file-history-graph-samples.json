@@ -1,0 +1,233 @@
+{
+  "version": "0.2.35",
+  "node": "v24.21.0",
+  "platform": "win32/x64",
+  "git": "git version 2.50.0.windows.1",
+  "scope": "Warm Git data loading only; includes subprocesses, excludes UI/paint. Five alternating samples per mode after warm-up. No concurrent tests/builds.",
+  "cases": [
+    {
+      "name": "1000 consecutive file revisions",
+      "page": 50,
+      "summary": [
+        {
+          "graph": false,
+          "samples": 5,
+          "medianMs": 117.61,
+          "minMs": 111.62,
+          "maxMs": 118.21
+        },
+        {
+          "graph": true,
+          "samples": 5,
+          "medianMs": 119.98,
+          "minMs": 107.36,
+          "maxMs": 127.36
+        }
+      ],
+      "samples": [
+        {
+          "graph": false,
+          "ms": 111.62,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": true,
+          "ms": 107.36,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": true,
+          "ms": 113.66,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": false,
+          "ms": 118.21,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": false,
+          "ms": 117.11,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": true,
+          "ms": 119.98,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": true,
+          "ms": 127.36,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": false,
+          "ms": 117.61,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": false,
+          "ms": 117.66,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": true,
+          "ms": 123.49,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1000 file revisions interleaved with 1000 unrelated commits",
+      "page": 50,
+      "summary": [
+        {
+          "graph": false,
+          "samples": 5,
+          "medianMs": 118.78,
+          "minMs": 113.22,
+          "maxMs": 128.2
+        },
+        {
+          "graph": true,
+          "samples": 5,
+          "medianMs": 120.51,
+          "minMs": 113.37,
+          "maxMs": 121.34
+        }
+      ],
+      "samples": [
+        {
+          "graph": false,
+          "ms": 128.2,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": true,
+          "ms": 113.37,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": true,
+          "ms": 114.24,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": false,
+          "ms": 118.78,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": false,
+          "ms": 113.22,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": true,
+          "ms": 121.34,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": true,
+          "ms": 120.51,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": false,
+          "ms": 124.17,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": false,
+          "ms": 114.63,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        },
+        {
+          "graph": true,
+          "ms": 121.17,
+          "rows": 50,
+          "commands": [
+            "rev-parse",
+            "log"
+          ]
+        }
+      ]
+    }
+  ]
+}

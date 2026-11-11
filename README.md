@@ -7,7 +7,7 @@ A Git sidebar and commit graph for Obsidian.
 ## Features
 
 - View changed files, diffs and commit history.
-- Right-click a file to browse its history, including Git-detected renames; compare each commit with its parent.
+- Right-click a file to browse its history, including Git-detected renames; compare each commit with its parent. The left pane shows Git commit nodes and fork/merge lines for the file, with current/all-branch scope. Commits unrelated to the file are compressed out of the graph.
 - Create and switch local branches; create a branch from a selected graph commit.
 - Edit directly in the right diff pane with live diff highlighting; save with Ctrl/Cmd+S or enable optional autosave.
 - Enable **Diff syntax highlighting** under **Other** for JSON and Markdown source. Off by default; other file types remain plain text. Applies to editable, staged and file-history comparisons without changing drafts, selection or undo. Documents above 200,000 characters or lines above 10,000 characters use plain text. Markdown code fences use one code style without embedded language parsing.

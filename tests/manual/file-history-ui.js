@@ -10,6 +10,10 @@
   const original = { git:p.git, status:p.status, ready:p.ready, lastAutoRefresh:p.lastAutoRefresh, error:p.error, collapse:p.settings.collapseUnchanged };
   const git = async (...args) => (await exec(original.git.binary, args, { cwd:root, windowsHide:true })).stdout;
   const pause = ms => new Promise(resolve => setTimeout(resolve,ms));
+  const until = async predicate => {
+    const deadline = Date.now() + 10000;
+    while (!predicate() && Date.now() < deadline) await pause(20);
+  };
   const results = [], check = (v,label) => { if (!v) throw Error(label); results.push(label); };
   let historyLeaf, diffLeaf;
   try {
@@ -29,6 +33,10 @@
     historyLeaf=await p.openFileHistory('.obsidian/history-ui.json');
     const view=historyLeaf.view;
     check(view.rows.length===50,'initial page contains 50 commits');
+    check(view.rows.every(row=>row.querySelector('svg.vaultbranch-graph circle')),'every file-history row has a Git graph node');
+    check(view.commits.every(c=>Array.isArray(c.graphParents)&&Array.isArray(c.edges)),'file-history graph uses projected ancestry and lanes');
+    check(view.rows.every(row=>Math.abs(row.getBoundingClientRect().height-68)<1),'compact graph rows have a stable shared height');
+    check(view.rows.every(row=>row.querySelector('.vaultbranch-file-history-subject').scrollWidth>=row.querySelector('.vaultbranch-file-history-subject').clientWidth),'subjects keep their complete text with bounded display width');
     check(!view.all&&view.contentEl.querySelector('select').value==='current','current branch selected by default');
     check(view.merge.a.state.readOnly&&view.merge.b.state.readOnly&&!view.contentEl.querySelector('[contenteditable=true]'),'both history panes are read-only');
     check(view.merge.a.state.doc.toString().includes('revision 50')&&view.merge.b.state.doc.toString().includes('revision 51'),'selected commit compares previous version to selected version');
@@ -44,15 +52,24 @@
     const green=view.contentEl.querySelector('.cm-merge-b .cm-changedText');
     check(green&&getComputedStyle(green).backgroundImage==='none'&&getComputedStyle(green).textDecorationLine==='none','history changed text has background without green underline');
     const more=[...view.contentEl.querySelectorAll('button')].find(b=>/Load more|加载更多/.test(b.textContent));
-    more.click(); await pause(500);
+    more.click(); await until(()=>!view.loading&&view.rows.length===53);
     check(view.rows.length===53&&!view.contentEl.textContent.includes('Load more'),'Load more appends older commits without duplicates');
-    const renamed=view.commits.find(c=>c.oldPath); await view.selectCommit(renamed);
+    const originalHistory=p.git.fileHistory.bind(p.git); let historyReads=0;
+    p.git.fileHistory=(...args)=>{historyReads++;return originalHistory(...args)};
+    const changedRows=new Set(), graphNodes=view.rows.map(row=>row.querySelector('svg'));
+    const observeRows=new MutationObserver(records=>records.forEach(record=>changedRows.add(record.target)));
+    view.rows.forEach(row=>observeRows.observe(row,{attributes:true,attributeFilter:['class','aria-pressed']}));
+    const renamed=view.commits.find(c=>c.oldPath); await view.selectCommit(renamed); await pause(0);
+    observeRows.disconnect(); p.git.fileHistory=originalHistory;
+    check(changedRows.size===2,'selection updates only previous and current row attributes');
+    check(historyReads===0&&view.rows.every((row,index)=>row.querySelector('svg')===graphNodes[index]),'selection reuses the graph without querying file history');
     check(view.contentEl.querySelector('.vaultbranch-file-history-path').textContent==='old.md → .obsidian/history-ui.json','rename entry displays old and new paths');
     check(view.merge.a.state.doc.toString()===base&&view.merge.b.state.doc.toString()===base,'rename compares contents using each historical path');
     await view.selectCommit(view.commits.at(-1));
     check(view.merge.a.state.doc.length===0&&view.merge.b.state.doc.toString()===base,'initial commit displays empty parent');
-    const scope=view.contentEl.querySelector('select'); scope.value='all'; scope.dispatchEvent(new Event('change',{bubbles:true})); await pause(800);
+    const scope=view.contentEl.querySelector('select'); scope.value='all'; scope.dispatchEvent(new Event('change',{bubbles:true})); await until(()=>!view.loading&&view.commits.some(c=>c.subject==='Side branch edit'));
     check(view.all&&view.commits.some(c=>c.subject==='Side branch edit'),'all branches includes edit from fork before rename');
+    check(view.commits.some(c=>c.width>1),'all-branch file history shows the pre-rename fork in separate lanes');
     const originalRead=p.git.comparisonVersions.bind(p.git);
     p.git.comparisonVersions=async(c,a)=>{await pause(c.subject==='Side branch edit'?250:0);return originalRead(c,a)};
     const side=view.commits.find(c=>c.subject==='Side branch edit');
@@ -76,7 +93,7 @@
     const row=sidebar.view.contentEl.querySelector('[data-path=".obsidian/history-ui.json"].vaultbranch-file-row');
     row.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,clientX:200,clientY:150})); await pause(50);
     const item=[...document.querySelectorAll('.menu-item')].find(i=>/File history|文件历史/.test(i.textContent));
-    check(item,'Git sidebar context menu offers file history'); item.click(); await pause(600);
+    check(item,'Git sidebar context menu offers file history'); item.click(); await until(()=>app.workspace.activeLeaf.view.getViewType()==='vaultbranch-file-history');
     check(app.workspace.activeLeaf.view.getViewType()==='vaultbranch-file-history','context menu opens main-area history tab');
     check(p.fileHistoryCommand.checkCallback(true),'current file history command is enabled');
     check((await git('write-tree'))===stagedIndex,'history viewing and context menus do not alter index');

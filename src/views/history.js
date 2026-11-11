@@ -5,27 +5,7 @@ const { t } = require("../i18n.js");
 const { HISTORY_VIEW, el, button, GitView } = require("./shared.js");
 const { chooseBranch, createBranch } = require("../branches.js");
 
-function drawGraph(parent, commit, width) {
-  const colors = ["blue", "green", "orange", "purple", "red"];
-  const color = (lane) => `var(--color-${colors[lane % colors.length]})`;
-  const x = (lane) => 12 + lane * 16;
-  const svgNode = (parent, tag, attributes) => {
-    const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
-    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
-    parent.appendChild(node);
-    return node;
-  };
-  const svg = svgNode(parent, "svg", { width, height: 36, viewBox: `0 0 ${width} 36`, class: "vaultbranch-graph" });
-  for (const { from, to, through } of commit.edges) {
-    if (to < 0) continue;
-    const d = through ? `M ${x(from)} 0 L ${x(from)} 18 C ${x(from)} 26 ${x(to)} 26 ${x(to)} 36`
-      : `M ${x(from)} 18 C ${x(from)} 27 ${x(to)} 27 ${x(to)} 36`;
-    svgNode(svg, "path", { d, stroke: color(from), "stroke-width": 2, fill: "none" });
-  }
-  svgNode(svg, "path", { d: `M ${x(commit.column)} 0 L ${x(commit.column)} 18`, stroke: color(commit.column), "stroke-width": 2 });
-  svgNode(svg, "circle", { cx: x(commit.column), cy: 18, r: commit.parents.length > 1 ? 5 : 4,
-    fill: color(commit.column), stroke: "var(--background-primary)", "stroke-width": 1.5 });
-}
+const { drawGraph } = require("./graph.js");
 
 class HistoryView extends GitView {
   constructor(leaf, plugin) { super(leaf, plugin); this.limit = plugin.settings.historyLimit; this.selected = ""; this.query = ""; this.ref = ""; this.detailRequest = 0; }

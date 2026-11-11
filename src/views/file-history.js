@@ -4,6 +4,7 @@ const { t } = require("../i18n.js");
 const { FILE_HISTORY_VIEW, GitView, el, button } = require("./shared.js");
 const { readOnlyMerge, updateCollapse, updateDiffNavigation } = require("./merge.js");
 const { updateSyntaxHighlight } = require("./highlight.js");
+const { drawGraph } = require("./graph.js");
 
 class FileHistoryView extends GitView {
   constructor(leaf, plugin) {
@@ -48,7 +49,7 @@ class FileHistoryView extends GitView {
     try {
       if (this.filePath) {
         await this.plugin.ensureReady();
-        data = await this.plugin.git.fileHistory(this.filePath, { all: this.all, limit: this.limit });
+        data = await this.plugin.git.fileHistory(this.filePath, { all: this.all, limit: this.limit, graph: true });
         if (request !== this.request) return;
         const commit = data.commits.find(commit => commit.hash === this.selected) || data.commits[0];
         if (commit) {
@@ -88,14 +89,19 @@ class FileHistoryView extends GitView {
       if (!data) throw prepared.error;
       this.commits = data.commits;
       if (!data.commits.length) { el(list, "div", "vaultbranch-empty", t("没有文件历史。")); return; }
+      const width = Math.max(28, Math.max(...data.commits.map(commit => commit.width)) * 16 + 12);
+      list.style.setProperty("--vaultbranch-file-graph-width", `${width}px`);
+      this.selectedRow = null;
       this.rows = data.commits.map((commit, index) => {
         const row = el(list, "button", "vaultbranch-file-history-entry");
         row.type = "button";
-        row.title = `${commit.subject}\n${commit.author} · ${commit.date}\n${commit.path}`;
-        el(row, "div", "vaultbranch-file-history-subject", commit.subject);
-        el(row, "div", "vaultbranch-file-history-meta", `${commit.short} · ${commit.author}`);
-        el(row, "div", "vaultbranch-file-history-meta", new Date(commit.date).toLocaleString(this.plugin.settings.language === "zh" ? "zh-CN" : "en"));
-        if (commit.oldPath || commit.path !== this.filePath) el(row, "div", "vaultbranch-file-history-rename", commit.oldPath ? `${commit.oldPath} → ${commit.path}` : commit.path);
+        row.setAttribute("aria-pressed", "false");
+        row.title = `${commit.subject}\n${commit.hash}\n${commit.author} · ${commit.date}\n${commit.oldPath ? commit.oldPath + " → " : ""}${commit.path}`;
+        drawGraph(row, commit, width, 68);
+        const text = el(row, "div", "vaultbranch-file-history-text");
+        el(text, "div", "vaultbranch-file-history-subject", commit.subject);
+        el(text, "div", "vaultbranch-file-history-meta", `${commit.short} · ${commit.author}`);
+        el(text, "div", "vaultbranch-file-history-meta", new Date(commit.date).toLocaleString(this.plugin.settings.language === "zh" ? "zh-CN" : "en"));
         row.addEventListener("click", () => { void this.selectCommit(commit); });
         row.addEventListener("keydown", event => {
           const next = event.key === "ArrowDown" ? index + 1 : event.key === "ArrowUp" ? index - 1 : -1;
@@ -126,11 +132,14 @@ class FileHistoryView extends GitView {
     if (request !== this.detailRequest || details !== this.detailsEl) return;
     this.destroyMerge();
     this.selected = commit.hash;
-    this.rows.forEach((row, index) => {
-      const active = this.commits[index].hash === commit.hash;
-      row.classList.toggle("is-selected", active);
-      row.setAttribute("aria-pressed", String(active));
-    });
+    const row = this.rows[this.commits.indexOf(commit)];
+    if (this.selectedRow !== row) {
+      this.selectedRow?.classList.remove("is-selected");
+      this.selectedRow?.setAttribute("aria-pressed", "false");
+      row.classList.add("is-selected");
+      row.setAttribute("aria-pressed", "true");
+      this.selectedRow = row;
+    }
     this.app.workspace.requestSaveLayout();
     details.replaceChildren();
     const description = el(details, "div", "vaultbranch-diff-description", `${commit.short} · ${commit.subject}`);

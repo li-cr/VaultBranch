@@ -1,3 +1,16 @@
+VaultBranch 0.2.35 adds Git ancestry lines to file history.
+
+- Render commit nodes and fork/merge lines beside file-history entries. Current/all-branch scope and rename-following history remain available; commits unrelated to the file are compressed out.
+- Keep the graph read-only and use actual first-parent versions for selected-commit comparisons.
+- Avoid a second Git process for current-branch pages without visible merges. In other scopes, read topology in one batch rather than once per row.
+- Reuse the existing SVG renderer and fixed-height rows. Changing selection updates only the old and new row and does not reload file history.
+
+Validated with 106 local automated tests, 32 Obsidian file-history checks, 36 gated stability checks and 12 trusted GUI history clicks using alternating small/large JSON. Performance measurements compare graph rendering data on/off across 1,000-change histories; no overall GUI latency improvement is claimed. See `docs/performance/file-history-graph-samples.json` and `scripts/benchmark-file-history-graph.cjs`.
+
+Desktop only; requires Git installed separately.
+
+---
+
 VaultBranch 0.2.34 removes visible intermediate states during asynchronous views.
 
 - Keep the complete file-history page while history and selected-commit comparisons load; update selection, path, description and read-only editor together.

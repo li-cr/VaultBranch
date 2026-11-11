@@ -34,6 +34,56 @@ async function write(root, file, text) {
   await fs.writeFile(path.join(root, file), text);
 }
 
+test("file-history graph skips unrelated changes and retains fork and merge ancestry", async () => {
+  const { root, service } = await fixture();
+  const text = Array.from({ length: 40 }, (_, n) => `line ${n}\n`).join("");
+  await write(root, "note.md", text); git(root, "add", "."); git(root, "commit", "-m", "base");
+  const base = git(root, "rev-parse", "HEAD").trim(); git(root, "branch", "side");
+  await write(root, "unrelated.md", "skip\n"); git(root, "add", "."); git(root, "commit", "-m", "unrelated");
+  await write(root, "note.md", text.replace("line 30\n", "main\n")); git(root, "commit", "-am", "main edit");
+  const main = git(root, "rev-parse", "HEAD").trim();
+  git(root, "switch", "side");
+  await write(root, "note.md", text.replace("line 2\n", "side\n")); git(root, "commit", "-am", "side edit");
+  const side = git(root, "rev-parse", "HEAD").trim();
+  git(root, "switch", "main"); git(root, "merge", "--no-ff", "side", "-m", "merge");
+  const merge = git(root, "rev-parse", "HEAD").trim(), index = git(root, "write-tree");
+  const commands = [], run = service.run;
+  service.run = function(args, options) { commands.push(args[0]); return run.call(this, args, options); };
+  const { commits } = await service.fileHistory("note.md", { graph: true });
+  const byHash = new Map(commits.map(c => [c.hash, c]));
+  assert.equal(commits[0].hash, merge);
+  assert.equal(commits[0].incoming, false, "a branch tip has no incoming segment");
+  assert.deepEqual(new Set(byHash.get(merge).graphParents), new Set([main, side]));
+  assert.deepEqual(byHash.get(main).graphParents, [base]);
+  assert.deepEqual(byHash.get(side).graphParents, [base]);
+  assert.deepEqual(byHash.get(base).graphParents, []);
+  assert.equal(byHash.get(base).incoming, true, "the ancestor joins the existing lanes");
+  assert.ok(commits.some(c => c.width > 1));
+  assert.equal(commands.filter(c => c === "rev-list").length, 1, "one batched topology query, not one per commit");
+  for (const [at, commit] of commits.entries()) for (const parent of commit.graphParents) {
+    const position = commits.findIndex(c => c.hash === parent);
+    assert.ok(position === -1 || position > at, "parents must follow children even when timestamps tie");
+  }
+  const page = await service.fileHistory("note.md", { graph: true, limit: 2 });
+  assert.equal(page.commits.length, 2); assert.equal(page.hasMore, true);
+  assert.ok(page.commits.some(c => c.graphParents.some(hash => !page.commits.some(p => p.hash === hash))));
+  assert.equal(git(root, "write-tree"), index);
+});
+
+test("current-branch file history projects unrelated gaps without a topology process", async () => {
+  const { root, service } = await fixture();
+  await write(root, "note.md", "base\n"); git(root, "add", "."); git(root, "commit", "-m", "base");
+  await write(root, "other.md", "unrelated\n"); git(root, "add", "."); git(root, "commit", "-m", "unrelated");
+  await write(root, "note.md", "changed\n"); git(root, "commit", "-am", "changed");
+  const calls = [], run = service.run;
+  service.run = function(args, options) { calls.push(args[0]); return run.call(this, args, options); };
+  const { commits } = await service.fileHistory("note.md", { graph: true });
+  assert.deepEqual(commits.map(commit => commit.subject), ["changed", "base"]);
+  assert.deepEqual(commits[0].graphParents, [commits[1].hash]);
+  assert.deepEqual(commits[1].graphParents, []);
+  assert.equal(calls.includes("rev-list"), false);
+});
+
 test("file history follows renames and previews root, modification, rename and deletion without changing index", async () => {
   const { root, service } = await fixture();
   const oldPath = "笔记/旧 名称.md", newPath = "笔记/新 名称.json";
@@ -58,6 +108,12 @@ test("file history follows renames and previews root, modification, rename and d
   assert.deepEqual(await service.comparisonVersions(deleted, "history"), { left: base + "added\n", right: "" });
   assert.equal(git(root, "write-tree"), index);
   assert.equal(await fs.readFile(path.join(root, "unrelated.md"), "utf8"), "staged only\n");
+  const commands = [], run = service.run;
+  service.run = function(args, options) { commands.push(args[0]); return run.call(this, args, options); };
+  const graph = await service.fileHistory(newPath, { graph: true });
+  assert.deepEqual(graph.commits.map(c => c.hash), data.commits.map(c => c.hash));
+  assert.deepEqual(graph.commits.slice(0, -1).map(c => c.graphParents), data.commits.slice(1).map(c => [c.hash]));
+  assert.equal(commands.includes("rev-list"), false, "a consecutive chain needs no extra topology process");
 });
 
 test("file history pagination and branch scope exclude stash and preserve paths on a fork before rename", async () => {
@@ -78,6 +134,10 @@ test("file history pagination and branch scope exclude stash and preserve paths 
   assert.ok(side); assert.equal(side.path, "old.md");
   assert.deepEqual(await service.comparisonVersions(side, "history"), { left: base, right: base + "side\n" });
   assert.equal(all.commits.some(c => /WIP|On main|index on/.test(c.subject)), false);
+  const graph = await service.fileHistory("new.md", { all: true, graph: true });
+  const fork = graph.commits.find(c => c.subject === "side change"), start = graph.commits.find(c => c.subject === "base");
+  assert.deepEqual(fork.graphParents, [start.hash]);
+  assert.ok(graph.commits.some(c => c.width > 1));
   const page = await service.fileHistory("new.md", { limit: 2 });
   assert.equal(page.commits.length, 2); assert.equal(page.hasMore, true);
   const more = await service.fileHistory("new.md", { limit: 50 });
