@@ -1,0 +1,3708 @@
+{
+  "baselineCommit": "3e51864",
+  "candidate": "0.2.36 working tree",
+  "scope": "Original isolated four-file Staged benchmark. Timing recording enabled. Five measured clicks per file after warm-up. Runs are sequential on the same Windows/Obsidian instance; system load varied. DOM-ready excludes physical paint.",
+  "before": {
+    "version": "0.2.35",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+    "indexUnchanged": true,
+    "fixtures": [
+      {
+        "path": "small/note.md",
+        "bytes": 28,
+        "lines": 3
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "lines": 96003
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 26,
+        "lines": 2
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "lines": 24001
+      }
+    ],
+    "samples": [
+      {
+        "path": "small/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 1.5,
+            "ms": 181.39999997615814
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 182.89999997615814,
+            "ms": 134
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 317.0999999642372,
+            "ms": 140.80000001192093
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 328.19999998807907,
+            "ms": 142.69999998807907
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 458.0999999642372,
+            "ms": 166.19999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 470.89999997615814,
+            "ms": 168
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 624.3999999761581,
+            "ms": 164.30000001192093
+          }
+        ],
+        "completedMs": 820.5999999642372,
+        "done": true,
+        "domReadyMs": 816.4,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 1.2,
+            "durationMs": 181.4
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 182.6,
+            "durationMs": 133.9
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 316.8,
+            "durationMs": 140.6
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 327.9,
+            "durationMs": 142.7
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 457.8,
+            "durationMs": 166.1
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 470.7,
+            "durationMs": 167.9
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 624.1,
+            "durationMs": 164.2
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 1.2,
+            "durationMs": 787.3
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 788.6,
+            "durationMs": 5.1
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 794.9,
+            "durationMs": 21.1
+          }
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.30000001192092896,
+            "ms": 112.19999998807907
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 112.5,
+            "ms": 152.9000000357628
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 265.60000002384186,
+            "ms": 179.19999998807907
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 276.10000002384186,
+            "ms": 184.5
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 444.80000001192093,
+            "ms": 222.30000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 460.60000002384186,
+            "ms": 223.69999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 667.2000000476837,
+            "ms": 209.5
+          }
+        ],
+        "completedMs": 1016.2000000476837,
+        "done": true,
+        "domReadyMs": 1014.1,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.3,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.3,
+            "durationMs": 112.2
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 112.5,
+            "durationMs": 152.9
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 265.6,
+            "durationMs": 179
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 276.1,
+            "durationMs": 184.5
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 444.9,
+            "durationMs": 222.2
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 460.7,
+            "durationMs": 223.6
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 667.2,
+            "durationMs": 209.3
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.3,
+            "durationMs": 877.7
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 878.1,
+            "durationMs": 1.1
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 879.8,
+            "durationMs": 134.2
+          }
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.19999998807907104,
+            "ms": 181.80000001192093
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 182,
+            "ms": 115.5
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 297.60000002384186,
+            "ms": 133.29999995231628
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 304.89999997615814,
+            "ms": 139.9000000357628
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 431,
+            "ms": 146.30000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 444.89999997615814,
+            "ms": 137.4000000357628
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 577.3000000119209,
+            "ms": 158.89999997615814
+          }
+        ],
+        "completedMs": 771.3000000119209,
+        "done": true,
+        "domReadyMs": 767.7,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 181.7
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 181.9,
+            "durationMs": 115.5
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 297.5,
+            "durationMs": 133.3
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 304.8,
+            "durationMs": 139.9
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 431,
+            "durationMs": 146.2
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 444.8,
+            "durationMs": 137.4
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 577.3,
+            "durationMs": 158.8
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 736
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 736.1,
+            "durationMs": 1
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 737.4,
+            "durationMs": 30.1
+          }
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.699999988079071,
+            "ms": 109.59999996423721
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 110.29999995231628,
+            "ms": 171.10000002384186
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 281.5,
+            "ms": 183.5
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 298.89999997615814,
+            "ms": 173.10000002384186
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 465.0999999642372,
+            "ms": 164.60000002384186
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 472.0999999642372,
+            "ms": 208
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 629.6999999880791,
+            "ms": 236.39999997615814
+          }
+        ],
+        "completedMs": 992.2999999523163,
+        "done": true,
+        "domReadyMs": 972.2,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.4,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.6,
+            "durationMs": 109.6
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 110.2,
+            "durationMs": 171.1
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 281.4,
+            "durationMs": 183.5
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 298.8,
+            "durationMs": 173
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 465,
+            "durationMs": 164.6
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 472,
+            "durationMs": 207.9
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 629.6,
+            "durationMs": 236.3
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.6,
+            "durationMs": 866.3
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 866.9,
+            "durationMs": 0.8
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 868.5,
+            "durationMs": 102.6
+          }
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.6000000238418579,
+            "ms": 287.5
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 288.19999998807907,
+            "ms": 251.9000000357628
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 540.3000000119209,
+            "ms": 286.5999999642372
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 559.6999999880791,
+            "ms": 302.69999998807907
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 827.1000000238419,
+            "ms": 295.89999997615814
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 862.5,
+            "ms": 278.89999997615814
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 1123,
+            "ms": 191.69999998807907
+          }
+        ],
+        "completedMs": 1343.199999988079,
+        "done": true,
+        "domReadyMs": 1338.3,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.2,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.5,
+            "durationMs": 287.3
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 288,
+            "durationMs": 251.9
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 540.1,
+            "durationMs": 286.5
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 559.5,
+            "durationMs": 302.6
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 826.9,
+            "durationMs": 295.9
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 862.3,
+            "durationMs": 278.8
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 1122.8,
+            "durationMs": 191.6
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.4,
+            "durationMs": 1314.1
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 1314.5,
+            "durationMs": 1.3
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 1316.2,
+            "durationMs": 21.7
+          }
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.2999999523162842,
+            "ms": 222.30000001192093
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 222.69999998807907,
+            "ms": 187.0999999642372
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 409.89999997615814,
+            "ms": 169.10000002384186
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 421,
+            "ms": 175.19999998807907
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 579,
+            "ms": 188.39999997615814
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 596.2999999523163,
+            "ms": 222.80000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 767.3999999761581,
+            "ms": 180.39999997615814
+          }
+        ],
+        "completedMs": 1035.0999999642372,
+        "done": true,
+        "domReadyMs": 1032.3,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 222.2
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 222.5,
+            "durationMs": 187.1
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 409.7,
+            "durationMs": 169
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 420.8,
+            "durationMs": 175.2
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 578.8,
+            "durationMs": 188.3
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 596.1,
+            "durationMs": 222.6
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 767.2,
+            "durationMs": 180.4
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 947.6
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 947.7,
+            "durationMs": 0.4
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 948.2,
+            "durationMs": 83.9
+          }
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0,
+            "ms": 77.69999998807907
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 77.69999998807907,
+            "ms": 122.69999998807907
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 200.39999997615814,
+            "ms": 148.10000002384186
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 213.5,
+            "ms": 148.0999999642372
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 348.5,
+            "ms": 118.29999995231628
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 361.5999999642372,
+            "ms": 118.80000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 466.89999997615814,
+            "ms": 82.60000002384186
+          }
+        ],
+        "completedMs": 562.3999999761581,
+        "done": true,
+        "domReadyMs": 561,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0,
+            "durationMs": 77.7
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 77.7,
+            "durationMs": 122.7
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 200.4,
+            "durationMs": 148.1
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 213.6,
+            "durationMs": 148
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 348.5,
+            "durationMs": 118.3
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 361.6,
+            "durationMs": 118.8
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 466.9,
+            "durationMs": 82.6
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0,
+            "durationMs": 549.5
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 549.5,
+            "durationMs": 0.6
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 550.2,
+            "durationMs": 10.6
+          }
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.3999999761581421,
+            "ms": 74.10000002384186
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 74.59999996423721,
+            "ms": 79.5
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 154.0999999642372,
+            "ms": 82.5
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 161.19999998807907,
+            "ms": 85
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 236.5999999642372,
+            "ms": 86.80000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 246.19999998807907,
+            "ms": 91.80000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 323.39999997615814,
+            "ms": 82.69999998807907
+          }
+        ],
+        "completedMs": 430,
+        "done": true,
+        "domReadyMs": 423,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.2,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.3,
+            "durationMs": 74.1
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 74.5,
+            "durationMs": 79.5
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 154,
+            "durationMs": 82.5
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 161.1,
+            "durationMs": 85
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 236.5,
+            "durationMs": 86.8
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 246.1,
+            "durationMs": 91.8
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 323.3,
+            "durationMs": 82.7
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.3,
+            "durationMs": 405.9
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 406.2,
+            "durationMs": 0.4
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 406.9,
+            "durationMs": 16.1
+          }
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 1.100000023841858,
+            "ms": 110.5
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 111.60000002384186,
+            "ms": 130
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 241.69999998807907,
+            "ms": 61.30000001192093
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 248,
+            "ms": 59.60000002384186
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 303.10000002384186,
+            "ms": 69.19999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 307.60000002384186,
+            "ms": 69.19999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 372.30000001192093,
+            "ms": 69.30000001192093
+          }
+        ],
+        "completedMs": 454.19999998807907,
+        "done": true,
+        "domReadyMs": 450.8,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.5,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.9,
+            "durationMs": 110.4
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 111.4,
+            "durationMs": 130
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 241.5,
+            "durationMs": 61.3
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 247.8,
+            "durationMs": 59.6
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 302.9,
+            "durationMs": 69.1
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 307.4,
+            "durationMs": 69.2
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 372.1,
+            "durationMs": 69.3
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.7,
+            "durationMs": 440.7
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 441.4,
+            "durationMs": 0.4
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 442,
+            "durationMs": 8.6
+          }
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.19999998807907104,
+            "ms": 69.70000004768372
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 69.90000003576279,
+            "ms": 63.5
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 133.4000000357628,
+            "ms": 73.09999996423721
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 137.30000001192093,
+            "ms": 78.60000002384186
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 206.5,
+            "ms": 74.90000003576279
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 215.9000000357628,
+            "ms": 75.59999996423721
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 281.4000000357628,
+            "ms": 68.5
+          }
+        ],
+        "completedMs": 383,
+        "done": true,
+        "domReadyMs": 379.5,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 69.7
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 69.8,
+            "durationMs": 63.5
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 133.3,
+            "durationMs": 73.1
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 137.2,
+            "durationMs": 78.6
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 206.4,
+            "durationMs": 74.9
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 215.8,
+            "durationMs": 75.5
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 281.3,
+            "durationMs": 68.5
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 349.9
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 350,
+            "durationMs": 0.3
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 350.5,
+            "durationMs": 28.4
+          }
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.30000001192092896,
+            "ms": 63.30000001192093
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 63.60000002384186,
+            "ms": 61.30000001192093
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 125,
+            "ms": 62.80000001192093
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 129,
+            "ms": 72.40000003576279
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 187.9000000357628,
+            "ms": 95.19999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 201.4000000357628,
+            "ms": 90.69999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 283.10000002384186,
+            "ms": 64.19999998807907
+          }
+        ],
+        "completedMs": 353.80000001192093,
+        "done": true,
+        "domReadyMs": 352.3,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.2,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.3,
+            "durationMs": 63.3
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 63.6,
+            "durationMs": 61.2
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 125,
+            "durationMs": 62.8
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 129,
+            "durationMs": 72.3
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 187.9,
+            "durationMs": 95.2
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 201.5,
+            "durationMs": 90.6
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 283.1,
+            "durationMs": 64.1
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.2,
+            "durationMs": 347.1
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 347.3,
+            "durationMs": 0.3
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 347.8,
+            "durationMs": 4.4
+          }
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.09999996423721313,
+            "ms": 65.10000002384186
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 65.19999998807907,
+            "ms": 52.10000002384186
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 117.30000001192093,
+            "ms": 61.89999997615814
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 125.69999998807907,
+            "ms": 57.69999998807907
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 179.30000001192093,
+            "ms": 72
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 183.39999997615814,
+            "ms": 96.80000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 251.30000001192093,
+            "ms": 91.5
+          }
+        ],
+        "completedMs": 362.5999999642372,
+        "done": true,
+        "domReadyMs": 360.7,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 65.1
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 65.2,
+            "durationMs": 52.1
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 117.3,
+            "durationMs": 61.9
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 125.7,
+            "durationMs": 57.7
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 179.3,
+            "durationMs": 72
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 183.4,
+            "durationMs": 96.7
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 251.3,
+            "durationMs": 91.5
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 342.9
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 343,
+            "durationMs": 0.5
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 343.9,
+            "durationMs": 16.7
+          }
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.09999996423721313,
+            "ms": 58.90000003576279
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 59,
+            "ms": 92.59999996423721
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 151.5999999642372,
+            "ms": 87.90000003576279
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 157.39999997615814,
+            "ms": 87.60000002384186
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 239.5,
+            "ms": 163.0999999642372
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 245,
+            "ms": 170.39999997615814
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 402.5999999642372,
+            "ms": 175.20000004768372
+          }
+        ],
+        "completedMs": 613.3999999761581,
+        "done": true,
+        "domReadyMs": 609.4,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 58.9
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 59,
+            "durationMs": 92.6
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 151.6,
+            "durationMs": 87.9
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 157.4,
+            "durationMs": 87.5
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 239.5,
+            "durationMs": 163.1
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 245,
+            "durationMs": 170.4
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 402.6,
+            "durationMs": 175.2
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 577.9
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 578,
+            "durationMs": 2.6
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 581.6,
+            "durationMs": 27.6
+          }
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.6000000238418579,
+            "ms": 134.5
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 135.10000002384186,
+            "ms": 96.19999998807907
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 231.39999997615814,
+            "ms": 59.200000047683716
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 235.39999997615814,
+            "ms": 63.10000002384186
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 290.80000001192093,
+            "ms": 94.39999997615814
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 298.5,
+            "ms": 114.69999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 385.19999998807907,
+            "ms": 114.10000002384186
+          }
+        ],
+        "completedMs": 609.6999999880791,
+        "done": true,
+        "domReadyMs": 605,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.4,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.6,
+            "durationMs": 134.5
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 135.2,
+            "durationMs": 96.1
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 231.4,
+            "durationMs": 59.2
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 235.4,
+            "durationMs": 63.1
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 290.8,
+            "durationMs": 94.4
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 298.5,
+            "durationMs": 114.7
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 385.2,
+            "durationMs": 114
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.5,
+            "durationMs": 499.7
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 500.3,
+            "durationMs": 1.7
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 502.4,
+            "durationMs": 102.5
+          }
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.20000004768371582,
+            "ms": 65.89999997615814
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 66.10000002384186,
+            "ms": 67.60000002384186
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 133.80000001192093,
+            "ms": 90.60000002384186
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 141.5,
+            "ms": 90.70000004768372
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 224.60000002384186,
+            "ms": 72.10000002384186
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 232.30000001192093,
+            "ms": 68.80000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 296.7000000476837,
+            "ms": 64.69999998807907
+          }
+        ],
+        "completedMs": 374.80000001192093,
+        "done": true,
+        "domReadyMs": 369.5,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0,
+            "durationMs": 0.1
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.2,
+            "durationMs": 65.9
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 66.1,
+            "durationMs": 67.6
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 133.8,
+            "durationMs": 90.6
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 141.5,
+            "durationMs": 90.7
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 224.6,
+            "durationMs": 72.1
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 232.3,
+            "durationMs": 68.8
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 296.7,
+            "durationMs": 64.6
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.2,
+            "durationMs": 361.2
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 361.4,
+            "durationMs": 0.6
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 362.3,
+            "durationMs": 7.1
+          }
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.10000002384185791,
+            "ms": 65.5
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 65.60000002384186,
+            "ms": 85.60000002384186
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 154.9000000357628,
+            "ms": 67.39999997615814
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 151.20000004768372,
+            "ms": 82
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 222.30000001192093,
+            "ms": 98.19999998807907
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 233.4000000357628,
+            "ms": 90.80000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 324.2000000476837,
+            "ms": 72.09999996423721
+          }
+        ],
+        "completedMs": 473,
+        "done": true,
+        "domReadyMs": 467.5,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 65.4
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 65.6,
+            "durationMs": 85.6
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 154.9,
+            "durationMs": 67.4
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 151.2,
+            "durationMs": 82
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 222.3,
+            "durationMs": 98.1
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 233.4,
+            "durationMs": 90.8
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 324.2,
+            "durationMs": 71.9
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 398.4
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 398.6,
+            "durationMs": 1.8
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 400.9,
+            "durationMs": 65.9
+          }
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.19999998807907104,
+            "ms": 130
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 130.19999998807907,
+            "ms": 69.5
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 199.80000001192093,
+            "ms": 87.39999997615814
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 204.10000002384186,
+            "ms": 93.30000001192093
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 287.19999998807907,
+            "ms": 77.60000002384186
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 297.5,
+            "ms": 72.90000003576279
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 364.80000001192093,
+            "ms": 71
+          }
+        ],
+        "completedMs": 464.5,
+        "done": true,
+        "domReadyMs": 459.2,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.2,
+            "durationMs": 130
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 130.2,
+            "durationMs": 69.5
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 199.8,
+            "durationMs": 87.4
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 204.1,
+            "durationMs": 93.3
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 287.2,
+            "durationMs": 77.5
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 297.5,
+            "durationMs": 72.9
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 364.8,
+            "durationMs": 71
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 435.7
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 435.8,
+            "durationMs": 0.5
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 436.4,
+            "durationMs": 22.2
+          }
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.09999996423721313,
+            "ms": 58.60000002384186
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 58.69999998807907,
+            "ms": 74.30000001192093
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 133.19999998807907,
+            "ms": 71.69999998807907
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 141.69999998807907,
+            "ms": 72.19999998807907
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 204.89999997615814,
+            "ms": 66
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 213.89999997615814,
+            "ms": 73.5
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 270.89999997615814,
+            "ms": 79
+          }
+        ],
+        "completedMs": 401.5,
+        "done": true,
+        "domReadyMs": 399.3,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 58.5
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 58.7,
+            "durationMs": 74.3
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 133.2,
+            "durationMs": 71.7
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 141.8,
+            "durationMs": 72.1
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 204.9,
+            "durationMs": 66
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 213.9,
+            "durationMs": 73.5
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 270.9,
+            "durationMs": 79
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 350
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 350.1,
+            "durationMs": 0.4
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 350.6,
+            "durationMs": 48.5
+          }
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.10000002384185791,
+            "ms": 54.5
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 54.60000002384186,
+            "ms": 90.59999996423721
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 152.10000002384186,
+            "ms": 66.79999995231628
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 145.19999998807907,
+            "ms": 77.60000002384186
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 218.89999997615814,
+            "ms": 74.80000001192093
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 222.80000001192093,
+            "ms": 89.19999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 312.19999998807907,
+            "ms": 78.40000003576279
+          }
+        ],
+        "completedMs": 405,
+        "done": true,
+        "domReadyMs": 403.2,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 54.5
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 54.6,
+            "durationMs": 90.5
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 152.1,
+            "durationMs": 66.8
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 145.2,
+            "durationMs": 77.6
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 219,
+            "durationMs": 74.7
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 222.8,
+            "durationMs": 89.2
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 312.2,
+            "durationMs": 78.4
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 390.5
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 390.6,
+            "durationMs": 0.7
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 391.5,
+            "durationMs": 11.5
+          }
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.30000001192092896,
+            "ms": 82.80000001192093
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 83.10000002384186,
+            "ms": 79.89999997615814
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 163.10000002384186,
+            "ms": 65
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 168.10000002384186,
+            "ms": 64.59999996423721
+          },
+          {
+            "name": "git:cat-file:-s",
+            "start": 228.10000002384186,
+            "ms": 72.69999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 232.69999998807907,
+            "ms": 73.40000003576279
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 300.80000001192093,
+            "ms": 111.39999997615814
+          }
+        ],
+        "completedMs": 447.4000000357628,
+        "done": true,
+        "domReadyMs": 438.5,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.2,
+            "durationMs": 82.7
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 83,
+            "durationMs": 79.9
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 163,
+            "durationMs": 65
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 168,
+            "durationMs": 64.6
+          },
+          {
+            "name": "git:cat-file:-s",
+            "startMs": 228,
+            "durationMs": 72.6
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 232.6,
+            "durationMs": 73.4
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 300.7,
+            "durationMs": 111.3
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.2,
+            "durationMs": 413
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 413.2,
+            "durationMs": 1.3
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 415.2,
+            "durationMs": 23.1
+          }
+        ]
+      }
+    ],
+    "mode": "sequential",
+    "cache": "warm after first cycle"
+  },
+  "after": {
+    "version": "0.2.35",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+    "indexUnchanged": true,
+    "stagedReadonly": true,
+    "fixtures": [
+      {
+        "path": "small/note.md",
+        "bytes": 28,
+        "lines": 3
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1633783,
+        "lines": 96003
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 26,
+        "lines": 2
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1284890,
+        "lines": 24001
+      }
+    ],
+    "samples": [
+      {
+        "path": "small/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.30000001192092896,
+            "ms": 78.30000001192093
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 6.200000047683716,
+            "ms": 76
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 82.40000003576279,
+            "ms": 80.89999997615814
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 89.10000002384186,
+            "ms": 78.60000002384186
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 163.30000001192093,
+            "ms": 59.10000002384186
+          }
+        ],
+        "completedMs": 231.5,
+        "done": true,
+        "domReadyMs": 230.1,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.2,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.2,
+            "durationMs": 78.3
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 6.1,
+            "durationMs": 76
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 82.3,
+            "durationMs": 80.9
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 89,
+            "durationMs": 78.6
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 163.2,
+            "durationMs": 59.1
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.2,
+            "durationMs": 222.2
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 222.4,
+            "durationMs": 1
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 223.7,
+            "durationMs": 6.4
+          }
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.3999999761581421,
+            "ms": 62.90000003576279
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 6.199999988079071,
+            "ms": 60.19999998807907
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 66.5,
+            "ms": 70.19999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 70.39999997615814,
+            "ms": 88.10000002384186
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 136.69999998807907,
+            "ms": 77
+          }
+        ],
+        "completedMs": 268.30000001192093,
+        "done": true,
+        "domReadyMs": 263.6,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.2,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.3,
+            "durationMs": 62.8
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 6.1,
+            "durationMs": 60.2
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 66.4,
+            "durationMs": 70.2
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 70.3,
+            "durationMs": 88
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 136.6,
+            "durationMs": 77
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.3,
+            "durationMs": 214.6
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 214.9,
+            "durationMs": 0.8
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 216.1,
+            "durationMs": 47.4
+          }
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.2999999523162842,
+            "ms": 70.90000003576279
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 3.699999988079071,
+            "ms": 70.30000001192093
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 74.09999996423721,
+            "ms": 87.90000003576279
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 77.59999996423721,
+            "ms": 94.5
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 162.0999999642372,
+            "ms": 58.80000001192093
+          }
+        ],
+        "completedMs": 227.39999997615814,
+        "done": true,
+        "domReadyMs": 226.2,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.2,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.3,
+            "durationMs": 70.9
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 3.7,
+            "durationMs": 70.3
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 74.1,
+            "durationMs": 87.9
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 77.7,
+            "durationMs": 94.4
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 162.2,
+            "durationMs": 58.7
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.2,
+            "durationMs": 220.7
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 220.9,
+            "durationMs": 0.3
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 221.5,
+            "durationMs": 4.7
+          }
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.10000002384185791,
+            "ms": 79.5
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 3.700000047683716,
+            "ms": 76
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 79.90000003576279,
+            "ms": 94.5
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 87.10000002384186,
+            "ms": 102.60000002384186
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 174.4000000357628,
+            "ms": 76.39999997615814
+          }
+        ],
+        "completedMs": 270.7000000476837,
+        "done": true,
+        "domReadyMs": 268.6,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 79.5
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 3.7,
+            "durationMs": 76
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 79.9,
+            "durationMs": 94.4
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 87.1,
+            "durationMs": 102.6
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 174.4,
+            "durationMs": 76.3
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 251.3
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 251.4,
+            "durationMs": 0.5
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 252.1,
+            "durationMs": 16.4
+          }
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.10000002384185791,
+            "ms": 93
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 4.5,
+            "ms": 98
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 102.5,
+            "ms": 83.90000003576279
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 106.5,
+            "ms": 86.90000003576279
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 186.4000000357628,
+            "ms": 88.59999996423721
+          }
+        ],
+        "completedMs": 304.60000002384186,
+        "done": true,
+        "domReadyMs": 302.4,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 92.9
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 4.5,
+            "durationMs": 98
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 102.5,
+            "durationMs": 83.9
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 106.6,
+            "durationMs": 86.8
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 186.4,
+            "durationMs": 88.6
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 274.9
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 275,
+            "durationMs": 0.8
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 276.1,
+            "durationMs": 25.9
+          }
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.19999998807907104,
+            "ms": 99.5
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 4.699999988079071,
+            "ms": 110.19999998807907
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 114.89999997615814,
+            "ms": 131.19999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 122.59999996423721,
+            "ms": 134.30000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 246.30000001192093,
+            "ms": 125.39999997615814
+          }
+        ],
+        "completedMs": 482.69999998807907,
+        "done": true,
+        "domReadyMs": 472.1,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.2,
+            "durationMs": 99.4
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 4.7,
+            "durationMs": 110.1
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 114.9,
+            "durationMs": 131.1
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 122.6,
+            "durationMs": 134.3
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 246.3,
+            "durationMs": 125.4
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 372.3
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 372.4,
+            "durationMs": 0.8
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 373.7,
+            "durationMs": 97.7
+          }
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.30000001192092896,
+            "ms": 147.29999995231628
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 9.300000011920929,
+            "ms": 143.69999998807907
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 153,
+            "ms": 166.69999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 165.69999998807907,
+            "ms": 164.69999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 319.89999997615814,
+            "ms": 110.80000001192093
+          }
+        ],
+        "completedMs": 455.89999997615814,
+        "done": true,
+        "domReadyMs": 447.6,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.2,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.3,
+            "durationMs": 147.3
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 9.3,
+            "durationMs": 143.7
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 153,
+            "durationMs": 166.6
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 165.7,
+            "durationMs": 164.7
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 319.9,
+            "durationMs": 110.8
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.3,
+            "durationMs": 430.4
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 430.7,
+            "durationMs": 0.5
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 431.4,
+            "durationMs": 15.9
+          }
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.10000002384185791,
+            "ms": 74.09999996423721
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 4.399999976158142,
+            "ms": 80.40000003576279
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 84.80000001192093,
+            "ms": 102.19999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 89,
+            "ms": 105.39999997615814
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 187.10000002384186,
+            "ms": 68.89999997615814
+          }
+        ],
+        "completedMs": 290.69999998807907,
+        "done": true,
+        "domReadyMs": 288.3,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 74
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 4.4,
+            "durationMs": 80.3
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 84.8,
+            "durationMs": 102.2
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 89,
+            "durationMs": 105.4
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 187.1,
+            "durationMs": 68.9
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 256.4
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 256.5,
+            "durationMs": 0.4
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 257.1,
+            "durationMs": 31.2
+          }
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.8999999761581421,
+            "ms": 110.60000002384186
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 8.300000011920929,
+            "ms": 107.69999998807907
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 116.09999996423721,
+            "ms": 83.40000003576279
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 122.09999996423721,
+            "ms": 84
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 199.5999999642372,
+            "ms": 109.90000003576279
+          }
+        ],
+        "completedMs": 334.5,
+        "done": true,
+        "domReadyMs": 330.8,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.5,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.8,
+            "durationMs": 110.4
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 8.2,
+            "durationMs": 107.6
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 116,
+            "durationMs": 83.4
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 122,
+            "durationMs": 84
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 199.5,
+            "durationMs": 109.9
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.7,
+            "durationMs": 308.7
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 309.4,
+            "durationMs": 0.8
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 310.5,
+            "durationMs": 19.7
+          }
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.19999998807907104,
+            "ms": 76.80000001192093
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 4.5,
+            "ms": 79.39999997615814
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 84,
+            "ms": 108.39999997615814
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 89.80000001192093,
+            "ms": 112.39999997615814
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 192.39999997615814,
+            "ms": 109.30000001192093
+          }
+        ],
+        "completedMs": 359.69999998807907,
+        "done": true,
+        "domReadyMs": 357.5,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 76.8
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 4.4,
+            "durationMs": 79.3
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 83.9,
+            "durationMs": 108.4
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 89.7,
+            "durationMs": 112.3
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 192.4,
+            "durationMs": 109.2
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 303.2
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 303.3,
+            "durationMs": 0.8
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 304.2,
+            "durationMs": 53.2
+          }
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.20000004768371582,
+            "ms": 90.69999998807907
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 3.800000011920929,
+            "ms": 96.10000002384186
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 109.5,
+            "ms": 91
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 100,
+            "ms": 100.70000004768372
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 200.80000001192093,
+            "ms": 69.60000002384186
+          }
+        ],
+        "completedMs": 280.9000000357628,
+        "done": true,
+        "domReadyMs": 279.7,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.2,
+            "durationMs": 90.7
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 3.8,
+            "durationMs": 96
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 109.5,
+            "durationMs": 91
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 100,
+            "durationMs": 100.7
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 200.8,
+            "durationMs": 69.6
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 270.3
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 270.4,
+            "durationMs": 0.9
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 271.6,
+            "durationMs": 8
+          }
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.10000002384185791,
+            "ms": 59.89999997615814
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 3.900000035762787,
+            "ms": 61.59999996423721
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 65.60000002384186,
+            "ms": 93
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 74.5,
+            "ms": 95.80000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 158.60000002384186,
+            "ms": 77.10000002384186
+          }
+        ],
+        "completedMs": 252,
+        "done": true,
+        "domReadyMs": 250.1,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0,
+            "durationMs": 59.9
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 3.8,
+            "durationMs": 61.6
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 65.5,
+            "durationMs": 92.9
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 74.4,
+            "durationMs": 95.8
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 158.6,
+            "durationMs": 77
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0,
+            "durationMs": 236
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 236,
+            "durationMs": 0.4
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 236.5,
+            "durationMs": 13.5
+          }
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.20000004768371582,
+            "ms": 83.5
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 5.400000035762787,
+            "ms": 83.09999996423721
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 88.60000002384186,
+            "ms": 89.30000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 95.60000002384186,
+            "ms": 92.69999998807907
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 177.9000000357628,
+            "ms": 91.59999996423721
+          }
+        ],
+        "completedMs": 283.60000002384186,
+        "done": true,
+        "domReadyMs": 280.1,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.2,
+            "durationMs": 83.5
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 5.4,
+            "durationMs": 83.1
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 88.6,
+            "durationMs": 89.2
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 95.6,
+            "durationMs": 92.6
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 177.9,
+            "durationMs": 91.6
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.2,
+            "durationMs": 269.3
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 269.5,
+            "durationMs": 0.5
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 270.2,
+            "durationMs": 9.6
+          }
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.19999998807907104,
+            "ms": 80.20000004768372
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 4.100000023841858,
+            "ms": 81.89999997615814
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 86,
+            "ms": 79.5
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 90.10000002384186,
+            "ms": 84.39999997615814
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 165.5,
+            "ms": 70.60000002384186
+          }
+        ],
+        "completedMs": 285.5,
+        "done": true,
+        "domReadyMs": 283.6,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 80.1
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 4,
+            "durationMs": 81.9
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 85.9,
+            "durationMs": 79.4
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 90,
+            "durationMs": 84.3
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 165.4,
+            "durationMs": 70.6
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 236.3
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 236.4,
+            "durationMs": 0.3
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 236.8,
+            "durationMs": 46.7
+          }
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.30000001192092896,
+            "ms": 105.59999996423721
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 12.099999964237213,
+            "ms": 98.30000001192093
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 110.5,
+            "ms": 86.39999997615814
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 119.19999998807907,
+            "ms": 90.5
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 196.89999997615814,
+            "ms": 92.40000003576279
+          }
+        ],
+        "completedMs": 304.80000001192093,
+        "done": true,
+        "domReadyMs": 303.3,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.2,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.3,
+            "durationMs": 105.6
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 12.2,
+            "durationMs": 98.1
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 110.5,
+            "durationMs": 86.3
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 119.2,
+            "durationMs": 90.5
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 196.9,
+            "durationMs": 92.2
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.3,
+            "durationMs": 289.1
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 289.4,
+            "durationMs": 3
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 293.7,
+            "durationMs": 9.6
+          }
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.10000002384185791,
+            "ms": 94.80000001192093
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 5,
+            "ms": 96.80000001192093
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 101.90000003576279,
+            "ms": 96.5
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 112.10000002384186,
+            "ms": 91.5
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 198.4000000357628,
+            "ms": 89.09999996423721
+          }
+        ],
+        "completedMs": 319.5,
+        "done": true,
+        "domReadyMs": 317.4,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.2,
+            "durationMs": 94.6
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 5.1,
+            "durationMs": 96.5
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 101.9,
+            "durationMs": 96.5
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 112.1,
+            "durationMs": 91.5
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 198.4,
+            "durationMs": 89.1
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 288.5
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 288.6,
+            "durationMs": 0.6
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 289.4,
+            "durationMs": 27.9
+          }
+        ]
+      },
+      {
+        "path": "small/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.10000002384185791,
+            "ms": 74.80000001192093
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 3.700000047683716,
+            "ms": 73.19999998807907
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 76.90000003576279,
+            "ms": 93.89999997615814
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 84.20000004768372,
+            "ms": 91.39999997615814
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 170.9000000357628,
+            "ms": 105.19999998807907
+          }
+        ],
+        "completedMs": 285.5,
+        "done": true,
+        "domReadyMs": 284.3,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 74.8
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 3.7,
+            "durationMs": 73.1
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 76.9,
+            "durationMs": 93.9
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 84.2,
+            "durationMs": 91.4
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 170.9,
+            "durationMs": 105.2
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 276
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 276.1,
+            "durationMs": 0.4
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 276.7,
+            "durationMs": 7.6
+          }
+        ]
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.09999996423721313,
+            "ms": 93.10000002384186
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 6.399999976158142,
+            "ms": 110.10000002384186
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 116.59999996423721,
+            "ms": 151.70000004768372
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 124.59999996423721,
+            "ms": 151.10000002384186
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 268.30000001192093,
+            "ms": 139.5
+          }
+        ],
+        "completedMs": 546.1999999880791,
+        "done": true,
+        "domReadyMs": 532.6,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.1,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.1,
+            "durationMs": 93
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 6.4,
+            "durationMs": 110
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 116.6,
+            "durationMs": 151.6
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 124.6,
+            "durationMs": 151.1
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 268.3,
+            "durationMs": 139.5
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.1,
+            "durationMs": 408.8
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 408.9,
+            "durationMs": 0.7
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 410.1,
+            "durationMs": 122
+          }
+        ]
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.30000001192092896,
+            "ms": 98.30000001192093
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 11.400000035762787,
+            "ms": 100.59999996423721
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 112,
+            "ms": 98.80000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 116.40000003576279,
+            "ms": 107.09999996423721
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 210.80000001192093,
+            "ms": 99.10000002384186
+          }
+        ],
+        "completedMs": 318.9000000357628,
+        "done": true,
+        "domReadyMs": 316.2,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.2,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.3,
+            "durationMs": 98.2
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 11.4,
+            "durationMs": 100.6
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 112,
+            "durationMs": 98.7
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 116.4,
+            "durationMs": 107.1
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 210.8,
+            "durationMs": 99.1
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.2,
+            "durationMs": 309.7
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 309.9,
+            "durationMs": 0.5
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 310.6,
+            "durationMs": 5.5
+          }
+        ]
+      },
+      {
+        "path": "large/note.md",
+        "trusted": true,
+        "spans": [
+          {
+            "name": "git:rev-parse:--verify",
+            "start": 0.5,
+            "ms": 113.19999998807907
+          },
+          {
+            "name": "git:ls-files:--stage",
+            "start": 10.800000011920929,
+            "ms": 121.60000002384186
+          },
+          {
+            "name": "git:ls-tree:-z",
+            "start": 132.60000002384186,
+            "ms": 128.80000001192093
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 139.9000000357628,
+            "ms": 135.0999999642372
+          },
+          {
+            "name": "git:cat-file:blob",
+            "start": 261.5,
+            "ms": 215.69999998807907
+          }
+        ],
+        "completedMs": 544,
+        "done": true,
+        "domReadyMs": 528.7,
+        "stages": [
+          {
+            "name": "save-before-switch",
+            "startMs": 0.3,
+            "durationMs": 0
+          },
+          {
+            "name": "git:rev-parse",
+            "startMs": 0.4,
+            "durationMs": 113.2
+          },
+          {
+            "name": "git:ls-files",
+            "startMs": 10.7,
+            "durationMs": 121.6
+          },
+          {
+            "name": "git:ls-tree",
+            "startMs": 132.5,
+            "durationMs": 128.7
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 139.8,
+            "durationMs": 135
+          },
+          {
+            "name": "git:cat-file:blob",
+            "startMs": 261.5,
+            "durationMs": 215.4
+          },
+          {
+            "name": "comparison-data",
+            "startMs": 0.3,
+            "durationMs": 482
+          },
+          {
+            "name": "destroy-editor",
+            "startMs": 482.3,
+            "durationMs": 1.9
+          },
+          {
+            "name": "create-readonly-editor",
+            "startMs": 485,
+            "durationMs": 42.9
+          }
+        ]
+      }
+    ],
+    "mode": "sequential",
+    "cache": "warm after first cycle"
+  }
+}

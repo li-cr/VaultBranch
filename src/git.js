@@ -368,31 +368,7 @@ class GitService {
     };
     if (stat.size > MAX_PREVIEW) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
     const working = decode(await measure(timing, "read-working-file", () => fs.readFile(absolute)));
-    let index = "";
-    if (entry) {
-      const hash = entry[2];
-      if (this.previewBlobs?.has(hash)) {
-        index = this.previewBlobs.get(hash);
-        this.previewBlobs.delete(hash); this.previewBlobs.set(hash, index);
-        if (timing) timing.record.blobCacheHits = (timing.record.blobCacheHits || 0) + 1;
-      }
-      else {
-        index = await this.run(["cat-file", "blob", hash], { maxBuffer: MAX_PREVIEW, timing });
-        if (index.includes("\0") || index.includes("\ufffd")) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
-        // Only immutable blobs are cached; mutable index and disk state stay live.
-        this.previewBlobs ||= new Map();
-        // Another concurrent read may have filled the same hash while awaiting Git.
-        if (!this.previewBlobs.has(hash)) {
-          this.previewBlobs.set(hash, index);
-          this.previewBlobBytes = (this.previewBlobBytes || 0) + Buffer.byteLength(index, "utf8");
-          while (this.previewBlobs.size > 8 || this.previewBlobBytes > MAX_PREVIEW * 2) {
-            const oldest = this.previewBlobs.keys().next().value;
-            this.previewBlobBytes -= Buffer.byteLength(this.previewBlobs.get(oldest), "utf8");
-            this.previewBlobs.delete(oldest);
-          }
-        }
-      }
-    }
+    const index = await this.textBlob(entry?.[2], timing);
     if (timing) { timing.record.workingBytes = stat.size; timing.record.indexBytes = Buffer.byteLength(index, "utf8"); }
     return { index, working };
   }
@@ -612,9 +588,27 @@ class GitService {
   async textBlob(hash, timing) {
     if (!hash) return "";
     this.checkCommit(hash);
-    if (Number(await this.run(["cat-file", "-s", hash], { timing })) > MAX_PREVIEW) throw new Error(t("文件超过 2 MB，请在外部编辑器中查看。"));
-    const text = await this.run(["cat-file", "blob", hash], { timing });
+    if (this.previewBlobs?.has(hash)) {
+      const text = this.previewBlobs.get(hash);
+      this.previewBlobs.delete(hash); this.previewBlobs.set(hash, text);
+      if (timing) timing.record.blobCacheHits = (timing.record.blobCacheHits || 0) + 1;
+      return text;
+    }
+    const text = await this.run(["cat-file", "blob", hash], { maxBuffer: MAX_PREVIEW, timing });
+    if (Buffer.byteLength(text, "utf8") > MAX_PREVIEW) throw new Error(t("文件超过 2 MB，请在外部编辑器中查看。"));
     if (text.includes("\0") || text.includes("\ufffd")) throw new Error(t("此版本不是可预览的 UTF-8 文本。"));
+    // Share the existing bounded immutable-blob cache across all diff views.
+    // HEAD, index and working files are still read afresh on every request.
+    this.previewBlobs ||= new Map();
+    if (!this.previewBlobs.has(hash)) {
+      this.previewBlobs.set(hash, text);
+      this.previewBlobBytes = (this.previewBlobBytes || 0) + Buffer.byteLength(text, "utf8");
+      while (this.previewBlobs.size > 8 || this.previewBlobBytes > MAX_PREVIEW * 2) {
+        const oldest = this.previewBlobs.keys().next().value;
+        this.previewBlobBytes -= Buffer.byteLength(this.previewBlobs.get(oldest), "utf8");
+        this.previewBlobs.delete(oldest);
+      }
+    }
     return text;
   }
 
@@ -639,8 +633,12 @@ class GitService {
       return { left, right };
     }
     if (area !== "staged") return null;
-    const head = (await this.run(["rev-parse", "--verify", "--quiet", "HEAD"], { allowDiffExit: true, timing })).trim();
-    const entries = (await this.run(["ls-files", "--stage", "-z", "--", file.path], { timing })).split("\0").filter(Boolean);
+    const [headOutput, indexOutput] = await Promise.all([
+      this.run(["rev-parse", "--verify", "--quiet", "HEAD"], { allowDiffExit: true, timing }),
+      this.run(["ls-files", "--stage", "-z", "--", file.path], { timing }),
+    ]);
+    const head = headOutput.trim();
+    const entries = indexOutput.split("\0").filter(Boolean);
     const entry = entries.find(line => /^\d+ [a-f0-9]+ 0\t/.test(line));
     if (entries.length && !entry) throw new Error(t("请先解决冲突。"));
     const [left, right] = await Promise.all([

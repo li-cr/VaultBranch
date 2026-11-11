@@ -171,6 +171,35 @@ test("staged comparison reads HEAD and index including an unborn branch and stag
   assert.equal(git(root, "show", ":new.md"), "initial\n");
 });
 
+test("staged and working comparisons share bounded blobs while HEAD and index stay live", async () => {
+  const { root, service } = await fixture();
+  await write(root, "note.md", "committed\n"); git(root, "add", "."); git(root, "commit", "-m", "base");
+  await write(root, "note.md", "staged\n"); git(root, "add", ".");
+  await write(root, "note.md", "working only\n");
+  const run = service.run, calls = [];
+  service.run = function(args, options) { calls.push([...args]); return run.call(this, args, options); };
+  const file = { path: "note.md" }, index = git(root, "write-tree");
+  const staged = await service.comparisonVersions(file, "staged");
+  assert.deepEqual(staged, { left: "committed\n", right: "staged\n" });
+  assert.equal(calls.filter(args => args[0] === "cat-file").length, 2, "one bounded read for each immutable version");
+  calls.length = 0;
+  assert.deepEqual(await service.worktreeVersions(file.path), { index: "staged\n", working: "working only\n" });
+  assert.equal(calls.some(args => args[0] === "cat-file"), false, "working view reuses the validated staged blob");
+  calls.length = 0;
+  assert.deepEqual(await service.comparisonVersions(file, "staged"), staged);
+  assert.deepEqual(calls.map(args => args[0]).sort(), ["ls-files", "ls-tree", "rev-parse"]);
+  assert.equal(git(root, "write-tree"), index);
+  git(root, "add", ".");
+  assert.deepEqual(await service.comparisonVersions(file, "staged"), { left: "committed\n", right: "working only\n" });
+  git(root, "commit", "-m", "external commit");
+  assert.deepEqual(await service.comparisonVersions(file, "staged"), { left: "working only\n", right: "working only\n" });
+  await write(root, file.path, Buffer.alloc(2 * 1024 * 1024 + 1, 97)); git(root, "add", ".");
+  await assert.rejects(service.comparisonVersions(file, "staged"), /2 MB/);
+  assert.ok(service.previewBlobBytes <= 4 * 1024 * 1024);
+  await write(root, file.path, Buffer.from([0, 1, 2])); git(root, "add", ".");
+  await assert.rejects(service.comparisonVersions(file, "staged"), /UTF-8/);
+});
+
 test("file history loads the first 50 entries and then older commits with no duplicates", async () => {
   const { root, service } = await fixture();
   let input = "";

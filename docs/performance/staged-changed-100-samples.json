@@ -1,0 +1,1180 @@
+{
+  "version": "0.2.36",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+  "statusCounts": {
+    "staged": 100,
+    "changed": 100
+  },
+  "indexUnchanged": true,
+  "modeChecksPassed": true,
+  "fixtures": [
+    {
+      "path": "staged/small/note.md",
+      "bytes": 28,
+      "lines": 3
+    },
+    {
+      "path": "staged/large/deep/json/data.json",
+      "bytes": 1633783,
+      "lines": 96003
+    },
+    {
+      "path": "staged/small/deep/json/data.json",
+      "bytes": 26,
+      "lines": 2
+    },
+    {
+      "path": "staged/large/note.md",
+      "bytes": 1284890,
+      "lines": 24001
+    },
+    {
+      "path": "changed/small/note.md",
+      "bytes": 28,
+      "lines": 3
+    },
+    {
+      "path": "changed/large/deep/json/data.json",
+      "bytes": 1633783,
+      "lines": 96003
+    },
+    {
+      "path": "changed/small/deep/json/data.json",
+      "bytes": 26,
+      "lines": 2
+    },
+    {
+      "path": "changed/large/note.md",
+      "bytes": 1284890,
+      "lines": 24001
+    }
+  ],
+  "samples": [
+    {
+      "path": "staged/small/note.md",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 2.199999988079071,
+          "ms": 108.80000001192093
+        },
+        {
+          "command": "ls-files",
+          "start": 8.899999976158142,
+          "ms": 109.80000001192093
+        },
+        {
+          "command": "ls-tree",
+          "start": 118.80000001192093,
+          "ms": 125.39999997615814
+        },
+        {
+          "command": "cat-file",
+          "start": 128.0999999642372,
+          "ms": 116.20000004768372
+        }
+      ],
+      "completedMs": 291.39999997615814,
+      "domReadyMs": 288.5,
+      "gitCalls": 4
+    },
+    {
+      "path": "staged/large/deep/json/data.json",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 6.400000035762787,
+          "ms": 131.0999999642372
+        },
+        {
+          "command": "rev-parse",
+          "start": 0.20000004768371582,
+          "ms": 137.39999997615814
+        },
+        {
+          "command": "ls-tree",
+          "start": 137.60000002384186,
+          "ms": 123.30000001192093
+        },
+        {
+          "command": "cat-file",
+          "start": 147.20000004768372,
+          "ms": 128.79999995231628
+        }
+      ],
+      "completedMs": 405.7000000476837,
+      "domReadyMs": 397,
+      "gitCalls": 4
+    },
+    {
+      "path": "staged/small/deep/json/data.json",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.6000000238418579,
+          "ms": 142.30000001192093
+        },
+        {
+          "command": "ls-files",
+          "start": 6.400000035762787,
+          "ms": 142.79999995231628
+        },
+        {
+          "command": "ls-tree",
+          "start": 149.19999998807907,
+          "ms": 126.10000002384186
+        },
+        {
+          "command": "cat-file",
+          "start": 157.60000002384186,
+          "ms": 133.30000001192093
+        },
+        {
+          "command": "cat-file",
+          "start": 275.30000001192093,
+          "ms": 128.89999997615814
+        }
+      ],
+      "completedMs": 433.30000001192093,
+      "domReadyMs": 428.3,
+      "gitCalls": 5
+    },
+    {
+      "path": "staged/large/note.md",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.9000000357627869,
+          "ms": 108.09999996423721
+        },
+        {
+          "command": "ls-files",
+          "start": 8.900000035762787,
+          "ms": 108.30000001192093
+        },
+        {
+          "command": "ls-tree",
+          "start": 117.5,
+          "ms": 144.70000004768372
+        },
+        {
+          "command": "cat-file",
+          "start": 128.80000001192093,
+          "ms": 150.69999998807907
+        },
+        {
+          "command": "cat-file",
+          "start": 262.2000000476837,
+          "ms": 149.5999999642372
+        }
+      ],
+      "completedMs": 507,
+      "domReadyMs": 493.8,
+      "gitCalls": 5
+    },
+    {
+      "path": "changed/small/note.md",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.800000011920929,
+          "ms": 89.5
+        },
+        {
+          "command": "cat-file",
+          "start": 91,
+          "ms": 107.89999997615814
+        },
+        {
+          "command": "ls-files",
+          "start": 245.5999999642372,
+          "ms": 146.80000001192093
+        }
+      ],
+      "completedMs": 395.19999998807907,
+      "domReadyMs": 240.3,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/large/deep/json/data.json",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 1.699999988079071,
+          "ms": 118.5
+        },
+        {
+          "command": "cat-file",
+          "start": 126.5,
+          "ms": 205.69999998807907
+        },
+        {
+          "command": "ls-files",
+          "start": 486.60000002384186,
+          "ms": 147.39999997615814
+        }
+      ],
+      "completedMs": 656.8000000119209,
+      "domReadyMs": 479.4,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/small/deep/json/data.json",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.40000003576278687,
+          "ms": 183
+        },
+        {
+          "command": "cat-file",
+          "start": 184.80000001192093,
+          "ms": 117.80000001192093
+        },
+        {
+          "command": "ls-files",
+          "start": 329.2000000476837,
+          "ms": 57.19999998807907
+        }
+      ],
+      "completedMs": 387.10000002384186,
+      "domReadyMs": 326.4,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/large/note.md",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.3999999761581421,
+          "ms": 56
+        },
+        {
+          "command": "ls-files",
+          "start": 87.5,
+          "ms": 63
+        }
+      ],
+      "completedMs": 153,
+      "domReadyMs": 84.3,
+      "gitCalls": 2
+    },
+    {
+      "path": "staged/small/note.md",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.19999998807907104,
+          "ms": 56.5
+        },
+        {
+          "command": "ls-files",
+          "start": 4.099999964237213,
+          "ms": 57.80000001192093
+        },
+        {
+          "command": "ls-tree",
+          "start": 62,
+          "ms": 65.39999997615814
+        },
+        {
+          "command": "cat-file",
+          "start": 65.89999997615814,
+          "ms": 66
+        }
+      ],
+      "completedMs": 149.5,
+      "domReadyMs": 147.1,
+      "gitCalls": 4
+    },
+    {
+      "path": "staged/large/deep/json/data.json",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.19999998807907104,
+          "ms": 59.60000002384186
+        },
+        {
+          "command": "ls-files",
+          "start": 7.599999964237213,
+          "ms": 57.200000047683716
+        },
+        {
+          "command": "ls-tree",
+          "start": 64.80000001192093,
+          "ms": 63.59999996423721
+        },
+        {
+          "command": "cat-file",
+          "start": 70,
+          "ms": 62.30000001192093
+        }
+      ],
+      "completedMs": 182.89999997615814,
+      "domReadyMs": 179.5,
+      "gitCalls": 4
+    },
+    {
+      "path": "staged/small/deep/json/data.json",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.10000002384185791,
+          "ms": 70.69999998807907
+        },
+        {
+          "command": "ls-files",
+          "start": 3.800000011920929,
+          "ms": 71.80000001192093
+        },
+        {
+          "command": "cat-file",
+          "start": 80.80000001192093,
+          "ms": 63.09999996423721
+        },
+        {
+          "command": "ls-tree",
+          "start": 75.60000002384186,
+          "ms": 69.59999996423721
+        },
+        {
+          "command": "cat-file",
+          "start": 145.30000001192093,
+          "ms": 77.19999998807907
+        }
+      ],
+      "completedMs": 242,
+      "domReadyMs": 239.7,
+      "gitCalls": 5
+    },
+    {
+      "path": "staged/large/note.md",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.10000002384185791,
+          "ms": 70.59999996423721
+        },
+        {
+          "command": "ls-files",
+          "start": 7.300000011920929,
+          "ms": 70.60000002384186
+        },
+        {
+          "command": "ls-tree",
+          "start": 77.90000003576279,
+          "ms": 56.59999996423721
+        },
+        {
+          "command": "cat-file",
+          "start": 81.60000002384186,
+          "ms": 65.59999996423721
+        },
+        {
+          "command": "cat-file",
+          "start": 134.5,
+          "ms": 61.30000001192093
+        }
+      ],
+      "completedMs": 224,
+      "domReadyMs": 217.2,
+      "gitCalls": 5
+    },
+    {
+      "path": "changed/small/note.md",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.19999998807907104,
+          "ms": 60.30000001192093
+        },
+        {
+          "command": "cat-file",
+          "start": 61,
+          "ms": 51.299999952316284
+        },
+        {
+          "command": "ls-files",
+          "start": 127.5,
+          "ms": 56.19999998807907
+        }
+      ],
+      "completedMs": 184.5999999642372,
+      "domReadyMs": 125.1,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/large/deep/json/data.json",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.3999999761581421,
+          "ms": 51.80000001192093
+        },
+        {
+          "command": "cat-file",
+          "start": 54.89999997615814,
+          "ms": 70.10000002384186
+        },
+        {
+          "command": "ls-files",
+          "start": 189.19999998807907,
+          "ms": 75.39999997615814
+        }
+      ],
+      "completedMs": 268.2999999523163,
+      "domReadyMs": 185.5,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/small/deep/json/data.json",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.3999999761581421,
+          "ms": 77.5
+        },
+        {
+          "command": "cat-file",
+          "start": 78.80000001192093,
+          "ms": 68.69999998807907
+        },
+        {
+          "command": "ls-files",
+          "start": 166.19999998807907,
+          "ms": 67.30000001192093
+        }
+      ],
+      "completedMs": 234.19999998807907,
+      "domReadyMs": 163.7,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/large/note.md",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.5,
+          "ms": 63.89999997615814
+        },
+        {
+          "command": "ls-files",
+          "start": 96,
+          "ms": 66.79999995231628
+        }
+      ],
+      "completedMs": 165.0999999642372,
+      "domReadyMs": 92.7,
+      "gitCalls": 2
+    },
+    {
+      "path": "staged/small/note.md",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.30000001192092896,
+          "ms": 62.60000002384186
+        },
+        {
+          "command": "ls-files",
+          "start": 4.300000011920929,
+          "ms": 61
+        },
+        {
+          "command": "ls-tree",
+          "start": 65.30000001192093,
+          "ms": 68
+        },
+        {
+          "command": "cat-file",
+          "start": 69.20000004768372,
+          "ms": 66.09999996423721
+        }
+      ],
+      "completedMs": 150.4000000357628,
+      "domReadyMs": 147.9,
+      "gitCalls": 4
+    },
+    {
+      "path": "staged/large/deep/json/data.json",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.40000003576278687,
+          "ms": 60
+        },
+        {
+          "command": "ls-files",
+          "start": 5,
+          "ms": 58.60000002384186
+        },
+        {
+          "command": "ls-tree",
+          "start": 63.60000002384186,
+          "ms": 65.39999997615814
+        },
+        {
+          "command": "cat-file",
+          "start": 69.10000002384186,
+          "ms": 73.69999998807907
+        }
+      ],
+      "completedMs": 195.30000001192093,
+      "domReadyMs": 192,
+      "gitCalls": 4
+    },
+    {
+      "path": "staged/small/deep/json/data.json",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.19999998807907104,
+          "ms": 71.10000002384186
+        },
+        {
+          "command": "ls-files",
+          "start": 5.300000011920929,
+          "ms": 68.30000001192093
+        },
+        {
+          "command": "ls-tree",
+          "start": 73.69999998807907,
+          "ms": 117.80000001192093
+        },
+        {
+          "command": "cat-file",
+          "start": 77.69999998807907,
+          "ms": 118.30000001192093
+        },
+        {
+          "command": "cat-file",
+          "start": 191.5,
+          "ms": 64.39999997615814
+        }
+      ],
+      "completedMs": 280.60000002384186,
+      "domReadyMs": 278.1,
+      "gitCalls": 5
+    },
+    {
+      "path": "staged/large/note.md",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.699999988079071,
+          "ms": 59.69999998807907
+        },
+        {
+          "command": "ls-files",
+          "start": 5.899999976158142,
+          "ms": 57
+        },
+        {
+          "command": "ls-tree",
+          "start": 62.89999997615814,
+          "ms": 58.89999997615814
+        },
+        {
+          "command": "cat-file",
+          "start": 67,
+          "ms": 60.09999996423721
+        },
+        {
+          "command": "cat-file",
+          "start": 121.79999995231628,
+          "ms": 57.10000002384186
+        }
+      ],
+      "completedMs": 198.89999997615814,
+      "domReadyMs": 196,
+      "gitCalls": 5
+    },
+    {
+      "path": "changed/small/note.md",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.9000000357627869,
+          "ms": 54
+        },
+        {
+          "command": "cat-file",
+          "start": 55.40000003576279,
+          "ms": 51.299999952316284
+        },
+        {
+          "command": "ls-files",
+          "start": 123.30000001192093,
+          "ms": 53.30000001192093
+        }
+      ],
+      "completedMs": 177.30000001192093,
+      "domReadyMs": 120.1,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/large/deep/json/data.json",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.3999999761581421,
+          "ms": 67.90000003576279
+        },
+        {
+          "command": "cat-file",
+          "start": 71,
+          "ms": 65.59999996423721
+        },
+        {
+          "command": "ls-files",
+          "start": 178,
+          "ms": 60.69999998807907
+        }
+      ],
+      "completedMs": 247.5,
+      "domReadyMs": 171.5,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/small/deep/json/data.json",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.5999999642372131,
+          "ms": 56.80000001192093
+        },
+        {
+          "command": "cat-file",
+          "start": 57.89999997615814,
+          "ms": 54
+        },
+        {
+          "command": "ls-files",
+          "start": 128.5999999642372,
+          "ms": 71.20000004768372
+        }
+      ],
+      "completedMs": 201,
+      "domReadyMs": 126,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/large/note.md",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.30000001192092896,
+          "ms": 54.5
+        },
+        {
+          "command": "ls-files",
+          "start": 83.20000004768372,
+          "ms": 60.799999952316284
+        }
+      ],
+      "completedMs": 147.20000004768372,
+      "domReadyMs": 79.9,
+      "gitCalls": 2
+    },
+    {
+      "path": "staged/small/note.md",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.30000001192092896,
+          "ms": 56.299999952316284
+        },
+        {
+          "command": "ls-files",
+          "start": 3.800000011920929,
+          "ms": 57
+        },
+        {
+          "command": "ls-tree",
+          "start": 60.89999997615814,
+          "ms": 65.19999998807907
+        },
+        {
+          "command": "cat-file",
+          "start": 65.19999998807907,
+          "ms": 65.69999998807907
+        }
+      ],
+      "completedMs": 148.0999999642372,
+      "domReadyMs": 145.7,
+      "gitCalls": 4
+    },
+    {
+      "path": "staged/large/deep/json/data.json",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.30000001192092896,
+          "ms": 60.80000001192093
+        },
+        {
+          "command": "ls-files",
+          "start": 4.400000035762787,
+          "ms": 60.19999998807907
+        },
+        {
+          "command": "ls-tree",
+          "start": 64.69999998807907,
+          "ms": 67.10000002384186
+        },
+        {
+          "command": "cat-file",
+          "start": 69.30000001192093,
+          "ms": 67.60000002384186
+        }
+      ],
+      "completedMs": 197.30000001192093,
+      "domReadyMs": 193.5,
+      "gitCalls": 4
+    },
+    {
+      "path": "staged/small/deep/json/data.json",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.09999996423721313,
+          "ms": 66.5
+        },
+        {
+          "command": "ls-files",
+          "start": 3.699999988079071,
+          "ms": 67.5
+        },
+        {
+          "command": "ls-tree",
+          "start": 71.19999998807907,
+          "ms": 93.69999998807907
+        },
+        {
+          "command": "cat-file",
+          "start": 81.30000001192093,
+          "ms": 88
+        },
+        {
+          "command": "cat-file",
+          "start": 165,
+          "ms": 57.69999998807907
+        }
+      ],
+      "completedMs": 237.80000001192093,
+      "domReadyMs": 235.6,
+      "gitCalls": 5
+    },
+    {
+      "path": "staged/large/note.md",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.2999999523162842,
+          "ms": 70.60000002384186
+        },
+        {
+          "command": "ls-files",
+          "start": 4.099999964237213,
+          "ms": 76.5
+        },
+        {
+          "command": "ls-tree",
+          "start": 80.79999995231628,
+          "ms": 74
+        },
+        {
+          "command": "cat-file",
+          "start": 84.69999998807907,
+          "ms": 92.09999996423721
+        },
+        {
+          "command": "cat-file",
+          "start": 154.89999997615814,
+          "ms": 81.39999997615814
+        }
+      ],
+      "completedMs": 275.7999999523163,
+      "domReadyMs": 269.6,
+      "gitCalls": 5
+    },
+    {
+      "path": "changed/small/note.md",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.30000001192092896,
+          "ms": 62.10000002384186
+        },
+        {
+          "command": "cat-file",
+          "start": 62.90000003576279,
+          "ms": 57.39999997615814
+        },
+        {
+          "command": "ls-files",
+          "start": 147.9000000357628,
+          "ms": 66
+        }
+      ],
+      "completedMs": 215,
+      "domReadyMs": 140.9,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/large/deep/json/data.json",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.699999988079071,
+          "ms": 73.19999998807907
+        },
+        {
+          "command": "cat-file",
+          "start": 79.30000001192093,
+          "ms": 89.39999997615814
+        },
+        {
+          "command": "ls-files",
+          "start": 258.80000001192093,
+          "ms": 67.5
+        }
+      ],
+      "completedMs": 329.5,
+      "domReadyMs": 250.1,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/small/deep/json/data.json",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.699999988079071,
+          "ms": 78.69999998807907
+        },
+        {
+          "command": "cat-file",
+          "start": 80.19999998807907,
+          "ms": 89.10000002384186
+        },
+        {
+          "command": "ls-files",
+          "start": 205.10000002384186,
+          "ms": 142.89999997615814
+        }
+      ],
+      "completedMs": 349.89999997615814,
+      "domReadyMs": 198.8,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/large/note.md",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.3999999761581421,
+          "ms": 119.19999998807907
+        },
+        {
+          "command": "ls-files",
+          "start": 224.79999995231628,
+          "ms": 216.9000000357628
+        }
+      ],
+      "completedMs": 457.7999999523163,
+      "domReadyMs": 216.7,
+      "gitCalls": 2
+    },
+    {
+      "path": "staged/small/note.md",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.10000002384185791,
+          "ms": 118.09999996423721
+        },
+        {
+          "command": "ls-files",
+          "start": 8.400000035762787,
+          "ms": 131.39999997615814
+        },
+        {
+          "command": "ls-tree",
+          "start": 140,
+          "ms": 129.4000000357628
+        },
+        {
+          "command": "cat-file",
+          "start": 151.30000001192093,
+          "ms": 118.80000001192093
+        }
+      ],
+      "completedMs": 316.4000000357628,
+      "domReadyMs": 313.7,
+      "gitCalls": 4
+    },
+    {
+      "path": "staged/large/deep/json/data.json",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.800000011920929,
+          "ms": 121.39999997615814
+        },
+        {
+          "command": "ls-files",
+          "start": 9.900000035762787,
+          "ms": 118.39999997615814
+        },
+        {
+          "command": "ls-tree",
+          "start": 128.5,
+          "ms": 131
+        },
+        {
+          "command": "cat-file",
+          "start": 133.69999998807907,
+          "ms": 132.4000000357628
+        }
+      ],
+      "completedMs": 364.80000001192093,
+      "domReadyMs": 356.2,
+      "gitCalls": 4
+    },
+    {
+      "path": "staged/small/deep/json/data.json",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 0.5999999642372131,
+          "ms": 133.9000000357628
+        },
+        {
+          "command": "ls-files",
+          "start": 7.399999976158142,
+          "ms": 132.4000000357628
+        },
+        {
+          "command": "ls-tree",
+          "start": 140,
+          "ms": 141.30000001192093
+        },
+        {
+          "command": "cat-file",
+          "start": 147.5,
+          "ms": 152.39999997615814
+        },
+        {
+          "command": "cat-file",
+          "start": 281.30000001192093,
+          "ms": 152
+        }
+      ],
+      "completedMs": 473.80000001192093,
+      "domReadyMs": 471,
+      "gitCalls": 5
+    },
+    {
+      "path": "staged/large/note.md",
+      "area": "staged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "rev-parse",
+          "start": 1.0999999642372131,
+          "ms": 151.30000001192093
+        },
+        {
+          "command": "ls-files",
+          "start": 9.299999952316284,
+          "ms": 163.70000004768372
+        },
+        {
+          "command": "ls-tree",
+          "start": 173.0999999642372,
+          "ms": 158.9000000357628
+        },
+        {
+          "command": "cat-file",
+          "start": 182.69999998807907,
+          "ms": 161.89999997615814
+        },
+        {
+          "command": "cat-file",
+          "start": 332.0999999642372,
+          "ms": 125
+        }
+      ],
+      "completedMs": 511.5,
+      "domReadyMs": 508.2,
+      "gitCalls": 5
+    },
+    {
+      "path": "changed/small/note.md",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 1.0999999642372131,
+          "ms": 107.80000001192093
+        },
+        {
+          "command": "cat-file",
+          "start": 109.39999997615814,
+          "ms": 130.30000001192093
+        },
+        {
+          "command": "ls-files",
+          "start": 294.89999997615814,
+          "ms": 106.19999998807907
+        }
+      ],
+      "completedMs": 403.5,
+      "domReadyMs": 280.1,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/large/deep/json/data.json",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 1.300000011920929,
+          "ms": 111.30000001192093
+        },
+        {
+          "command": "cat-file",
+          "start": 127.10000002384186,
+          "ms": 134.69999998807907
+        },
+        {
+          "command": "ls-files",
+          "start": 418.9000000357628,
+          "ms": 141.39999997615814
+        }
+      ],
+      "completedMs": 580.6000000238419,
+      "domReadyMs": 410.6,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/small/deep/json/data.json",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 1.0999999642372131,
+          "ms": 110.90000003576279
+        },
+        {
+          "command": "cat-file",
+          "start": 114.19999998807907,
+          "ms": 114.39999997615814
+        },
+        {
+          "command": "ls-files",
+          "start": 265.80000001192093,
+          "ms": 115.59999996423721
+        }
+      ],
+      "completedMs": 384.0999999642372,
+      "domReadyMs": 259.1,
+      "gitCalls": 3
+    },
+    {
+      "path": "changed/large/note.md",
+      "area": "unstaged",
+      "trusted": true,
+      "spans": [
+        {
+          "command": "ls-files",
+          "start": 0.30000001192092896,
+          "ms": 160.5
+        },
+        {
+          "command": "ls-files",
+          "start": 233.19999998807907,
+          "ms": 169
+        }
+      ],
+      "completedMs": 415.30000001192093,
+      "domReadyMs": 224,
+      "gitCalls": 2
+    }
+  ],
+  "note": "40 trusted GUI clicks after discarding eight warm-up clicks; DOM-ready and navigation completion exclude physical paint."
+}
