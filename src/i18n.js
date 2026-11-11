@@ -3,6 +3,10 @@
 // Chinese source strings are the fallback; tagged templates keep values out of translation keys.
 let language = "zh";
 const english = {
+  "图片超过 10 MB，请在外部查看。": "Image exceeds 10 MB. View it externally.",
+  "此文件不支持图片预览。": "This file cannot be previewed as an image.",
+  "无法预览此图片；文件可能损坏或格式不受支持。": "Cannot preview this image; the file may be damaged or its format unsupported.",
+  "此版本无图片": "No image in this version",
   "调优：记录操作耗时": "Tuning: record operation timings",
   "默认关闭。记录差异文件打开的点击、排队、Git、编辑器和帧时间；仅保存在本机内存，不记录正文。关闭或重载后清空。": "Off by default. Record diff-opening clicks, queue, Git, editor and frame timings in local memory without file contents. Clear when disabled or reloaded.",
   "调优记录保留条数": "Timing record limit",

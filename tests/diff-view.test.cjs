@@ -217,7 +217,7 @@ function loadingFixture() {
   view.contentEl.children.push("complete previous page");
   Object.assign(view, { request: 0, stateRequest: 0, file: { path: "new.json" }, area: "unstaged", app: { keymap: { popScope() {} } } });
   view.plugin = {
-    settings: {}, diffDrafts: new Map(), ensureReady: async () => {},
+    git: {}, settings: {}, diffDrafts: new Map(), ensureReady: async () => {},
     editorSession: () => gate.promise,
     releaseEditorSession: (filePath, session) => released.push({ filePath, session }),
     setGraphReturn() {},

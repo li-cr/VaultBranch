@@ -5,6 +5,7 @@ const { FILE_HISTORY_VIEW, GitView, el, button } = require("./shared.js");
 const { readOnlyMerge, updateCollapse, updateDiffNavigation } = require("./merge.js");
 const { updateSyntaxHighlight } = require("./highlight.js");
 const { drawGraph } = require("./graph.js");
+const { prepareImages } = require("./images.js");
 
 class FileHistoryView extends GitView {
   constructor(leaf, plugin) {
@@ -29,7 +30,14 @@ class FileHistoryView extends GitView {
     await super.setState(state, result);
   }
 
-  destroyMerge() { this.merge?.destroy(); this.merge = null; this.updateDiffNavigation(); }
+  destroyMerge() { this.images?.destroy(); this.images = null; this.merge?.destroy(); this.merge = null; this.updateDiffNavigation(); }
+  async readComparison(commit) {
+    if (this.plugin.git.imageType?.(commit.path) || this.plugin.git.imageType?.(commit.oldPath || "")) {
+      const versions = await this.plugin.git.imageVersions(commit, "history");
+      return { images: await prepareImages(this.contentEl.ownerDocument, versions.images) };
+    }
+    return { versions: await this.plugin.git.comparisonVersions(commit, "history") };
+  }
   updateCollapse() { updateCollapse(this); }
   updateDiffNavigation() { updateDiffNavigation(this); }
   updateSyntaxHighlight() { return updateSyntaxHighlight(this); }
@@ -53,12 +61,12 @@ class FileHistoryView extends GitView {
         if (request !== this.request) return;
         const commit = data.commits.find(commit => commit.hash === this.selected) || data.commits[0];
         if (commit) {
-          try { prepared = { versions: await this.plugin.git.comparisonVersions(commit, "history") }; }
+          try { prepared = await this.readComparison(commit); }
           catch (error) { prepared = { error }; }
         }
       }
     } catch (error) { prepared = { error }; }
-    if (request !== this.request) return;
+    if (request !== this.request) { prepared?.images?.destroy(); return; }
     const scroll = this.contentEl.querySelector(".vaultbranch-file-history-sidebar")?.scrollTop || 0;
     this.destroyMerge();
     this.contentEl.empty();
@@ -124,12 +132,12 @@ class FileHistoryView extends GitView {
     const details = this.detailsEl;
     details.inert = true;
     details.setAttribute("aria-busy", "true");
-    let versions, failure;
+    let loaded, failure;
     try {
       if (prepared?.error) throw prepared.error;
-      versions = prepared ? prepared.versions : await this.plugin.git.comparisonVersions(commit, "history");
+      loaded = prepared || await this.readComparison(commit);
     } catch (error) { failure = error; }
-    if (request !== this.detailRequest || details !== this.detailsEl) return;
+    if (request !== this.detailRequest || details !== this.detailsEl) { loaded?.images?.destroy(); return; }
     this.destroyMerge();
     this.selected = commit.hash;
     const row = this.rows[this.commits.indexOf(commit)];
@@ -148,7 +156,12 @@ class FileHistoryView extends GitView {
     const body = el(details, "div", "vaultbranch-diff-body");
     try {
       if (failure) throw failure;
-      this.merge = readOnlyMerge(body, versions, [t("父提交（只读）"), t("当前提交（只读）")], this.plugin.settings);
+      if (loaded.images) {
+        this.images = loaded.images;
+        this.images.render(body, [t("父提交（只读）"), t("当前提交（只读）")]);
+        return;
+      }
+      this.merge = readOnlyMerge(body, loaded.versions, [t("父提交（只读）"), t("当前提交（只读）")], this.plugin.settings);
       this.highlightPath = commit.path;
       this.collapseEnabled = Boolean(this.plugin.settings.collapseUnchanged);
       this.updateDiffNavigation();

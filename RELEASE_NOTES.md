@@ -1,10 +1,10 @@
-VaultBranch 0.2.36 reduces repeated Git reads when switching Staged files.
+VaultBranch 0.2.37 adds image previews and side-by-side image comparisons.
 
-- Query HEAD and the staged index concurrently.
-- Share the bounded immutable-blob reader across Changed, Staged and historical comparisons. Keep the two-MiB content limit, eight-entry/four-MiB cache bounds, fresh HEAD/index reads and editable-session safety checks.
-- Remove separate blob-size subprocesses. The initial four-file local Staged benchmark used five Git calls per click instead of seven.
-- Simplify the English and Chinese README to main features and a GitHub Issues invitation.
+- Preview PNG, JPEG, GIF, WebP, BMP, ICO and AVIF files in Changes, Staged, commit diffs and file history, subject to the browser's format support.
+- Compare index to working tree in Changes, HEAD to index in Staged, and parent to selected commit in history. Added and deleted images display the available version alongside an empty-version label.
+- Decode both images before committing the complete page. Release image sources on switching, cancellation and close; retain the latest-request behavior and text editing safeguards.
+- Keep image previews read-only, limit each image to 10 MiB, and show a short error for oversized or undecodable files. Other binary files retain their existing fallback. SVG continues through the text diff flow.
 
-Validated with 107 local automated tests and trusted GUI switching in an isolated repository with 100 staged and 100 changed files. Staged comparisons remain read-only, Changed comparisons remain editable, and the index was unchanged. Local timings vary by file and machine; no equal-speed or 50-ms guarantee is claimed. See docs/performance/0.2.36.md for medians, ranges, raw measurements and reproduction.
+Validated locally with 108 automated tests, 30 image UI checks and 41 mixed Markdown/JSON diff UI checks in the disposable note_test vault. Image checks include a 3,608,585-byte PNG, nested paths, JPEG/WebP/GIF decoding, staged versus working content, root/deleted versions, stale requests and unchanged index. This is a feature update; no performance improvement is claimed.
 
 Release assets retain GitHub provenance attestations. Desktop only; requires Git installed separately.

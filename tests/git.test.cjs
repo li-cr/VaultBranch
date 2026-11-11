@@ -34,6 +34,49 @@ async function write(root, file, text) {
   await fs.writeFile(path.join(root, file), text);
 }
 
+test("image previews keep raw bytes and live HEAD/index/worktree versions without changing the index", async () => {
+  const { root, service } = await fixture();
+  const file = { path: "Fig/deep/nested/TMP-{counter_00X}.PNG" };
+  const base = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 255, 128]);
+  const staged = Buffer.concat([base, Buffer.from("staged")]);
+  const working = Buffer.concat([base, Buffer.from("working")]);
+  const bytes = version => version && Buffer.from(version.src.split(",")[1], "base64");
+  await write(root, file.path, base); git(root, "add", "."); git(root, "commit", "-m", "image base");
+  const hash = git(root, "rev-parse", "HEAD").trim();
+  await write(root, file.path, staged); git(root, "add", ".");
+  await write(root, file.path, working);
+  const index = git(root, "write-tree");
+  let versions = (await service.imageVersions(file, "staged")).images;
+  assert.equal(versions.left.mime, "image/png");
+  assert.deepEqual(bytes(versions.left), base); assert.deepEqual(bytes(versions.right), staged);
+  versions = (await service.imageVersions(file, "unstaged")).images;
+  assert.deepEqual(bytes(versions.left), staged); assert.deepEqual(bytes(versions.right), working);
+  assert.equal(git(root, "write-tree"), index);
+  versions = (await service.imageVersions({ ...file, commit: hash }, "history")).images;
+  assert.equal(versions.left, null); assert.deepEqual(bytes(versions.right), base);
+  git(root, "add", "."); git(root, "commit", "-m", "external image commit");
+  versions = (await service.imageVersions(file, "staged")).images;
+  assert.deepEqual(bytes(versions.left), working); assert.deepEqual(bytes(versions.right), working);
+  const renamed = "Fig/renamed.png"; git(root, "mv", file.path, renamed);
+  versions = (await service.imageVersions({ path: renamed, oldPath: file.path }, "staged")).images;
+  assert.deepEqual(bytes(versions.left), working); assert.deepEqual(bytes(versions.right), working);
+  git(root, "commit", "-m", "rename image");
+  await fs.unlink(path.join(root, renamed));
+  versions = (await service.imageVersions({ path: renamed }, "unstaged")).images;
+  assert.deepEqual(bytes(versions.left), working); assert.equal(versions.right, null);
+  git(root, "add", ".");
+  versions = (await service.imageVersions({ path: renamed }, "staged")).images;
+  assert.deepEqual(bytes(versions.left), working); assert.equal(versions.right, null);
+  await assert.rejects(service.imageVersions({ path: "../outside.png" }, "unstaged"), /路径/);
+  await write(root, "new.png", base);
+  versions = (await service.imageVersions({ path: "new.png" }, "unstaged")).images;
+  assert.equal(versions.left, null); assert.deepEqual(bytes(versions.right), base);
+  await write(root, "new.png", Buffer.alloc(10 * 1024 * 1024 + 1));
+  await assert.rejects(service.imageVersions({ path: "new.png" }, "unstaged"), /10 MB/);
+  git(root, "add", "new.png");
+  await assert.rejects(service.imageVersions({ path: "new.png" }, "staged"), /10 MB/);
+});
+
 test("file-history graph skips unrelated changes and retains fork and merge ancestry", async () => {
   const { root, service } = await fixture();
   const text = Array.from({ length: 40 }, (_, n) => `line ${n}\n`).join("");

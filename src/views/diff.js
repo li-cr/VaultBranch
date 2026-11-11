@@ -11,6 +11,7 @@ const { DIFF_VIEW, LABELS, el, button, GitView } = require("./shared.js");
 const { collapseOptions, updateCollapse, readOnlyMerge, updateDiffNavigation } = require("./merge.js");
 const { updateSyntaxHighlight } = require("./highlight.js");
 const { measure } = require("../timing.js");
+const { prepareImages } = require("./images.js");
 
 class DiffView extends GitView {
   constructor(leaf, plugin) {
@@ -67,6 +68,10 @@ class DiffView extends GitView {
   async readComparison(file, area, unified, timing) {
     await this.plugin.ensureReady();
     const warnings = [];
+    if (["unstaged", "staged", "history"].includes(area) && (this.plugin.git.imageType?.(file.path) || this.plugin.git.imageType?.(file.oldPath || ""))) {
+      const versions = await this.plugin.git.imageVersions(file, area, timing);
+      return { images: await prepareImages(this.contentEl.ownerDocument, versions.images), warnings };
+    }
     if (area === "unstaged" && file.worktree !== "D") {
       try { return { session: await this.plugin.editorSession(file.path, true, timing), warnings }; }
       catch (error) { warnings.push(error.message); }
@@ -96,6 +101,7 @@ class DiffView extends GitView {
     if (request !== this.request) {
       timing?.mark("cancelledMs");
       if (loaded.session) this.plugin.releaseEditorSession(file.path, loaded.session);
+      loaded.images?.destroy();
       return;
     }
     // Commit the complete page in one task, before the browser can paint it.
@@ -111,8 +117,8 @@ class DiffView extends GitView {
     el(header, "span", "vaultbranch-tag", t(LABELS[this.area]));
     button(header, "file-pen-line", t("打开文件"), () => this.plugin.openFile(this.file.path, this.graphReturn));
     const editable = this.area === "unstaged" && this.file.worktree !== "D";
-    if (!editable) {
-      button(header, this.unified ? "columns-2" : "list", this.unified ? t("切换左右对比") : t("切换统一差异"), async () => { this.unified = !this.unified; await this.render(); });
+    if (!editable || loaded.images || this.plugin.git.imageType?.(file.path)) {
+      if (!loaded.images && !this.plugin.git.imageType?.(file.path)) button(header, this.unified ? "columns-2" : "list", this.unified ? t("切换左右对比") : t("切换统一差异"), async () => { this.unified = !this.unified; await this.render(); });
       button(header, "refresh-cw", t("刷新差异"), () => this.render());
     }
     el(this.contentEl, "div", "vaultbranch-diff-description", this.area === "history" ? t`提交 ${this.file.commit.slice(0, 8)} · 相对第一父提交` : this.area === "staged" ? t("HEAD → 暂存区") : t("暂存区 → 工作区"));
@@ -120,6 +126,12 @@ class DiffView extends GitView {
     try {
       if (loaded.error) throw loaded.error;
       for (const warning of loaded.warnings) el(this.contentEl, "div", "vaultbranch-editor-warning", warning);
+      if (loaded.images) {
+        this.images = loaded.images;
+        this.images.render(body, this.area === "history" ? [t("父提交"), t("当前提交")] : this.area === "staged" ? ["HEAD", t("暂存区")] : [t("暂存区"), t("工作区")]);
+        timing?.ready(this.contentEl.ownerDocument, () => request === this.request);
+        return;
+      }
       if (loaded.session) {
         this.session = loaded.session;
         this.sessionPath = file.path;
@@ -171,6 +183,7 @@ class DiffView extends GitView {
   }
 
   destroyEditor() {
+    this.images?.destroy(); this.images = null;
     const session = this.session;
     session?.listeners.delete(this.editorListener);
     this.merge?.destroy();

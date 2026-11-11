@@ -8,6 +8,7 @@ Git source control inside Obsidian. Desktop only; requires Git and a vault initi
 
 - **Git sidebar**: browse changed files, stage, commit, pull and push.
 - **Editable diffs**: compare versions side by side, edit changes and restore individual blocks; manual save or optional autosave.
+- **Image comparisons**: preview added images and compare versions in Changes, Staged and file history.
 - **Commit graph and file history**: explore branches, merges and past changes, including file renames.
 - **Branches and Stash**: create or switch branches, save changes and restore a selected stash.
 - **Conflict resolution**: compare local and incoming changes, edit the result, and continue or abort a rebase.

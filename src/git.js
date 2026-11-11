@@ -9,6 +9,8 @@ const path = require("node:path");
 
 const MAX_OUTPUT = 12 * 1024 * 1024;
 const MAX_PREVIEW = 2 * 1024 * 1024;
+const MAX_IMAGE = 10 * 1024 * 1024;
+const IMAGE_TYPES = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", bmp: "image/bmp", ico: "image/x-icon", avif: "image/avif" };
 const DIFF_OPTIONS = ["--no-ext-diff", "--no-textconv", "--no-color", "--no-renames", "--unified=4"];
 const CONFLICTS = new Set(["DD", "AU", "UD", "UA", "DU", "AA", "UU"]);
 
@@ -154,14 +156,14 @@ class GitService {
     this.pullMethod = options.pullMethod === "merge" ? "merge" : "rebase";
   }
 
-  run(args, { timeout = 20000, allowDiffExit = false, maxBuffer = MAX_OUTPUT, timing } = {}) {
+  run(args, { timeout = 20000, allowDiffExit = false, maxBuffer = MAX_OUTPUT, timing, encoding = "utf8" } = {}) {
     const end = timing?.span(`git:${args[0]}${args[0] === "cat-file" ? ":" + args[1] : ""}`);
     return new Promise((resolve, reject) => {
       execFile(this.binary, ["-c", "core.quotepath=false", "-c", "color.ui=false", ...args], {
         cwd: this.root,
         shell: false,
         windowsHide: true,
-        encoding: "utf8",
+        encoding,
         timeout,
         maxBuffer,
         // Stash uses Git's own pathspecs to remove saved untracked files.
@@ -170,6 +172,9 @@ class GitService {
         end?.();
         if (!error || (allowDiffExit && error.code === 1)) return resolve(stdout);
         if (error.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER" && maxBuffer === MAX_PREVIEW) return reject(new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。")));
+        if (error.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER" && maxBuffer === MAX_IMAGE) return reject(new Error(t("图片超过 10 MB，请在外部查看。")));
+        if (Buffer.isBuffer(stderr)) stderr = stderr.toString("utf8");
+        if (Buffer.isBuffer(stdout)) stdout = stdout.toString("utf8");
         const detail = error.killed ? t("Git 操作超时；请检查网络、SSH 或凭据配置。") : ([stderr, stdout].filter((value) => value?.trim()).join("\n").trim() || error.message);
         if (/non-fast-forward|fetch first|remote contains work|tip of your current branch is behind/i.test(detail)) {
           reject(new Error(t`Push 被拒绝：远程有新提交。请先 Pull，解决可能的冲突后再 Push。\n\n${detail}`));
@@ -612,23 +617,23 @@ class GitService {
     return text;
   }
 
-  async revisionText(hash, filePath, timing) {
-    if (!hash) return "";
+  async revisionText(hash, filePath, timing, read = (blobHash, _filePath, measureTiming) => this.textBlob(blobHash, measureTiming)) {
+    if (!hash) return read(null, filePath, timing);
     this.checkCommit(hash);
     this.checkPaths([filePath]);
     const entry = (await this.run(["ls-tree", "-z", hash, "--", filePath], { timing })).split("\0").find(Boolean);
-    if (!entry) return "";
+    if (!entry) return read(null, filePath, timing);
     const match = entry.match(/^\d+ blob ([a-f0-9]+)\t/);
     if (!match) throw new Error(t("此版本不是可预览的 UTF-8 文本。"));
-    return this.textBlob(match[1], timing);
+    return read(match[1], filePath, timing, entry.split(" ")[0]);
   }
 
-  async comparisonVersions(file, area, timing) {
+  async comparisonVersions(file, area, timing, read = (hash, _filePath, measureTiming) => this.textBlob(hash, measureTiming)) {
     this.checkPaths([file.path, ...(file.oldPath ? [file.oldPath] : [])]);
     if (area === "history") {
       const parent = await this.firstParent(file.commit, timing);
       const [left, right] = await Promise.all([
-        this.revisionText(parent, file.oldPath || file.path, timing), this.revisionText(file.commit, file.path, timing),
+        this.revisionText(parent, file.oldPath || file.path, timing, read), this.revisionText(file.commit, file.path, timing, read),
       ]);
       return { left, right };
     }
@@ -642,9 +647,69 @@ class GitService {
     const entry = entries.find(line => /^\d+ [a-f0-9]+ 0\t/.test(line));
     if (entries.length && !entry) throw new Error(t("请先解决冲突。"));
     const [left, right] = await Promise.all([
-      this.revisionText(head, file.oldPath || file.path, timing), this.textBlob(entry?.split(" ")[1], timing),
+      this.revisionText(head, file.oldPath || file.path, timing, read), read(entry?.split(" ")[1], file.path, timing, entry?.split(" ")[0]),
     ]);
     return { left, right };
+  }
+
+  imageType(filePath) {
+    const extension = path.extname(filePath).slice(1).toLowerCase();
+    return Object.hasOwn(IMAGE_TYPES, extension) ? IMAGE_TYPES[extension] : null;
+  }
+
+  async imageVersions(file, area, timing) {
+    this.checkPaths([file.path, ...(file.oldPath ? [file.oldPath] : [])]);
+    const mime = this.imageType(file.path);
+    const oldMime = this.imageType(file.oldPath || file.path);
+    if (!mime && !oldMime) return null;
+    const read = async (hash, filePath, _timing, mode) => {
+      if (!hash) return null;
+      this.checkCommit(hash);
+      if (mode && !/^100(644|755)$/.test(mode)) throw new Error(t("此文件不支持图片预览。"));
+      const type = this.imageType(filePath);
+      if (!type) return null;
+      const bytes = await this.run(["cat-file", "blob", hash], { encoding: null, maxBuffer: MAX_IMAGE, timing });
+      return { mime: type, src: `data:${type};base64,${bytes.toString("base64")}` };
+    };
+    if (area !== "unstaged") {
+      const versions = await this.comparisonVersions(file, area, timing, read);
+      return versions && { images: versions };
+    }
+    const [status, index, working] = await Promise.all([
+      this.status({ includeStash: false }),
+      this.run(["ls-files", "--stage", "-z", "--", file.path], { timing }),
+      this.workingImage(file.path),
+    ]);
+    this.assertNormal(status);
+    if (!status.files.some(entry => entry.path === file.path && entry.worktree !== " ")) throw new Error(t("文件状态已改变，请刷新后重试。"));
+    const entries = index.split("\0").filter(Boolean);
+    if (entries.some(entry => !/^100(644|755) [a-f0-9]+ 0\t/.test(entry))) throw new Error(t("此文件不支持图片预览。"));
+    const left = await read(entries[0]?.split(" ")[1], file.oldPath || file.path);
+    const right = working && mime ? { mime, src: `data:${mime};base64,${working.toString("base64")}` } : null;
+    return { images: { left, right } };
+  }
+
+  async workingImage(filePath) {
+    this.checkPaths([filePath]);
+    const absolute = path.resolve(this.root, filePath);
+    let stat, actual, root;
+    try { [stat, actual, root] = await Promise.all([fs.lstat(absolute), fs.realpath(absolute), fs.realpath(this.root)]); }
+    catch (error) { if (error.code === "ENOENT") return null; throw error; }
+    const relative = path.relative(root, actual);
+    if (!stat.isFile() || stat.isSymbolicLink() || relative.startsWith("..") || path.isAbsolute(relative)) throw new Error(t("此文件不支持图片预览。"));
+    if (stat.size > MAX_IMAGE) throw new Error(t("图片超过 10 MB，请在外部查看。"));
+    const handle = await fs.open(absolute, "r");
+    try {
+      const bytes = Buffer.alloc(stat.size + 1);
+      let length = 0;
+      while (length < bytes.length) {
+        const { bytesRead } = await handle.read(bytes, length, bytes.length - length, length);
+        if (!bytesRead) break;
+        length += bytesRead;
+      }
+      if (length !== stat.size) throw new Error(t("文件状态已改变，请刷新后重试。"));
+      return bytes.subarray(0, length);
+    } finally { await handle.close(); }
   }
 
   async commitFiles(hash) {
