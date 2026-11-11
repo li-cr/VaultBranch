@@ -7,6 +7,17 @@
   if (!current || [...(current.editors?.sessions || current.editSessions).values()].some(session => session.dirty || session.saving)) throw Error("Enable the plugin and save drafts first.");
   const target = path.join(app.vault.adapter.getBasePath(), current.manifest.dir);
   const legacyEnabled = Boolean(manager.plugins["my-git"]), reports = {}, checks = [];
+  const originalTrash = app.vault.trash;
+  app.vault.trash = async function (...args) {
+    // The host metadata queue can still hold a synthetic Markdown read after
+    // the view closes. Finish those reads before removing a test fixture.
+    const deadline = Date.now() + 30000;
+    while (app.metadataCache.inProgressTaskCount > 0) {
+      if (Date.now() > deadline) throw Error("Host metadata indexing did not finish before fixture cleanup.");
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    return originalTrash.apply(this, args);
+  };
   window.__vaultbranchErrors = [];
   const consoleErrors = [], originalConsoleError = console.error;
   console.error = function (...args) {
@@ -48,6 +59,7 @@
     await store("release-ui", result);
     return { version: result.version, benchmarks: ["startup", "trusted file switching", "trusted Changed insert/newline/delete"], checks, sessions: result.sessions, pending: result.pending, errors: result.errors };
   } finally {
+    app.vault.trash = originalTrash;
     console.error = originalConsoleError;
     await store("console-errors", consoleErrors);
     await window.__vbStagedSwitch?.cleanup();
