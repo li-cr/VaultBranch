@@ -233,11 +233,15 @@ module.exports = class MyGitPlugin extends Plugin {
 
   showTimings() {
     const modal = new Modal(this.app);
+    modal.modalEl.addClass("vaultbranch-timings");
     modal.titleEl.textContent = t("调优记录");
-    const output = el(modal.contentEl, "pre", "vaultbranch-log", this.timingReport());
-    button(modal.contentEl, "copy", t("复制记录"), async () => { await navigator.clipboard.writeText(this.timingReport()); new Notice(t("已复制调优记录。")); }, t("复制记录"));
-    button(modal.contentEl, "trash-2", t("清空记录"), () => { this.timingLog?.clear(); output.textContent = this.timingReport(); }, t("清空记录"));
+    const output = el(modal.contentEl, "textarea", "vaultbranch-timing-editor");
+    output.value = this.timingReport(); output.spellcheck = false; output.wrap = "off";
+    output.setAttribute("aria-label", t("调优记录"));
+    button(modal.contentEl, "copy", t("复制记录"), async () => { await navigator.clipboard.writeText(output.value); new Notice(t("已复制调优记录。")); }, t("复制记录"));
+    button(modal.contentEl, "trash-2", t("清空记录"), () => { this.timingLog?.clear(); output.value = this.timingReport(); }, t("清空记录"));
     modal.open();
+    output.focus();
   }
 
   confirmAbort() {
