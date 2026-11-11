@@ -1,6 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test" || !window.__vbStagedSwitch) throw Error("Run staged-switch-ui.js in note_test first.");
-  const p = app.plugins.plugins.vaultbranch, web = require("electron").remote.getCurrentWebContents();
+  const p = app.plugins.plugins.vaultbranch, remote = require("electron").remote;
+  const web = remote.getCurrentWebContents(), testWindow = remote.getCurrentWindow();
   const samples = [], checks = [], pause = ms => new Promise(resolve => setTimeout(resolve, ms));
   const summary = values => {
     const sorted = [...values].sort((a, b) => a - b);
@@ -16,8 +17,7 @@
       const original = editor.state.doc.toString(), at = Math.floor(original.length / 2);
       const dispatch = editor.dispatch;
       let pending;
-      const events = [];
-      const begin = event => { events.push({ type: event.type, key: event.key, inputType: event.inputType, trusted: event.isTrusted }); if (pending && !pending.event) pending.event = { start: performance.now(), type: event.type, trusted: event.isTrusted }; };
+      const begin = event => { if (pending && !pending.event) pending.event = { start: performance.now(), type: event.type, trusted: event.isTrusted }; };
       for (const type of ["keydown", "beforeinput"]) editor.contentDOM.addEventListener(type, begin, true);
       editor.dispatch = function (...args) {
         const before = this.state.doc, started = performance.now();
@@ -26,6 +26,10 @@
           const done = pending; pending = null;
           const end = performance.now();
           if (!done.event?.trusted) { done.reject(Error("Missing trusted native editing event")); return result; }
+          if (this.composing || !document.hasFocus()) { done.reject(Error("Focus/composition changed during native edit; discard this run")); return result; }
+          if (done.operation === "newline" ? this.state.doc.lines <= before.lines : done.operation === "delete" ? this.state.doc.length >= before.length : this.state.doc.length <= before.length) {
+            done.reject(Error("Native event did not perform the requested edit")); return result;
+          }
           const record = { path: name, round: done.round, operation: done.operation, trusted: true, event: done.event.type,
             inputToDocumentMs: end - done.event.start, synchronousDispatchMs: end - started, deliveryToDocumentMs: end - done.sent };
           let settled = false;
@@ -39,8 +43,10 @@
         for (let round = 0; round < 6; round++) {
           editor.dispatch({ selection: { anchor: at } }); editor.focus(); await pause(40);
           for (const operation of ["insert", "newline", "delete"]) {
+            testWindow.show(); testWindow.focus(); web.focus(); editor.focus(); await pause(40);
+            if (!document.hasFocus() || editor.composing) throw Error("Focus/composition prevents a native edit sample; discard this run");
             const record = await new Promise((resolve, reject) => {
-              const timer = setTimeout(() => { pending = null; reject(Error("Native editing timeout: " + operation + " " + JSON.stringify({ events, active: document.activeElement?.className, focused: document.hasFocus() }))); }, 3000);
+              const timer = setTimeout(() => { pending = null; reject(Error("Native editing timeout: " + operation)); }, 3000);
               pending = { round, operation, sent: performance.now(), resolve: value => { clearTimeout(timer); resolve(value); }, reject: error => { clearTimeout(timer); reject(error); } };
               if (operation === "insert") web.sendInputEvent({ type: "char", keyCode: "x" });
               else {

@@ -23,6 +23,8 @@ Build and install VaultBranch into a disposable Obsidian vault named `note_test`
 
 All scripts refuse to run in a vault with a different name. They require a working Git executable and the normal file explorer enabled. Use a clean test session with no existing unsaved diff drafts. The normal `npm test` suite does not require Obsidian.
 
+For the complete release check in one invocation, run `npm run release:check -- --obsidian-cli <CLI executable> --baseline-build <previous release assets directory> --output-dir <local results directory>`. It runs validation, all automated tests and the build, then measures startup, trusted GUI switching and Changed typing/Enter/Backspace for both builds before running the UI regressions. `release-ui.js` accepts paths from this runner, restores the candidate and settings, preserves plugin data, and saves raw JSON reports locally. Keep the test window available; native input measurements reject lost focus or IME composition. This command is read-only with respect to remote Git services and does not publish a release.
+
 For repeatable plugin reload and first-use measurements, run `scripts/benchmark-startup.js` separately. See `docs/performance/0.2.21.md` for the baseline, environment, sample results and limitations.
 
 For background Git subprocess counts, run `scripts/benchmark-background-refresh.js` separately. See `docs/performance/0.2.22.md`; it temporarily closes sidebar leaves and restores the startup, refresh and collapse preferences.
