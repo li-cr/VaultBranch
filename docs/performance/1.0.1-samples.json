@@ -1,0 +1,1710 @@
+{
+  "baseline": {
+    "revision": "ff2cc0a (1.0.0)",
+    "environment": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+      "node": "v24.22.1",
+      "platform": "win32",
+      "git": "git version 2.50.0.windows.1",
+      "focused": true,
+      "visibility": "visible"
+    },
+    "scenario": "100 Staged + 100 Changed files; four mixed nested targets, six rounds each, discard one warm-up round. Focus the test window and editable pane; allow scheduled editor rendering between targets/rounds, outside timing. Thirty scripted CodeMirror insert transactions after the first dirty edit. Measures synchronous edit dispatch and toolbar/caption/warning/ARIA mutations only; excludes Git/file reads, navigation, asynchronous layout and physical paint. Autosave, folding, syntax highlighting and timing logging disabled. No GUI click latency claim.",
+    "fixtures": [
+      {
+        "path": "small/note.md",
+        "lines": 3,
+        "baseBytes": 28,
+        "bytes": 36
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "lines": 96003,
+        "baseBytes": 1633783,
+        "bytes": 1633791
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "lines": 2,
+        "baseBytes": 26,
+        "bytes": 34
+      },
+      {
+        "path": "large/note.md",
+        "lines": 24001,
+        "baseBytes": 1284890,
+        "bytes": 1284898
+      }
+    ],
+    "samples": [
+      {
+        "path": "small/note.md",
+        "round": 1,
+        "edits": 30,
+        "dispatchMs": 78.6,
+        "chromeMutations": 270
+      },
+      {
+        "path": "small/note.md",
+        "round": 2,
+        "edits": 30,
+        "dispatchMs": 106.4,
+        "chromeMutations": 270
+      },
+      {
+        "path": "small/note.md",
+        "round": 3,
+        "edits": 30,
+        "dispatchMs": 50.6,
+        "chromeMutations": 270
+      },
+      {
+        "path": "small/note.md",
+        "round": 4,
+        "edits": 30,
+        "dispatchMs": 33.1,
+        "chromeMutations": 270
+      },
+      {
+        "path": "small/note.md",
+        "round": 5,
+        "edits": 30,
+        "dispatchMs": 31,
+        "chromeMutations": 270
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "round": 1,
+        "edits": 30,
+        "dispatchMs": 365.2,
+        "chromeMutations": 270
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "round": 2,
+        "edits": 30,
+        "dispatchMs": 189.9,
+        "chromeMutations": 270
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "round": 3,
+        "edits": 30,
+        "dispatchMs": 183.6,
+        "chromeMutations": 270
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "round": 4,
+        "edits": 30,
+        "dispatchMs": 190.6,
+        "chromeMutations": 270
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "round": 5,
+        "edits": 30,
+        "dispatchMs": 141.2,
+        "chromeMutations": 270
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "round": 1,
+        "edits": 30,
+        "dispatchMs": 7.2,
+        "chromeMutations": 270
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "round": 2,
+        "edits": 30,
+        "dispatchMs": 6.8,
+        "chromeMutations": 270
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "round": 3,
+        "edits": 30,
+        "dispatchMs": 8.8,
+        "chromeMutations": 270
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "round": 4,
+        "edits": 30,
+        "dispatchMs": 6.2,
+        "chromeMutations": 270
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "round": 5,
+        "edits": 30,
+        "dispatchMs": 8.1,
+        "chromeMutations": 270
+      },
+      {
+        "path": "large/note.md",
+        "round": 1,
+        "edits": 30,
+        "dispatchMs": 37.9,
+        "chromeMutations": 270
+      },
+      {
+        "path": "large/note.md",
+        "round": 2,
+        "edits": 30,
+        "dispatchMs": 36.2,
+        "chromeMutations": 270
+      },
+      {
+        "path": "large/note.md",
+        "round": 3,
+        "edits": 30,
+        "dispatchMs": 30,
+        "chromeMutations": 270
+      },
+      {
+        "path": "large/note.md",
+        "round": 4,
+        "edits": 30,
+        "dispatchMs": 36.8,
+        "chromeMutations": 270
+      },
+      {
+        "path": "large/note.md",
+        "round": 5,
+        "edits": 30,
+        "dispatchMs": 33.4,
+        "chromeMutations": 270
+      }
+    ],
+    "summary": {
+      "small/note.md": {
+        "dispatchMs": {
+          "median": 50.6,
+          "range": [
+            31,
+            106.4
+          ]
+        },
+        "chromeMutations": {
+          "median": 270,
+          "range": [
+            270,
+            270
+          ]
+        }
+      },
+      "large/deep/json/data.json": {
+        "dispatchMs": {
+          "median": 189.9,
+          "range": [
+            141.2,
+            365.2
+          ]
+        },
+        "chromeMutations": {
+          "median": 270,
+          "range": [
+            270,
+            270
+          ]
+        }
+      },
+      "small/deep/json/data.json": {
+        "dispatchMs": {
+          "median": 7.2,
+          "range": [
+            6.2,
+            8.8
+          ]
+        },
+        "chromeMutations": {
+          "median": 270,
+          "range": [
+            270,
+            270
+          ]
+        }
+      },
+      "large/note.md": {
+        "dispatchMs": {
+          "median": 36.2,
+          "range": [
+            30,
+            37.9
+          ]
+        },
+        "chromeMutations": {
+          "median": 270,
+          "range": [
+            270,
+            270
+          ]
+        }
+      }
+    }
+  },
+  "candidate": {
+    "revision": "1.0.1",
+    "sourceSha256": {
+      "src/views/diff.js": "9e5771fd9982292bb7586125a0db678c7cde89ea2d8696c311e801045adfeb27",
+      "src/views/merge.js": "ae82fa68515627187954530703bf0e844a451cd0ff2b35897e534e79d5d92d61"
+    },
+    "environment": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+      "node": "v24.22.1",
+      "platform": "win32",
+      "git": "git version 2.50.0.windows.1",
+      "focused": true,
+      "visibility": "visible"
+    },
+    "scenario": "100 Staged + 100 Changed files; four mixed nested targets, six rounds each, discard one warm-up round. Focus the test window and editable pane; allow scheduled editor rendering between targets/rounds, outside timing. Thirty scripted CodeMirror insert transactions after the first dirty edit. Measures synchronous edit dispatch and toolbar/caption/warning/ARIA mutations only; excludes Git/file reads, navigation, asynchronous layout and physical paint. Autosave, folding, syntax highlighting and timing logging disabled. No GUI click latency claim.",
+    "fixtures": [
+      {
+        "path": "small/note.md",
+        "lines": 3,
+        "baseBytes": 28,
+        "bytes": 36
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "lines": 96003,
+        "baseBytes": 1633783,
+        "bytes": 1633791
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "lines": 2,
+        "baseBytes": 26,
+        "bytes": 34
+      },
+      {
+        "path": "large/note.md",
+        "lines": 24001,
+        "baseBytes": 1284890,
+        "bytes": 1284898
+      }
+    ],
+    "samples": [
+      {
+        "path": "small/note.md",
+        "round": 1,
+        "edits": 30,
+        "dispatchMs": 10.2,
+        "chromeMutations": 0
+      },
+      {
+        "path": "small/note.md",
+        "round": 2,
+        "edits": 30,
+        "dispatchMs": 18.4,
+        "chromeMutations": 0
+      },
+      {
+        "path": "small/note.md",
+        "round": 3,
+        "edits": 30,
+        "dispatchMs": 11.7,
+        "chromeMutations": 0
+      },
+      {
+        "path": "small/note.md",
+        "round": 4,
+        "edits": 30,
+        "dispatchMs": 9.9,
+        "chromeMutations": 0
+      },
+      {
+        "path": "small/note.md",
+        "round": 5,
+        "edits": 30,
+        "dispatchMs": 9.5,
+        "chromeMutations": 0
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "round": 1,
+        "edits": 30,
+        "dispatchMs": 377.4,
+        "chromeMutations": 0
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "round": 2,
+        "edits": 30,
+        "dispatchMs": 200.9,
+        "chromeMutations": 0
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "round": 3,
+        "edits": 30,
+        "dispatchMs": 146.9,
+        "chromeMutations": 0
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "round": 4,
+        "edits": 30,
+        "dispatchMs": 170.6,
+        "chromeMutations": 0
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "round": 5,
+        "edits": 30,
+        "dispatchMs": 145.9,
+        "chromeMutations": 0
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "round": 1,
+        "edits": 30,
+        "dispatchMs": 7.3,
+        "chromeMutations": 0
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "round": 2,
+        "edits": 30,
+        "dispatchMs": 5.8,
+        "chromeMutations": 0
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "round": 3,
+        "edits": 30,
+        "dispatchMs": 7.1,
+        "chromeMutations": 0
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "round": 4,
+        "edits": 30,
+        "dispatchMs": 7,
+        "chromeMutations": 0
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "round": 5,
+        "edits": 30,
+        "dispatchMs": 7.2,
+        "chromeMutations": 0
+      },
+      {
+        "path": "large/note.md",
+        "round": 1,
+        "edits": 30,
+        "dispatchMs": 38.8,
+        "chromeMutations": 0
+      },
+      {
+        "path": "large/note.md",
+        "round": 2,
+        "edits": 30,
+        "dispatchMs": 37.6,
+        "chromeMutations": 0
+      },
+      {
+        "path": "large/note.md",
+        "round": 3,
+        "edits": 30,
+        "dispatchMs": 44.8,
+        "chromeMutations": 0
+      },
+      {
+        "path": "large/note.md",
+        "round": 4,
+        "edits": 30,
+        "dispatchMs": 44.8,
+        "chromeMutations": 0
+      },
+      {
+        "path": "large/note.md",
+        "round": 5,
+        "edits": 30,
+        "dispatchMs": 28.4,
+        "chromeMutations": 0
+      }
+    ],
+    "summary": {
+      "small/note.md": {
+        "dispatchMs": {
+          "median": 10.2,
+          "range": [
+            9.5,
+            18.4
+          ]
+        },
+        "chromeMutations": {
+          "median": 0,
+          "range": [
+            0,
+            0
+          ]
+        }
+      },
+      "large/deep/json/data.json": {
+        "dispatchMs": {
+          "median": 170.6,
+          "range": [
+            145.9,
+            377.4
+          ]
+        },
+        "chromeMutations": {
+          "median": 0,
+          "range": [
+            0,
+            0
+          ]
+        }
+      },
+      "small/deep/json/data.json": {
+        "dispatchMs": {
+          "median": 7.1,
+          "range": [
+            5.8,
+            7.3
+          ]
+        },
+        "chromeMutations": {
+          "median": 0,
+          "range": [
+            0,
+            0
+          ]
+        }
+      },
+      "large/note.md": {
+        "dispatchMs": {
+          "median": 38.8,
+          "range": [
+            28.4,
+            44.8
+          ]
+        },
+        "chromeMutations": {
+          "median": 0,
+          "range": [
+            0,
+            0
+          ]
+        }
+      }
+    }
+  },
+  "exploratory": {
+    "editor-updates-before": {
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+        "node": "v24.22.1",
+        "platform": "win32"
+      },
+      "scenario": "100 Staged + 100 Changed files; four mixed nested targets, six rounds each, discard one warm-up round. Thirty scripted CodeMirror insert transactions after the first dirty edit. Measures synchronous edit dispatch and toolbar/caption/warning/ARIA mutations only; excludes Git/file reads, navigation, asynchronous layout and physical paint. Autosave, folding, syntax highlighting and timing logging disabled. No GUI click latency claim.",
+      "fixtures": [
+        {
+          "path": "small/note.md",
+          "lines": 3,
+          "baseBytes": 28,
+          "bytes": 36
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "lines": 96003,
+          "baseBytes": 1633783,
+          "bytes": 1633791
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "lines": 2,
+          "baseBytes": 26,
+          "bytes": 34
+        },
+        {
+          "path": "large/note.md",
+          "lines": 24001,
+          "baseBytes": 1284890,
+          "bytes": 1284898
+        }
+      ],
+      "samples": [
+        {
+          "path": "small/note.md",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 11.6,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/note.md",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 10.3,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/note.md",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 9.8,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/note.md",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 9.3,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/note.md",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 10.7,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 253.6,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 249,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 249,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 234.5,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 248.9,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 120.9,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 122.7,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 130.2,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 130.6,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 141.7,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/note.md",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 164.5,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/note.md",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 167.9,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/note.md",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 171.7,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/note.md",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 162.6,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/note.md",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 160.1,
+          "chromeMutations": 270
+        }
+      ],
+      "summary": {
+        "small/note.md": {
+          "dispatchMs": {
+            "median": 10.3,
+            "range": [
+              9.3,
+              11.6
+            ]
+          },
+          "chromeMutations": {
+            "median": 270,
+            "range": [
+              270,
+              270
+            ]
+          }
+        },
+        "large/deep/json/data.json": {
+          "dispatchMs": {
+            "median": 249,
+            "range": [
+              234.5,
+              253.6
+            ]
+          },
+          "chromeMutations": {
+            "median": 270,
+            "range": [
+              270,
+              270
+            ]
+          }
+        },
+        "small/deep/json/data.json": {
+          "dispatchMs": {
+            "median": 130.2,
+            "range": [
+              120.9,
+              141.7
+            ]
+          },
+          "chromeMutations": {
+            "median": 270,
+            "range": [
+              270,
+              270
+            ]
+          }
+        },
+        "large/note.md": {
+          "dispatchMs": {
+            "median": 164.5,
+            "range": [
+              160.1,
+              171.7
+            ]
+          },
+          "chromeMutations": {
+            "median": 270,
+            "range": [
+              270,
+              270
+            ]
+          }
+        }
+      }
+    },
+    "editor-updates-after": {
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+        "node": "v24.22.1",
+        "platform": "win32"
+      },
+      "scenario": "100 Staged + 100 Changed files; four mixed nested targets, six rounds each, discard one warm-up round. Thirty scripted CodeMirror insert transactions after the first dirty edit. Measures synchronous edit dispatch and toolbar/caption/warning/ARIA mutations only; excludes Git/file reads, navigation, asynchronous layout and physical paint. Autosave, folding, syntax highlighting and timing logging disabled. No GUI click latency claim.",
+      "fixtures": [
+        {
+          "path": "small/note.md",
+          "lines": 3,
+          "baseBytes": 28,
+          "bytes": 36
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "lines": 96003,
+          "baseBytes": 1633783,
+          "bytes": 1633791
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "lines": 2,
+          "baseBytes": 26,
+          "bytes": 34
+        },
+        {
+          "path": "large/note.md",
+          "lines": 24001,
+          "baseBytes": 1284890,
+          "bytes": 1284898
+        }
+      ],
+      "samples": [
+        {
+          "path": "small/note.md",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 96.6,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/note.md",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 87.5,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/note.md",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 93.4,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/note.md",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 102,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/note.md",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 86.7,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 237,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 213.5,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 220.5,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 220.2,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 213.2,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 97,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 206.2,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 161.9,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 139.8,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 143.1,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 109.3,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 113.4,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 194.8,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 151.7,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 117,
+          "chromeMutations": 0
+        }
+      ],
+      "summary": {
+        "small/note.md": {
+          "dispatchMs": {
+            "median": 93.4,
+            "range": [
+              86.7,
+              102
+            ]
+          },
+          "chromeMutations": {
+            "median": 0,
+            "range": [
+              0,
+              0
+            ]
+          }
+        },
+        "large/deep/json/data.json": {
+          "dispatchMs": {
+            "median": 220.2,
+            "range": [
+              213.2,
+              237
+            ]
+          },
+          "chromeMutations": {
+            "median": 0,
+            "range": [
+              0,
+              0
+            ]
+          }
+        },
+        "small/deep/json/data.json": {
+          "dispatchMs": {
+            "median": 143.1,
+            "range": [
+              97,
+              206.2
+            ]
+          },
+          "chromeMutations": {
+            "median": 0,
+            "range": [
+              0,
+              0
+            ]
+          }
+        },
+        "large/note.md": {
+          "dispatchMs": {
+            "median": 117,
+            "range": [
+              109.3,
+              194.8
+            ]
+          },
+          "chromeMutations": {
+            "median": 0,
+            "range": [
+              0,
+              0
+            ]
+          }
+        }
+      }
+    },
+    "editor-updates-after-repeat": {
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+        "node": "v24.22.1",
+        "platform": "win32"
+      },
+      "scenario": "100 Staged + 100 Changed files; four mixed nested targets, six rounds each, discard one warm-up round. Thirty scripted CodeMirror insert transactions after the first dirty edit. Measures synchronous edit dispatch and toolbar/caption/warning/ARIA mutations only; excludes Git/file reads, navigation, asynchronous layout and physical paint. Autosave, folding, syntax highlighting and timing logging disabled. No GUI click latency claim.",
+      "fixtures": [
+        {
+          "path": "small/note.md",
+          "lines": 3,
+          "baseBytes": 28,
+          "bytes": 36
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "lines": 96003,
+          "baseBytes": 1633783,
+          "bytes": 1633791
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "lines": 2,
+          "baseBytes": 26,
+          "bytes": 34
+        },
+        {
+          "path": "large/note.md",
+          "lines": 24001,
+          "baseBytes": 1284890,
+          "bytes": 1284898
+        }
+      ],
+      "samples": [
+        {
+          "path": "small/note.md",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 99,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/note.md",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 106.4,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/note.md",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 96.6,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/note.md",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 97.2,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/note.md",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 93.3,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 229.2,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 244.9,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 231.8,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 241.1,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 239.2,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 111.2,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 111.4,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 87.1,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 90.1,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 99.1,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 136.4,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 131.4,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 131.5,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 132.6,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 132.3,
+          "chromeMutations": 0
+        }
+      ],
+      "summary": {
+        "small/note.md": {
+          "dispatchMs": {
+            "median": 97.2,
+            "range": [
+              93.3,
+              106.4
+            ]
+          },
+          "chromeMutations": {
+            "median": 0,
+            "range": [
+              0,
+              0
+            ]
+          }
+        },
+        "large/deep/json/data.json": {
+          "dispatchMs": {
+            "median": 239.2,
+            "range": [
+              229.2,
+              244.9
+            ]
+          },
+          "chromeMutations": {
+            "median": 0,
+            "range": [
+              0,
+              0
+            ]
+          }
+        },
+        "small/deep/json/data.json": {
+          "dispatchMs": {
+            "median": 99.1,
+            "range": [
+              87.1,
+              111.4
+            ]
+          },
+          "chromeMutations": {
+            "median": 0,
+            "range": [
+              0,
+              0
+            ]
+          }
+        },
+        "large/note.md": {
+          "dispatchMs": {
+            "median": 132.3,
+            "range": [
+              131.4,
+              136.4
+            ]
+          },
+          "chromeMutations": {
+            "median": 0,
+            "range": [
+              0,
+              0
+            ]
+          }
+        }
+      }
+    },
+    "editor-updates-settled-before": {
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+        "node": "v24.22.1",
+        "platform": "win32"
+      },
+      "scenario": "100 Staged + 100 Changed files; four mixed nested targets, six rounds each, discard one warm-up round. Allow scheduled editor rendering between targets/rounds, outside timing. Thirty scripted CodeMirror insert transactions after the first dirty edit. Measures synchronous edit dispatch and toolbar/caption/warning/ARIA mutations only; excludes Git/file reads, navigation, asynchronous layout and physical paint. Autosave, folding, syntax highlighting and timing logging disabled. No GUI click latency claim.",
+      "fixtures": [
+        {
+          "path": "small/note.md",
+          "lines": 3,
+          "baseBytes": 28,
+          "bytes": 36
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "lines": 96003,
+          "baseBytes": 1633783,
+          "bytes": 1633791
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "lines": 2,
+          "baseBytes": 26,
+          "bytes": 34
+        },
+        {
+          "path": "large/note.md",
+          "lines": 24001,
+          "baseBytes": 1284890,
+          "bytes": 1284898
+        }
+      ],
+      "samples": [
+        {
+          "path": "small/note.md",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 6.7,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/note.md",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 7,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/note.md",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 10.9,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/note.md",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 8.9,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/note.md",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 7.2,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 271.8,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 298.8,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 271.1,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 273.1,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 275.1,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 138.5,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 153.1,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 139.9,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 159.2,
+          "chromeMutations": 270
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 145.5,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/note.md",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 185.3,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/note.md",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 177.7,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/note.md",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 188.7,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/note.md",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 182,
+          "chromeMutations": 270
+        },
+        {
+          "path": "large/note.md",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 178.2,
+          "chromeMutations": 270
+        }
+      ],
+      "summary": {
+        "small/note.md": {
+          "dispatchMs": {
+            "median": 7.2,
+            "range": [
+              6.7,
+              10.9
+            ]
+          },
+          "chromeMutations": {
+            "median": 270,
+            "range": [
+              270,
+              270
+            ]
+          }
+        },
+        "large/deep/json/data.json": {
+          "dispatchMs": {
+            "median": 273.1,
+            "range": [
+              271.1,
+              298.8
+            ]
+          },
+          "chromeMutations": {
+            "median": 270,
+            "range": [
+              270,
+              270
+            ]
+          }
+        },
+        "small/deep/json/data.json": {
+          "dispatchMs": {
+            "median": 145.5,
+            "range": [
+              138.5,
+              159.2
+            ]
+          },
+          "chromeMutations": {
+            "median": 270,
+            "range": [
+              270,
+              270
+            ]
+          }
+        },
+        "large/note.md": {
+          "dispatchMs": {
+            "median": 182,
+            "range": [
+              177.7,
+              188.7
+            ]
+          },
+          "chromeMutations": {
+            "median": 270,
+            "range": [
+              270,
+              270
+            ]
+          }
+        }
+      }
+    },
+    "editor-updates-settled-after": {
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.15.0 Chrome/150.0.7871.250 Electron/43.8.4 Safari/537.36",
+        "node": "v24.22.1",
+        "platform": "win32"
+      },
+      "scenario": "100 Staged + 100 Changed files; four mixed nested targets, six rounds each, discard one warm-up round. Allow scheduled editor rendering between targets/rounds, outside timing. Thirty scripted CodeMirror insert transactions after the first dirty edit. Measures synchronous edit dispatch and toolbar/caption/warning/ARIA mutations only; excludes Git/file reads, navigation, asynchronous layout and physical paint. Autosave, folding, syntax highlighting and timing logging disabled. No GUI click latency claim.",
+      "fixtures": [
+        {
+          "path": "small/note.md",
+          "lines": 3,
+          "baseBytes": 28,
+          "bytes": 36
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "lines": 96003,
+          "baseBytes": 1633783,
+          "bytes": 1633791
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "lines": 2,
+          "baseBytes": 26,
+          "bytes": 34
+        },
+        {
+          "path": "large/note.md",
+          "lines": 24001,
+          "baseBytes": 1284890,
+          "bytes": 1284898
+        }
+      ],
+      "samples": [
+        {
+          "path": "small/note.md",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 81.8,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/note.md",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 82.1,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/note.md",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 84.7,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/note.md",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 98.6,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/note.md",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 87.5,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 205.5,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 200.4,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 209.9,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 211,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/deep/json/data.json",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 194.1,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 80.9,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 73.9,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 78.4,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 80.1,
+          "chromeMutations": 0
+        },
+        {
+          "path": "small/deep/json/data.json",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 91.3,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 1,
+          "edits": 30,
+          "dispatchMs": 115.7,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 2,
+          "edits": 30,
+          "dispatchMs": 122.1,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 3,
+          "edits": 30,
+          "dispatchMs": 131.2,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 4,
+          "edits": 30,
+          "dispatchMs": 109.1,
+          "chromeMutations": 0
+        },
+        {
+          "path": "large/note.md",
+          "round": 5,
+          "edits": 30,
+          "dispatchMs": 109.2,
+          "chromeMutations": 0
+        }
+      ],
+      "summary": {
+        "small/note.md": {
+          "dispatchMs": {
+            "median": 84.7,
+            "range": [
+              81.8,
+              98.6
+            ]
+          },
+          "chromeMutations": {
+            "median": 0,
+            "range": [
+              0,
+              0
+            ]
+          }
+        },
+        "large/deep/json/data.json": {
+          "dispatchMs": {
+            "median": 205.5,
+            "range": [
+              194.1,
+              211
+            ]
+          },
+          "chromeMutations": {
+            "median": 0,
+            "range": [
+              0,
+              0
+            ]
+          }
+        },
+        "small/deep/json/data.json": {
+          "dispatchMs": {
+            "median": 80.1,
+            "range": [
+              73.9,
+              91.3
+            ]
+          },
+          "chromeMutations": {
+            "median": 0,
+            "range": [
+              0,
+              0
+            ]
+          }
+        },
+        "large/note.md": {
+          "dispatchMs": {
+            "median": 115.7,
+            "range": [
+              109.1,
+              131.2
+            ]
+          },
+          "chromeMutations": {
+            "median": 0,
+            "range": [
+              0,
+              0
+            ]
+          }
+        }
+      }
+    }
+  }
+}

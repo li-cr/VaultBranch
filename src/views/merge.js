@@ -28,9 +28,13 @@ function updateDiffNavigation(view) {
     }
   }
   for (const control of controls.children) {
-    control.title = t(control.dataset.label);
-    control.setAttribute("aria-label", control.title);
-    control.disabled = !view.merge.chunks.length;
+    const title = t(control.dataset.label);
+    if (control.title !== title) {
+      control.title = title;
+      control.setAttribute("aria-label", title);
+    }
+    const disabled = !view.merge.chunks.length;
+    if (control.disabled !== disabled) control.disabled = disabled;
   }
 }
 

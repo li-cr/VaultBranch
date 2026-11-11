@@ -314,3 +314,45 @@ test("uneditable files still fall back to patch previews after preparation", asy
   assert.equal(view.contentEl.children[2].children[0].textContent, "patch preview");
   assert.equal(view.contentEl.children[3].textContent, "size limit");
 });
+
+test("stable editor notifications avoid chrome writes while save state and navigation stay live", () => {
+  const { DiffView } = load(path.join(__dirname, "../src/views/diff.js"));
+  let writes = 0;
+  const node = () => {
+    const result = { dataset: {}, attributes: {}, setAttribute(name, value) { writes++; this.attributes[name] = value; } };
+    for (const [key, initial] of [["textContent", ""], ["title", ""], ["disabled", false], ["hidden", false]]) {
+      let value = initial;
+      Object.defineProperty(result, key, { get: () => value, set: next => { writes++; value = next; } });
+    }
+    return result;
+  };
+  const previous = node(), next = node(), revert = node();
+  previous.dataset.label = "上一处差异"; next.dataset.label = "下一处差异";
+  const controls = { children: [previous, next] }, header = { querySelector: () => controls };
+  const view = Object.create(DiffView.prototype);
+  Object.assign(view, {
+    contentEl: { querySelector: () => header },
+    plugin: { settings: { language: "zh", collapseUnchanged: false, showDiffNavigation: true } },
+    session: { draft: { index: "base", text: "edited" }, error: "", saving: false, dirty: true, enabled: false },
+    merge: { a: { contentDOM: node() }, b: { contentDOM: node(), state: { readOnly: false } }, chunks: [{}], dom: { querySelectorAll: () => [revert] } },
+    editorIndex: "base", editorText: "edited", collapseEnabled: false, revertLocked: false,
+    leftCaption: node(), rightCaption: node(), saveButton: node(), warningEl: node(), updateSyntaxHighlight() {},
+  });
+  Object.assign(view.warningEl.dataset, { error: "", language: "zh" });
+  view.updateEditor();
+  assert.equal(view.saveButton.disabled, false);
+  const dirtyCaption = view.rightCaption.textContent;
+  writes = 0;
+  for (let n = 0; n < 30; n++) view.updateEditor();
+  assert.equal(writes, 0, "stable notifications must not reset labels or button attributes");
+  view.session.saving = true; view.updateEditor();
+  assert.equal(view.saveButton.disabled, true);
+  assert.notEqual(view.rightCaption.textContent, dirtyCaption);
+  view.session.saving = false; view.session.dirty = false; view.merge.chunks = []; view.updateEditor();
+  assert.equal(view.saveButton.disabled, true);
+  assert.equal(previous.disabled, true); assert.equal(next.disabled, true);
+  view.session.dirty = true; view.merge.chunks = [{}]; view.updateEditor();
+  assert.equal(view.saveButton.disabled, false);
+  assert.equal(previous.disabled, false); assert.equal(next.disabled, false);
+  assert.equal(view.rightCaption.textContent, dirtyCaption);
+});

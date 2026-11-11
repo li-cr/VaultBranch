@@ -189,6 +189,7 @@ class DiffView extends GitView {
     this.merge?.destroy();
     this.merge = null;
     this.revertLocked = null;
+    this.editorLanguage = null;
     this.updateDiffNavigation();
     this.session = null;
     this.editorText = this.editorIndex = this.editorListener = null;
@@ -282,16 +283,21 @@ class DiffView extends GitView {
     } finally { this.syncingEditor = false; }
     this.updateDiffNavigation();
     void this.updateSyntaxHighlight();
-    for (const control of this.merge.dom.querySelectorAll(".cm-merge-revert button")) {
-      control.title = t("将此差异块恢复为暂存区版本");
-      control.setAttribute("aria-label", control.title);
+    if (this.editorLanguage !== this.plugin.settings.language) {
+      this.editorLanguage = this.plugin.settings.language;
+      for (const control of this.merge.dom.querySelectorAll(".cm-merge-revert button")) {
+        control.title = t("将此差异块恢复为暂存区版本");
+        control.setAttribute("aria-label", control.title);
+      }
+      this.leftCaption.textContent = t("暂存区（只读）");
+      this.merge.a.contentDOM.setAttribute("aria-label", t("暂存区（只读）"));
+      this.merge.b.contentDOM.setAttribute("aria-label", t("工作区（可编辑）"));
     }
-    this.leftCaption.textContent = t("暂存区（只读）");
-    this.rightCaption.textContent = saving ? t("工作区 · 正在保存…") : dirty ? t("工作区 · 未保存") : this.session.enabled ? t("工作区 · 已自动保存") : t("工作区 · 已保存");
-    this.saveButton.disabled = !dirty || saving || this.plugin.busy || this.plugin.mutationPending;
-    this.merge.a.contentDOM.setAttribute("aria-label", t("暂存区（只读）"));
-    this.merge.b.contentDOM.setAttribute("aria-label", t("工作区（可编辑）"));
-    this.warningEl.hidden = !error;
+    const caption = saving ? t("工作区 · 正在保存…") : dirty ? t("工作区 · 未保存") : this.session.enabled ? t("工作区 · 已自动保存") : t("工作区 · 已保存");
+    if (this.rightCaption.textContent !== caption) this.rightCaption.textContent = caption;
+    const disabled = Boolean(!dirty || saving || this.plugin.busy || this.plugin.mutationPending);
+    if (this.saveButton.disabled !== disabled) this.saveButton.disabled = disabled;
+    if (this.warningEl.hidden !== !error) this.warningEl.hidden = !error;
     if (this.warningEl.dataset.error !== error || this.warningEl.dataset.language !== this.plugin.settings.language) {
       this.warningEl.dataset.error = error;
       this.warningEl.dataset.language = this.plugin.settings.language;
