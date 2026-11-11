@@ -59,7 +59,7 @@ class SourceControlView extends ItemView {
     this.treeEl = el(this.contentEl, "div", "vaultbranch-tree");
     this.treeEl.setAttribute("aria-label", t("Git 文件改动"));
     this.render();
-    await this.plugin.refresh();
+    await this.plugin.refreshSource();
   }
 
   updateButtons() {

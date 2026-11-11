@@ -88,9 +88,12 @@ module.exports = class MyGitPlugin extends Plugin {
     this.registerEvent(this.app.workspace.on("active-leaf-change", (leaf) => {
       for (const view of this.views(DIFF_VIEW)) if (view.leaf !== leaf) void view.saveEditor(true);
       this.updateEditorReturn(leaf);
+      this.updateSourceVisibility();
     }));
     this.registerEvent(this.app.workspace.on("file-open", () => this.updateEditorReturn(this.app.workspace.activeLeaf)));
-    this.registerEvent(this.app.workspace.on("layout-change", () => this.pruneGraphReturns()));
+    this.registerEvent(this.app.workspace.on("layout-change", () => { this.pruneGraphReturns(); this.updateSourceVisibility(); }));
+    this.registerEvent(this.app.workspace.on("resize", () => this.updateSourceVisibility()));
+    this.registerDomEvent(document, "visibilitychange", () => this.updateSourceVisibility());
     const navigateBack = (event) => {
       const context = this.activeGraphReturn();
       if (!context) return;
@@ -121,9 +124,7 @@ module.exports = class MyGitPlugin extends Plugin {
       for (const view of this.views(DIFF_VIEW)) void view.session?.sync();
     });
     this.registerInterval(window.setInterval(() => {
-      if (!document.hidden && this.app.workspace.getLeavesOfType(SOURCE_VIEW).length && Date.now() - (this.lastAutoRefresh || 0) >= this.settings.refreshSeconds * 1000) {
-        this.lastAutoRefresh = Date.now(); void this.refresh();
-      }
+      if (this.updateSourceVisibility() && Date.now() - (this.lastAutoRefresh || 0) >= this.settings.refreshSeconds * 1000) void this.refreshSource();
     }, 1000));
     this.app.workspace.onLayoutReady(() => {
       if (this.unloaded) return;
@@ -327,9 +328,30 @@ module.exports = class MyGitPlugin extends Plugin {
   }
 
   scheduleRefresh() {
-    if (this.unloaded) return;
-    this.refreshSoon ||= debounce(() => { if (!this.unloaded) void this.refresh(); }, 650, true);
+    if (this.unloaded || !this.sourceVisible()) { this.refreshSoon?.cancel(); return; }
+    this.refreshSoon ||= debounce(() => { if (!this.unloaded) void this.refreshSource(); }, 650, true);
     this.refreshSoon();
+  }
+
+  sourceVisible() {
+    if (document.hidden) return false;
+    return this.app.workspace.getLeavesOfType(SOURCE_VIEW).some(leaf =>
+      !leaf.getRoot().collapsed && leaf.view.containerEl.isShown());
+  }
+
+  updateSourceVisibility() {
+    const visible = !this.unloaded && this.sourceVisible();
+    const revealed = visible && !this.sourceWasVisible;
+    this.sourceWasVisible = visible;
+    if (revealed) void this.refreshSource();
+    return visible;
+  }
+
+  refreshSource() {
+    if (this.unloaded || !this.sourceVisible()) return;
+    this.sourceWasVisible = true;
+    this.lastAutoRefresh = Date.now();
+    return this.refresh();
   }
 
   views(...types) {

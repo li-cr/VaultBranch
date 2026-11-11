@@ -1,0 +1,102 @@
+{
+  "before": {
+    "version": "0.2.21",
+    "obsidian": "1.15.0",
+    "platform": "win32",
+    "node": "v22.22.1",
+    "indexedFiles": 6,
+    "results": [
+      {
+        "mode": "closed",
+        "eventBurst": 20,
+        "gitSubprocesses": 2,
+        "commands": [
+          "status",
+          "rev-parse"
+        ]
+      },
+      {
+        "mode": "collapsed",
+        "eventBurst": 20,
+        "gitSubprocesses": 2,
+        "commands": [
+          "status",
+          "rev-parse"
+        ]
+      },
+      {
+        "mode": "background-tab",
+        "eventBurst": 20,
+        "gitSubprocesses": 2,
+        "commands": [
+          "status",
+          "rev-parse"
+        ]
+      },
+      {
+        "mode": "visible",
+        "eventBurst": 20,
+        "gitSubprocesses": 2,
+        "commands": [
+          "status",
+          "rev-parse"
+        ]
+      }
+    ],
+    "indexUnchanged": true,
+    "scope": "One burst of 20 scheduleRefresh requests per real sidebar state; 900 ms debounce window; initialized Git, periodic polling suppressed. Counts, not latency or application startup."
+  },
+  "after": {
+    "version": "0.2.21",
+    "obsidian": "1.15.0",
+    "platform": "win32",
+    "node": "v22.22.1",
+    "indexedFiles": 6,
+    "results": [
+      {
+        "mode": "closed",
+        "eventBurst": 20,
+        "gitSubprocesses": 0,
+        "commands": []
+      },
+      {
+        "mode": "collapsed",
+        "eventBurst": 20,
+        "gitSubprocesses": 0,
+        "commands": []
+      },
+      {
+        "mode": "background-tab",
+        "eventBurst": 20,
+        "gitSubprocesses": 0,
+        "commands": []
+      },
+      {
+        "mode": "visible",
+        "eventBurst": 20,
+        "gitSubprocesses": 2,
+        "commands": [
+          "status",
+          "rev-parse"
+        ]
+      }
+    ],
+    "indexUnchanged": true,
+    "scope": "One burst of 20 scheduleRefresh requests per real sidebar state; 900 ms debounce window; initialized Git, periodic polling suppressed. Counts, not latency or application startup."
+  },
+  "environment": {
+    "env": {
+      "platform": "win32 10.0.19045",
+      "node": "v22.22.1",
+      "electron": "39.8.3",
+      "obsidian": "1.15.0",
+      "git": "git version 2.50.0.windows.1"
+    },
+    "scale": {
+      "indexedFiles": 6,
+      "gitFiles": 8,
+      "commits": 6,
+      "stashes": 4
+    }
+  }
+}

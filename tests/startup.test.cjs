@@ -11,7 +11,8 @@ const defaults = require("../default-settings.json");
 
 function harness(saved) {
   const loaded = new Set(), modules = new Map(), factories = new Map(), writes = [];
-  let layoutReady;
+  let layoutReady, interval, pending;
+  const events = new Map(), vaultEvents = new Map(), domEvents = new Map(), document = { hidden: false }, leaves = [];
   class HostPlugin {
     loadData() { return Promise.resolve(saved); }
     saveData(value) { writes.push({ ...value }); return Promise.resolve(); }
@@ -20,13 +21,18 @@ function harness(saved) {
     addRibbonIcon() { return { setAttribute() {} }; }
     addCommand(command) { return command; }
     registerEvent() {}
-    registerDomEvent() {}
+    registerDomEvent(target, name, callback) { domEvents.set(name, callback); }
     registerInterval() {}
   }
   const host = {
     Plugin: HostPlugin, Platform: { isMobile: false },
     ItemView: class { constructor(leaf) { this.leaf = leaf; this.app = leaf.app; } },
     PluginSettingTab: class {}, FuzzySuggestModal: class {}, Modal: class {},
+    debounce(callback) {
+      const schedule = () => { pending = callback; };
+      schedule.cancel = () => { pending = null; };
+      return schedule;
+    },
   };
   function load(file) {
     if (modules.has(file)) return modules.get(file).exports;
@@ -35,7 +41,7 @@ function harness(saved) {
     modules.set(file, module);
     const localRequire = createRequire(file);
     vm.runInNewContext(fs.readFileSync(file, "utf8"), {
-      module, document: {}, window: { setInterval() {} },
+      module, document, window: { setInterval(callback) { interval = callback; } },
       require(name) {
         if (name === "obsidian") return host;
         if (name.startsWith("@codemirror/")) throw Error("Editor requested: " + name);
@@ -47,11 +53,11 @@ function harness(saved) {
   }
   const Plugin = load(path.join(root, "main.js")), plugin = new Plugin();
   plugin.app = {
-    workspace: { on() {}, onLayoutReady(callback) { layoutReady = callback; }, getLeavesOfType() { return []; } },
-    vault: { on() {}, adapter: { getBasePath() { return path.dirname(root); } } },
+    workspace: { on(name, callback) { events.set(name, callback); }, onLayoutReady(callback) { layoutReady = callback; }, getLeavesOfType() { return leaves; }, iterateAllLeaves() {} },
+    vault: { on(name, callback) { vaultEvents.set(name, callback); }, adapter: { getBasePath() { return path.dirname(root); } } },
   };
   plugin.manifest = { dir: ".obsidian/plugins/vaultbranch" };
-  return { plugin, factories, loaded, writes, layout: () => layoutReady() };
+  return { plugin, factories, loaded, writes, document, leaves, events, vaultEvents, domEvents, tick: () => interval(), flush: () => { const callback = pending; pending = null; callback?.(); }, layout: () => layoutReady() };
 }
 
 test("startup registers every view without evaluating view implementations or starting Git", async () => {
@@ -102,4 +108,67 @@ test("startup still opens the requested sidebar after layout and repairs invalid
   assert.equal(opened, 1);
   assert.equal(h.plugin.settings.language, defaults.language);
   assert.equal(h.writes.length, 0);
+});
+
+async function refreshHarness() {
+  const h = harness({ ...defaults, openOnStartup: false });
+  await h.plugin.onload();
+  h.plugin.ready = true;
+  h.counts = { status: 0, sync: 0 };
+  h.plugin.git.status = async () => { h.counts.status++; return { files: [] }; };
+  h.plugin.renderViews = () => {};
+  h.leaf = { getRoot: () => h.root, view: { containerEl: { isShown: () => h.shown } } };
+  h.root = { collapsed: false }; h.shown = true;
+  h.settle = async () => { if (h.plugin.refreshTask) await h.plugin.refreshTask; };
+  return h;
+}
+
+test("closed, collapsed, inactive-tab and hidden-window sidebars perform no automatic status queries", async () => {
+  for (const mode of ["closed", "collapsed", "inactive", "window"]) {
+    const h = await refreshHarness();
+    if (mode !== "closed") h.leaves.push(h.leaf);
+    if (mode === "collapsed") h.root.collapsed = true;
+    if (mode === "inactive") h.shown = false;
+    if (mode === "window") h.document.hidden = true;
+    for (let n = 0; n < 20; n++) h.plugin.scheduleRefresh();
+    h.flush(); h.tick(); await h.settle();
+    assert.equal(h.counts.status, 0, mode);
+    assert.equal(h.plugin.lastAutoRefresh, undefined);
+  }
+});
+
+test("a refresh queued while visible rechecks visibility after the sidebar is hidden", async () => {
+  const h = await refreshHarness(); h.leaves.push(h.leaf);
+  h.plugin.scheduleRefresh();
+  h.root.collapsed = true;
+  h.flush(); await h.settle();
+  assert.equal(h.counts.status, 0);
+});
+
+test("revealing the sidebar refreshes once and coalesces repeated layout and timer checks", async () => {
+  const h = await refreshHarness(); h.leaves.push(h.leaf);
+  h.root.collapsed = true; h.events.get("resize")();
+  h.root.collapsed = false; h.events.get("resize")();
+  h.events.get("layout-change")(); h.tick(); await h.settle();
+  assert.equal(h.counts.status, 1);
+  h.plugin.lastAutoRefresh = Date.now() - 6000;
+  h.tick(); await h.settle();
+  assert.equal(h.counts.status, 2);
+  h.document.hidden = true; h.domEvents.get("visibilitychange")();
+  h.document.hidden = false; h.domEvents.get("visibilitychange")();
+  await h.settle();
+  assert.equal(h.counts.status, 3);
+});
+
+test("hidden-sidebar file events still sync editor sessions and explicit refresh remains available", async () => {
+  const h = await refreshHarness();
+  h.plugin.editSessions.set("file.md", { sync() { h.counts.sync++; } });
+  h.plugin.editSessions.set("hidden.json", { sync() { h.counts.sync++; } });
+  h.plugin.app.vault.getAbstractFileByPath = () => null;
+  h.vaultEvents.get("modify")({ path: "file.md" });
+  h.vaultEvents.get("raw")("hidden.json"); h.flush(); await h.settle();
+  assert.equal(h.counts.sync, 2);
+  assert.equal(h.counts.status, 0);
+  await h.plugin.refresh(true);
+  assert.equal(h.counts.status, 1);
 });

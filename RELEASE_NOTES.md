@@ -1,8 +1,9 @@
-VaultBranch 0.2.21 reduces plugin startup work.
+VaultBranch 0.2.22 avoids unnecessary background Git status refreshes.
 
-- Reuse Obsidian's CodeMirror core modules and initialize view implementations when their first leaf is created, including restored workspace views. Keep MergeView bundled and register commands/settings immediately.
-- Apply new preference defaults in memory; save them on the next actual settings change instead of writing during startup. Preserve existing preferences.
+- Suspend automatic sidebar status refreshes when the sidebar is closed, collapsed, behind another tab or in a hidden document. Check both native DOM visibility and the sidebar root's collapsed state.
+- Refresh current status when the sidebar becomes visible. Keep explicit refresh, Git actions and independent editor synchronization/conflict safety checks available.
+- Recheck visibility when a queued event refresh runs; use the existing interval as a fallback for visibility transitions.
 
-In a local Windows / Obsidian 1.15.0 test vault with warm caches, five reloads per version gave a saved-preference median of 11.7 ms versus 26.4 ms; main.js shrank from 1,076,692 to 349,640 bytes. First-sidebar median rose from 239.5 to 255.1 ms; first-diff median rose from 214.6 to 224.2 ms. These are isolated plugin reloads, not full application cold starts. A reported 800 ms startup was not reproduced. Full samples, legacy-settings measurements, limitations and reproduction steps are in docs/performance/0.2.21.md and scripts/benchmark-startup.js.
+In a local Obsidian 1.15.0 test vault, a burst of 20 refresh requests triggered 0 Git subprocesses instead of 2 with the sidebar closed, collapsed or on an inactive tab; visible refresh remained at 2. The benchmark preserved the Git index. These are deterministic background-operation counts, not a cold-start timing improvement. See docs/performance/0.2.22.md and scripts/benchmark-background-refresh.js for scope, environment, raw results and reproduction.
 
-Validated with 66 local automated tests and 101 Obsidian UI checks for startup/view restoration, navigation, file history, folding, autosave, hidden JSON, drafts/undo and external-change protection. Reproducible startup and editor UI scripts are in tests/manual; run only in the note_test vault. Release assets retain GitHub provenance attestations. Desktop only; requires Git installed separately.
+Validated with 70 local automated tests and 58 Obsidian UI assertions covering visibility/polling, restored workspaces, manual drafts, autosave, hidden JSON, external-change protection and cleanup. Release assets retain GitHub provenance attestations. Desktop only; requires Git installed separately.
