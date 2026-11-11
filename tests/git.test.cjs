@@ -450,6 +450,54 @@ test("editable versions handle untracked empty files and retain CRLF and UTF-8 B
   assert.equal((await service.worktreeVersions("note.md")).working, "\ufefffirst\r\nsecond\r\n");
 });
 
+test("alternating index blobs remain cached while disk and staging changes stay live", async () => {
+  const { root, service } = await fixture();
+  for (const [name, text] of [["small/note.md", "small index\n"], ["large/deep/data.json", '"' + "x".repeat(1100000) + '"\n']]) {
+    await write(root, name, text); await service.stage([name]); await service.worktreeVersions(name);
+  }
+  const original = service.run, commands = [];
+  service.run = function (args, options) { commands.push(args[0]); return original.call(this, args, options); };
+  await write(root, "small/note.md", "external working change\n");
+  assert.deepEqual(await service.worktreeVersions("small/note.md"), { index: "small index\n", working: "external working change\n" });
+  await service.worktreeVersions("large/deep/data.json");
+  assert.equal(commands.filter(cmd => cmd === "cat-file").length, 0);
+  assert.equal(commands.filter(cmd => cmd === "status").length, 2);
+  assert.equal(commands.filter(cmd => cmd === "ls-files").length, 2);
+  await service.stage(["small/note.md"]);
+  assert.equal((await service.worktreeVersions("small/note.md")).index, "external working change\n");
+  assert.equal(commands.filter(cmd => cmd === "cat-file").length, 2);
+});
+
+test("index blob cache stays within eight entries and four MiB with LRU eviction", async () => {
+  const { root, service } = await fixture();
+  for (let n = 0; n < 9; n++) { await write(root, `${n}.md`, `${n}\n`); }
+  await service.stage(Array.from({ length: 9 }, (_, n) => `${n}.md`));
+  for (let n = 0; n < 9; n++) await service.worktreeVersions(`${n}.md`);
+  assert.equal(service.previewBlobs.size, 8);
+  assert.equal([...service.previewBlobs.values()].includes("0\n"), false);
+  for (let n = 0; n < 3; n++) {
+    const name = `large-${n}.md`;
+    await write(root, name, String(n).repeat(1536 * 1024)); await service.stage([name]); await service.worktreeVersions(name);
+    assert.ok(service.previewBlobs.size <= 8 && service.previewBlobBytes <= 4 * 1024 * 1024);
+  }
+  assert.equal(service.previewBlobs.size, 2);
+  assert.equal(service.previewBlobBytes, 3 * 1024 * 1024);
+});
+
+test("parallel index lookup still waits for live conflict and operation checks before exposing text", async () => {
+  const { root, service } = await fixture();
+  await write(root, "note.md", "index\n"); await service.stage(["note.md"]); await service.worktreeVersions("note.md");
+  let release, indexStarted = false;
+  const blocked = new Promise(resolve => { release = resolve; });
+  service.status = () => blocked;
+  const original = service.run;
+  service.run = function (args, options) { if (args[0] === "ls-files") indexStarted = true; return original.call(this, args, options); };
+  const reading = service.worktreeVersions("note.md");
+  assert.equal(indexStarted, true, "independent index lookup starts while status is pending");
+  release({ operation: "rebase", files: [] });
+  await assert.rejects(reading, /rebase/);
+});
+
 test("editable versions reject binary, invalid UTF-8, oversized files and unsafe paths", async () => {
   const { root, service } = await fixture();
   await fs.writeFile(path.join(root, "binary.md"), Buffer.from([0, 1, 2]));

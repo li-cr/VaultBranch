@@ -13,5 +13,6 @@
   "diffAutosave": false,
   "collapseUnchanged": true,
   "showDiffNavigation": true,
-  "syntaxHighlighting": false
+  "syntaxHighlighting": false,
+  "performanceLogging": false
 }

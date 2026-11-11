@@ -71,13 +71,13 @@ class Autosave {
       } finally { this.saving = false; this.notify(); }
     });
   }
-  sync() {
+  sync(timing) {
     this.syncAgain = true;
     if (this.syncTask) return this.syncTask;
     this.syncTask = this.enqueue(async () => {
       do {
         this.syncAgain = false;
-        const versions = await this.read();
+        const versions = await this.read(timing);
         let changed = this.draft.index !== versions.index;
         this.draft.index = versions.index;
         if (versions.working !== this.draft.working) {

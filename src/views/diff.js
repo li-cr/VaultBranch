@@ -10,6 +10,7 @@ const { t } = require("../i18n.js");
 const { DIFF_VIEW, LABELS, el, button, GitView } = require("./shared.js");
 const { collapseOptions, updateCollapse, readOnlyMerge, updateDiffNavigation } = require("./merge.js");
 const { updateSyntaxHighlight } = require("./highlight.js");
+const { measure } = require("../timing.js");
 
 class DiffView extends GitView {
   constructor(leaf, plugin) {
@@ -32,9 +33,10 @@ class DiffView extends GitView {
   getIcon() { return "git-compare"; }
   getState() { return { file: this.file, area: this.area, unified: this.unified, graphReturn: this.graphReturn, editDraft: this.area === "unstaged" ? this.plugin.diffDrafts.get(this.file?.path) : undefined }; }
   async setState(state, result) {
+    const timing = state.timing;
     const request = ++this.stateRequest;
     this.request++;
-    await this.session?.autoFlush();
+    await measure(timing, "save-before-switch", () => this.session?.autoFlush());
     if (request !== this.stateRequest) return;
     this.file = state.file || null;
     this.area = LABELS[state.area] ? state.area : "unstaged";
@@ -45,7 +47,7 @@ class DiffView extends GitView {
       this.plugin.diffDrafts.set(this.file.path, draft);
     }
     this.plugin.setGraphReturn(this.leaf, this.file?.path, this.graphReturn);
-    await this.render(true);
+    await this.render(true, timing);
     await super.setState(state, result);
   }
 
@@ -62,21 +64,21 @@ class DiffView extends GitView {
     await super.onClose();
   }
 
-  async readComparison(file, area, unified) {
+  async readComparison(file, area, unified, timing) {
     await this.plugin.ensureReady();
     const warnings = [];
     if (area === "unstaged" && file.worktree !== "D") {
-      try { return { session: await this.plugin.editorSession(file.path, true), warnings }; }
+      try { return { session: await this.plugin.editorSession(file.path, true, timing), warnings }; }
       catch (error) { warnings.push(error.message); }
     }
     if (!unified && ["history", "staged"].includes(area)) {
-      try { return { versions: await this.plugin.git.comparisonVersions(file, area), warnings }; }
+      try { return { versions: await this.plugin.git.comparisonVersions(file, area, timing), warnings }; }
       catch (error) { warnings.push(error.message); }
     }
-    return { result: area === "history" ? await this.plugin.git.commitDiff(file) : await this.plugin.git.diff(file, area), warnings };
+    return { result: area === "history" ? await this.plugin.git.commitDiff(file, timing) : await this.plugin.git.diff(file, area, timing), warnings };
   }
 
-  async render(replace = false) {
+  async render(replace = false, timing) {
     if (this.loading && !replace) return;
     if (this.merge && this.session && !replace) {
       this.updateEditor();
@@ -89,15 +91,16 @@ class DiffView extends GitView {
     this.contentEl.inert = true;
     this.contentEl.setAttribute("aria-busy", "true");
     let loaded;
-    try { loaded = file ? await this.readComparison(file, this.area, this.unified) : {}; }
+    try { loaded = file ? await measure(timing, "comparison-data", () => this.readComparison(file, this.area, this.unified, timing)) : {}; }
     catch (error) { loaded = { error }; }
     if (request !== this.request) {
+      timing?.mark("cancelledMs");
       if (loaded.session) this.plugin.releaseEditorSession(file.path, loaded.session);
       return;
     }
     // Commit the complete page in one task, before the browser can paint it.
     this.loading = false;
-    this.destroyEditor();
+    measure(timing, "destroy-editor", () => this.destroyEditor());
     this.contentEl.empty();
     this.contentEl.inert = false;
     this.contentEl.removeAttribute("aria-busy");
@@ -120,20 +123,22 @@ class DiffView extends GitView {
       if (loaded.session) {
         this.session = loaded.session;
         this.sessionPath = file.path;
-        this.renderEditor(body);
-        await this.session.sync();
+        measure(timing, "create-editor", () => this.renderEditor(body));
+        timing?.ready(this.contentEl.ownerDocument, () => request === this.request);
+        await measure(timing, "verify-after-render", () => this.session.sync(timing));
         return;
       }
       if (loaded.versions) {
-        this.merge = readOnlyMerge(body, loaded.versions, this.area === "history" ? [t("父提交"), t("当前提交")] : ["HEAD", t("暂存区（只读）")], this.plugin.settings);
+        this.merge = measure(timing, "create-readonly-editor", () => readOnlyMerge(body, loaded.versions, this.area === "history" ? [t("父提交"), t("当前提交")] : ["HEAD", t("暂存区（只读）")], this.plugin.settings));
         this.collapseEnabled = Boolean(this.plugin.settings.collapseUnchanged);
         this.updateDiffNavigation();
         void this.updateSyntaxHighlight();
+        timing?.ready(this.contentEl.ownerDocument, () => request === this.request);
         return;
       }
       const result = loaded.result;
       if (result.message) el(body, "div", "vaultbranch-empty", result.message);
-      if (!result.patch) return;
+      if (!result.patch) { timing?.ready(this.contentEl.ownerDocument, () => request === this.request); return; }
       if (this.unified || this.area === "conflicts") {
         const code = el(body, "div", "vaultbranch-unified");
         for (const line of result.patch.split("\n")) {
@@ -158,7 +163,9 @@ class DiffView extends GitView {
           }
         }
       }
+      timing?.ready(this.contentEl.ownerDocument, () => request === this.request);
     } catch (error) {
+      timing?.mark("errorMs");
       if (request === this.request) { body.replaceChildren(); el(body, "div", "vaultbranch-empty is-error", error.message); }
     }
   }

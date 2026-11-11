@@ -5,6 +5,7 @@ const { hostname } = require("node:os");
 const { t, setLanguage } = require("./i18n.js");
 const { Autosave, normalize, conflictMessage } = require("./autosave.js");
 const { dateTriggerRange } = require("./date.js");
+const { TimingLog } = require("./timing.js");
 const { SOURCE_VIEW, DIFF_VIEW, HISTORY_VIEW, CONFLICT_VIEW, FILE_HISTORY_VIEW, DEFAULT_SETTINGS, el, button } = require("./views/shared.js");
 const { MyGitSettings } = require("./settings.js");
 
@@ -134,6 +135,7 @@ module.exports = class MyGitPlugin extends Plugin {
 
   onunload() {
     this.unloaded = true;
+    this.timingLog?.clear();
     this.refreshSoon?.cancel();
     window.clearTimeout(this.dateTimer);
     document.querySelectorAll(".vaultbranch-editor-return").forEach((node) => node.remove());
@@ -186,7 +188,9 @@ module.exports = class MyGitPlugin extends Plugin {
     if (this.busy) { new Notice(t("Git 操作执行中，请稍后修改设置。")); return false; }
     if (this.settings[key] === value) return true;
     this.settings[key] = value;
+    if (key === "performanceLogging" && !value) this.timingLog?.clear();
     await this.saveData(this.settings);
+    if (key === "performanceLogging") return true;
     if (key === "diffAutosave") for (const session of this.editSessions.values()) session.setEnabled(value);
     if (key === "collapseUnchanged") for (const view of this.views(DIFF_VIEW, FILE_HISTORY_VIEW)) view.updateCollapse();
     if (key === "showDiffNavigation") for (const view of this.views(DIFF_VIEW, FILE_HISTORY_VIEW)) view.updateDiffNavigation();
@@ -212,6 +216,26 @@ module.exports = class MyGitPlugin extends Plugin {
     const modal = new Modal(this.app);
     modal.titleEl.textContent = t("VaultBranch · 操作输出");
     el(modal.contentEl, "pre", "vaultbranch-log", this.lastOutput || t("尚无操作。")); modal.open();
+  }
+
+  startDiffTiming(file, area, event) {
+    if (!this.settings?.performanceLogging) return;
+    this.timingLog ||= new TimingLog();
+    const delay = event ? performance.now() - event.timeStamp : 0;
+    return this.timingLog.start({ operation: "open-diff", path: file.path, area, source: event ? "sidebar" : "command", trusted: event?.isTrusted ?? false, inputDelayMs: delay >= 0 && delay < 60000 ? Math.round(delay * 100) / 100 : null });
+  }
+
+  timingReport() {
+    return JSON.stringify({ schema: 1, version: this.manifest.version, userAgent: navigator.userAgent, units: "ms", note: "Stages may overlap. Frame callbacks do not guarantee physical paint.", records: this.timingLog?.records || [] }, null, 2);
+  }
+
+  showTimings() {
+    const modal = new Modal(this.app);
+    modal.titleEl.textContent = t("调优记录");
+    const output = el(modal.contentEl, "pre", "vaultbranch-log", this.timingReport());
+    button(modal.contentEl, "copy", t("复制记录"), async () => { await navigator.clipboard.writeText(this.timingReport()); new Notice(t("已复制调优记录。")); }, t("复制记录"));
+    button(modal.contentEl, "trash-2", t("清空记录"), () => { this.timingLog?.clear(); output.textContent = this.timingReport(); }, t("清空记录"));
+    modal.open();
   }
 
   confirmAbort() {
@@ -283,14 +307,14 @@ module.exports = class MyGitPlugin extends Plugin {
     await this.initTask;
   }
 
-  async editorSession(filePath, retain = false) {
+  async editorSession(filePath, retain = false, timing) {
     if (!this.editSessions.has(filePath) && !this.editorTasks.has(filePath)) this.editorTasks.set(filePath, (async () => {
-      const versions = await this.git.worktreeVersions(filePath);
+      const versions = await this.git.worktreeVersions(filePath, timing);
       const draft = this.diffDrafts.get(filePath) || { ...versions, text: normalize(versions.working) };
       this.diffDrafts.set(filePath, draft);
       const session = new Autosave(draft, {
         enabled: this.settings.diffAutosave,
-        read: () => this.git.worktreeVersions(filePath),
+        read: timing => this.git.worktreeVersions(filePath, timing),
         write: async (expected, content) => {
           const file = this.app.vault.getAbstractFileByPath(filePath);
           const update = (current) => {
@@ -478,13 +502,21 @@ module.exports = class MyGitPlugin extends Plugin {
   }
   openConflict(filePath) { return this.openView(CONFLICT_VIEW, { filePath }); }
 
-  async openDiff(file, area, graphReturn = null) {
+  async openDiff(file, area, graphReturn = null, timing = this.startDiffTiming(file, area)) {
     if (area === "history" && !graphReturn) {
       const graph = this.app.workspace.getLeavesOfType(HISTORY_VIEW).find(item => this.isView(item.view, HISTORY_VIEW));
       graphReturn = graph?.view.captureNavigation() || null;
     }
     // WorkspaceLeaf.setViewState itself is asynchronous; preserve click order.
-    const open = () => this.openView(DIFF_VIEW, { file, area, graphReturn });
+    const open = async () => {
+      timing?.mark("queueMs");
+      try {
+        const leaf = await this.openView(DIFF_VIEW, { file, area, graphReturn, timing });
+        timing?.finish(timing.record.errorMs !== undefined ? "failed" : timing.record.cancelledMs !== undefined ? "cancelled" : "complete");
+        return leaf;
+      }
+      catch (error) { timing?.finish("failed"); throw error; }
+    };
     this.diffNavigationTask = (this.diffNavigationTask || Promise.resolve()).then(open, open);
     return this.diffNavigationTask;
   }

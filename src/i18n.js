@@ -3,6 +3,13 @@
 // Chinese source strings are the fallback; tagged templates keep values out of translation keys.
 let language = "zh";
 const english = {
+  "调优：记录操作耗时": "Tuning: record operation timings",
+  "默认关闭。记录差异文件打开的点击、排队、Git、编辑器和帧时间；仅本机保留最近 100 条，不记录正文。关闭或重载后清空。": "Off by default. Record diff-opening clicks, queue, Git, editor and frame timings. Keep the latest 100 records locally without file contents. Clear when disabled or reloaded.",
+  "调优记录": "Tuning records",
+  "查看记录": "View records",
+  "复制记录": "Copy records",
+  "清空记录": "Clear records",
+  "已复制调优记录。": "Tuning records copied.",
   "差异语法高亮": "Diff syntax highlighting",
   "默认关闭。开启后按扩展名高亮 JSON 和 Markdown；超过 20 万字符或单行超过 1 万字符时使用纯文本。保留差异背景、草稿和撤销历史。": "Off by default. Highlight JSON and Markdown by extension; use plain text above 200,000 characters or 10,000 characters on one line. Preserve diff backgrounds, drafts and undo history.",
   "将此差异块恢复为暂存区版本": "Restore this change to the staged version",

@@ -1,6 +1,7 @@
 "use strict";
 
 const { t } = require("./i18n.js");
+const { measure } = require("./timing.js");
 
 const { execFile } = require("node:child_process");
 const fs = require("node:fs/promises");
@@ -151,7 +152,8 @@ class GitService {
     this.pullMethod = options.pullMethod === "merge" ? "merge" : "rebase";
   }
 
-  run(args, { timeout = 20000, allowDiffExit = false } = {}) {
+  run(args, { timeout = 20000, allowDiffExit = false, timing } = {}) {
+    const end = timing?.span(`git:${args[0]}${args[0] === "cat-file" ? ":" + args[1] : ""}`);
     return new Promise((resolve, reject) => {
       execFile(this.binary, ["-c", "core.quotepath=false", "-c", "color.ui=false", ...args], {
         cwd: this.root,
@@ -163,6 +165,7 @@ class GitService {
         // Stash uses Git's own pathspecs to remove saved untracked files.
         env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_PAGER: "cat", GIT_EDITOR: "true", GIT_SEQUENCE_EDITOR: "true", GIT_LITERAL_PATHSPECS: ["check-ignore", "stash"].includes(args[0]) ? "0" : "1" },
       }, (error, stdout, stderr) => {
+        end?.();
         if (!error || (allowDiffExit && error.code === 1)) return resolve(stdout);
         const detail = error.killed ? t("Git 操作超时；请检查网络、SSH 或凭据配置。") : ([stderr, stdout].filter((value) => value?.trim()).join("\n").trim() || error.message);
         if (/non-fast-forward|fetch first|remote contains work|tip of your current branch is behind/i.test(detail)) {
@@ -194,9 +197,9 @@ class GitService {
     return null;
   }
 
-  async status({ includeStash = true } = {}) {
+  async status({ includeStash = true, timing } = {}) {
     const [output, operation, stash] = await Promise.all([
-      this.run(["status", "--porcelain=v1", "-z", "--branch", "--untracked-files=all"]),
+      this.run(["status", "--porcelain=v1", "-z", "--branch", "--untracked-files=all"], { timing }),
       this.operation(),
       includeStash ? this.stashExists() : false,
     ]);
@@ -301,7 +304,7 @@ class GitService {
     return this.run(["switch", "--no-guess", "-c", name, ...(hash ? [hash] : [])]);
   }
 
-  async diff(file, area) {
+  async diff(file, area, timing) {
     this.checkPaths([file.path]);
     if (file.untracked && area === "unstaged") {
       const absolute = path.resolve(this.root, file.path);
@@ -319,20 +322,26 @@ class GitService {
     if (area === "staged") args.push("--cached");
     args.push("--", file.path);
     if (area === "staged" && file.oldPath) args.push(file.oldPath);
-    return this.preview(args, t("没有可显示的文本差异，文件状态可能已发生变化。"));
+    return this.preview(args, t("没有可显示的文本差异，文件状态可能已发生变化。"), timing);
   }
 
-  async preview(args, emptyMessage) {
-    const patch = await this.run(args);
+  async preview(args, emptyMessage, timing) {
+    const patch = await this.run(args, { timing });
     if (Buffer.byteLength(patch, "utf8") > MAX_PREVIEW) return { message: t("差异超过 2 MB，请在外部编辑器中查看。"), patch: "" };
     return { patch, message: patch ? "" : emptyMessage };
   }
 
-  async worktreeVersions(filePath) {
+  worktreeVersions(filePath, timing) { return measure(timing, "read-worktree-versions", () => this.readWorktreeVersions(filePath, timing)); }
+
+  async readWorktreeVersions(filePath, timing) {
     this.checkPaths([filePath]);
-    this.assertNormal(await this.status({ includeStash: false }));
     const absolute = path.resolve(this.root, filePath);
-    const [stat, actual, root] = await Promise.all([fs.lstat(absolute), fs.realpath(absolute), fs.realpath(this.root)]);
+    const [status, [stat, actual, root], entries] = await Promise.all([
+      this.status({ includeStash: false, timing }),
+      measure(timing, "validate-file-path", () => Promise.all([fs.lstat(absolute), fs.realpath(absolute), fs.realpath(this.root)])),
+      this.run(["ls-files", "--stage", "-z", "--", filePath], { timing }),
+    ]);
+    this.assertNormal(status);
     const relative = path.relative(root, actual);
     if (!stat.isFile() || stat.isSymbolicLink() || relative.startsWith("..") || path.isAbsolute(relative)) {
       throw new Error(t("此文件不支持在差异视图中编辑。"));
@@ -343,20 +352,35 @@ class GitService {
       catch { throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。")); }
     };
     if (stat.size > MAX_PREVIEW) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
-    const working = decode(await fs.readFile(absolute));
-    const entry = (await this.run(["ls-files", "--stage", "-z", "--", filePath])).split("\0").find(Boolean);
+    const working = decode(await measure(timing, "read-working-file", () => fs.readFile(absolute)));
+    const entry = entries.split("\0").find(Boolean);
     let index = "";
     if (entry) {
       const hash = entry.split(" ")[1];
-      if (this.previewBlob?.hash === hash) index = this.previewBlob.text;
+      if (this.previewBlobs?.has(hash)) {
+        index = this.previewBlobs.get(hash);
+        this.previewBlobs.delete(hash); this.previewBlobs.set(hash, index);
+        if (timing) timing.record.blobCacheHits = (timing.record.blobCacheHits || 0) + 1;
+      }
       else {
-        if (Number(await this.run(["cat-file", "-s", hash])) > MAX_PREVIEW) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
-        index = await this.run(["cat-file", "blob", hash]);
+        if (Number(await this.run(["cat-file", "-s", hash], { timing })) > MAX_PREVIEW) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
+        index = await this.run(["cat-file", "blob", hash], { timing });
         if (index.includes("\0") || index.includes("\ufffd")) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
-        // Blobs are immutable by hash. Keep only one, bounded by MAX_PREVIEW.
-        this.previewBlob = { hash, text: index };
+        // Only immutable blobs are cached; mutable index and disk state stay live.
+        this.previewBlobs ||= new Map();
+        // Another concurrent read may have filled the same hash while awaiting Git.
+        if (!this.previewBlobs.has(hash)) {
+          this.previewBlobs.set(hash, index);
+          this.previewBlobBytes = (this.previewBlobBytes || 0) + Buffer.byteLength(index, "utf8");
+          while (this.previewBlobs.size > 8 || this.previewBlobBytes > MAX_PREVIEW * 2) {
+            const oldest = this.previewBlobs.keys().next().value;
+            this.previewBlobBytes -= Buffer.byteLength(this.previewBlobs.get(oldest), "utf8");
+            this.previewBlobs.delete(oldest);
+          }
+        }
       }
     }
+    if (timing) { timing.record.workingBytes = stat.size; timing.record.indexBytes = Buffer.byteLength(index, "utf8"); }
     return { index, working };
   }
 
@@ -484,9 +508,9 @@ class GitService {
     if (!/^[a-f0-9]{40,64}$/.test(hash)) throw new Error(t("无效的提交编号。"));
   }
 
-  async firstParent(hash) {
+  async firstParent(hash, timing) {
     this.checkCommit(hash);
-    return (await this.run(["rev-list", "--parents", "-n", "1", hash])).trim().split(" ")[1];
+    return (await this.run(["rev-list", "--parents", "-n", "1", hash], { timing })).trim().split(" ")[1];
   }
 
   async fileHistory(filePath, { all = false, limit = 50 } = {}) {
@@ -537,42 +561,42 @@ class GitService {
     return commits;
   }
 
-  async textBlob(hash) {
+  async textBlob(hash, timing) {
     if (!hash) return "";
     this.checkCommit(hash);
-    if (Number(await this.run(["cat-file", "-s", hash])) > MAX_PREVIEW) throw new Error(t("文件超过 2 MB，请在外部编辑器中查看。"));
-    const text = await this.run(["cat-file", "blob", hash]);
+    if (Number(await this.run(["cat-file", "-s", hash], { timing })) > MAX_PREVIEW) throw new Error(t("文件超过 2 MB，请在外部编辑器中查看。"));
+    const text = await this.run(["cat-file", "blob", hash], { timing });
     if (text.includes("\0") || text.includes("\ufffd")) throw new Error(t("此版本不是可预览的 UTF-8 文本。"));
     return text;
   }
 
-  async revisionText(hash, filePath) {
+  async revisionText(hash, filePath, timing) {
     if (!hash) return "";
     this.checkCommit(hash);
     this.checkPaths([filePath]);
-    const entry = (await this.run(["ls-tree", "-z", hash, "--", filePath])).split("\0").find(Boolean);
+    const entry = (await this.run(["ls-tree", "-z", hash, "--", filePath], { timing })).split("\0").find(Boolean);
     if (!entry) return "";
     const match = entry.match(/^\d+ blob ([a-f0-9]+)\t/);
     if (!match) throw new Error(t("此版本不是可预览的 UTF-8 文本。"));
-    return this.textBlob(match[1]);
+    return this.textBlob(match[1], timing);
   }
 
-  async comparisonVersions(file, area) {
+  async comparisonVersions(file, area, timing) {
     this.checkPaths([file.path, ...(file.oldPath ? [file.oldPath] : [])]);
     if (area === "history") {
-      const parent = await this.firstParent(file.commit);
+      const parent = await this.firstParent(file.commit, timing);
       const [left, right] = await Promise.all([
-        this.revisionText(parent, file.oldPath || file.path), this.revisionText(file.commit, file.path),
+        this.revisionText(parent, file.oldPath || file.path, timing), this.revisionText(file.commit, file.path, timing),
       ]);
       return { left, right };
     }
     if (area !== "staged") return null;
-    const head = (await this.run(["rev-parse", "--verify", "--quiet", "HEAD"], { allowDiffExit: true })).trim();
-    const entries = (await this.run(["ls-files", "--stage", "-z", "--", file.path])).split("\0").filter(Boolean);
+    const head = (await this.run(["rev-parse", "--verify", "--quiet", "HEAD"], { allowDiffExit: true, timing })).trim();
+    const entries = (await this.run(["ls-files", "--stage", "-z", "--", file.path], { timing })).split("\0").filter(Boolean);
     const entry = entries.find(line => /^\d+ [a-f0-9]+ 0\t/.test(line));
     if (entries.length && !entry) throw new Error(t("请先解决冲突。"));
     const [left, right] = await Promise.all([
-      this.revisionText(head, file.oldPath || file.path), this.textBlob(entry?.split(" ")[1]),
+      this.revisionText(head, file.oldPath || file.path, timing), this.textBlob(entry?.split(" ")[1], timing),
     ]);
     return { left, right };
   }
@@ -590,12 +614,12 @@ class GitService {
     return files;
   }
 
-  async commitDiff(file) {
+  async commitDiff(file, timing) {
     this.checkPaths([file.path]);
-    const parent = await this.firstParent(file.commit);
+    const parent = await this.firstParent(file.commit, timing);
     const args = parent ? ["diff", ...DIFF_OPTIONS, parent, file.commit, "--", file.path]
       : ["show", ...DIFF_OPTIONS, "--format=", "--root", file.commit, "--", file.path];
-    return this.preview(args, t("没有文本差异。"));
+    return this.preview(args, t("没有文本差异。"), timing);
   }
 
   async conflictVersions(filePath) {

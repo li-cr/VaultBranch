@@ -204,11 +204,12 @@ class SourceControlView extends ItemView {
       open.title = t`${file.path}\n${t(STATUS_LABELS[code] || code)}${file.oldPath ? t`\n原路径：${file.oldPath}` : ""}\n点击查看${t(LABELS[area])}差异`;
       setIcon(el(open, "span", "vaultbranch-file-icon"), "file-text");
       el(open, "span", "vaultbranch-file-name", file.path.split("/").at(-1));
-      open.addEventListener("click", () => {
+      open.addEventListener("click", event => {
+        const timing = area !== "conflicts" ? this.plugin.startDiffTiming?.(file, area, event) : undefined;
         this.selected = `${area}:${file.path}`;
         this.treeEl.querySelector(".vaultbranch-file-row.is-selected")?.classList.remove("is-selected");
         row.classList.add("is-selected");
-        (area === "conflicts" ? this.plugin.openConflict(file.path) : this.plugin.openDiff(file, area)).catch((error) => new Notice(error.message));
+        (area === "conflicts" ? this.plugin.openConflict(file.path) : this.plugin.openDiff(file, area, null, timing)).catch((error) => new Notice(error.message));
       });
       if (area !== "conflicts") {
         const stage = button(row, area === "staged" ? "minus" : "plus", area === "staged" ? t("取消暂存") : t("暂存文件"), () => this.plugin.changeStage([file], area));
