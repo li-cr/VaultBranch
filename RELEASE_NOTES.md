@@ -1,10 +1,8 @@
-VaultBranch 0.2.20 adds configurable previous/next change buttons.
+VaultBranch 0.2.21 reduces plugin startup work.
 
-- Enable or hide the ↑ / ↓ controls under Settings → Other → Show diff navigation buttons. Enabled by default, with immediate updates to open views.
-- Jump between changes in editable side-by-side diffs, staged comparisons and file history using CodeMirror's native goToPreviousChunk/goToNextChunk commands, including native wraparound and deletion chunks.
-- Disable both buttons when there are no changes. Patch-only previews do not display unavailable controls.
-- Preserve the active pane on mouse clicks, editable drafts, selection and undo when toggling the setting. Navigation does not save or stage content.
+- Reuse Obsidian's CodeMirror core modules and initialize view implementations when their first leaf is created, including restored workspace views. Keep MergeView bundled and register commands/settings immediately.
+- Apply new preference defaults in memory; save them on the next actual settings change instead of writing during startup. Preserve existing preferences.
 
-Validated with 24 Obsidian UI checks and 8 local editor/session regression tests. The reproducible UI script is tests/manual/diff-navigation-ui.js; run only in the note_test vault. Syntax, CSS and build checks pass. No performance improvement is claimed.
+In a local Windows / Obsidian 1.15.0 test vault with warm caches, five reloads per version gave a saved-preference median of 11.7 ms versus 26.4 ms; main.js shrank from 1,076,692 to 349,640 bytes. First-sidebar median rose from 239.5 to 255.1 ms; first-diff median rose from 214.6 to 224.2 ms. These are isolated plugin reloads, not full application cold starts. A reported 800 ms startup was not reproduced. Full samples, legacy-settings measurements, limitations and reproduction steps are in docs/performance/0.2.21.md and scripts/benchmark-startup.js.
 
-Release assets retain GitHub provenance attestations. Desktop only; requires Git installed separately.
+Validated with 66 local automated tests and 101 Obsidian UI checks for startup/view restoration, navigation, file history, folding, autosave, hidden JSON, drafts/undo and external-change protection. Reproducible startup and editor UI scripts are in tests/manual; run only in the note_test vault. Release assets retain GitHub provenance attestations. Desktop only; requires Git installed separately.

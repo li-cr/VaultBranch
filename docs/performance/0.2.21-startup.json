@@ -1,0 +1,494 @@
+{
+  "before-saved": {
+    "environment": {
+      "platform": "win32 10.0.19045",
+      "node": "v22.22.1",
+      "electron": "39.8.3",
+      "git": "git version 2.50.0.windows.1",
+      "obsidian": "1.15.0",
+      "installer": "1.12.7",
+      "plugin": "0.2.21",
+      "otherCommunityPlugins": []
+    },
+    "scenario": "Same live note_test vault; sidebar closed, openOnStartup=false; one warm-up, five reloads. loadPlugin includes script loading/evaluation, onload and CSS. First sidebar includes Git status and layout; first diff includes Git/file reads, MergeView creation and synchronous layout, not final paint. Warm OS/V8 cache; not a full application cold start.",
+    "preferences": "Existing preferences with all default fields",
+    "scale": {
+      "indexedVaultFiles": 7,
+      "gitFiles": 8,
+      "commits": 6,
+      "stashes": 4,
+      "fixtureLines": 80
+    },
+    "samples": [
+      {
+        "beforeOnloadMs": 24.9,
+        "settingsReadMs": 3.9,
+        "onloadMs": 4.5,
+        "loadPluginMs": 30.1,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 239.2,
+        "firstDiffMs": 212.2,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 22.2,
+        "settingsReadMs": 3,
+        "onloadMs": 3.4,
+        "loadPluginMs": 26.4,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 236.5,
+        "firstDiffMs": 217,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 29,
+        "settingsReadMs": 0.5,
+        "onloadMs": 1.2,
+        "loadPluginMs": 31.2,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 246.8,
+        "firstDiffMs": 213.2,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 19.5,
+        "settingsReadMs": 0.5,
+        "onloadMs": 0.9,
+        "loadPluginMs": 21,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 239.5,
+        "firstDiffMs": 280,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 21.9,
+        "settingsReadMs": 2.4,
+        "onloadMs": 2.9,
+        "loadPluginMs": 25.6,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 249.9,
+        "firstDiffMs": 214.6,
+        "sessionsAfterClose": 0
+      }
+    ],
+    "summary": {
+      "loadPluginMs": {
+        "median": 26.4,
+        "range": [
+          21,
+          31.2
+        ]
+      },
+      "beforeOnloadMs": {
+        "median": 22.2,
+        "range": [
+          19.5,
+          29
+        ]
+      },
+      "onloadMs": {
+        "median": 2.9,
+        "range": [
+          0.9,
+          4.5
+        ]
+      },
+      "settingsReadMs": {
+        "median": 2.4,
+        "range": [
+          0.5,
+          3.9
+        ]
+      },
+      "firstSidebarMs": {
+        "median": 239.5,
+        "range": [
+          236.5,
+          249.9
+        ]
+      },
+      "firstDiffMs": {
+        "median": 214.6,
+        "range": [
+          212.2,
+          280
+        ]
+      }
+    },
+    "bundleBytes": 1076692
+  },
+  "after-saved": {
+    "environment": {
+      "platform": "win32 10.0.19045",
+      "node": "v22.22.1",
+      "electron": "39.8.3",
+      "git": "git version 2.50.0.windows.1",
+      "obsidian": "1.15.0",
+      "installer": "1.12.7",
+      "plugin": "0.2.21",
+      "otherCommunityPlugins": []
+    },
+    "scenario": "Same live note_test vault; sidebar closed, openOnStartup=false; one warm-up, five reloads. loadPlugin includes script loading/evaluation, onload and CSS. First sidebar includes Git status and layout; first diff includes Git/file reads, MergeView creation and synchronous layout, not final paint. Warm OS/V8 cache; not a full application cold start.",
+    "preferences": "Existing preferences with all default fields",
+    "scale": {
+      "indexedVaultFiles": 7,
+      "gitFiles": 8,
+      "commits": 6,
+      "stashes": 4,
+      "fixtureLines": 80
+    },
+    "samples": [
+      {
+        "beforeOnloadMs": 11.8,
+        "settingsReadMs": 0.4,
+        "onloadMs": 1.2,
+        "loadPluginMs": 14.5,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 255.1,
+        "firstDiffMs": 221.3,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 8.2,
+        "settingsReadMs": 0.5,
+        "onloadMs": 1,
+        "loadPluginMs": 10.2,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 255.3,
+        "firstDiffMs": 272,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 10,
+        "settingsReadMs": 0.6,
+        "onloadMs": 1.1,
+        "loadPluginMs": 11.7,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 252.6,
+        "firstDiffMs": 225,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 9.1,
+        "settingsReadMs": 0.5,
+        "onloadMs": 1,
+        "loadPluginMs": 11.3,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 252.2,
+        "firstDiffMs": 224.2,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 10.4,
+        "settingsReadMs": 0.5,
+        "onloadMs": 1.1,
+        "loadPluginMs": 12.4,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 264.7,
+        "firstDiffMs": 220,
+        "sessionsAfterClose": 0
+      }
+    ],
+    "summary": {
+      "loadPluginMs": {
+        "median": 11.7,
+        "range": [
+          10.2,
+          14.5
+        ]
+      },
+      "beforeOnloadMs": {
+        "median": 10,
+        "range": [
+          8.2,
+          11.8
+        ]
+      },
+      "onloadMs": {
+        "median": 1.1,
+        "range": [
+          1,
+          1.2
+        ]
+      },
+      "settingsReadMs": {
+        "median": 0.5,
+        "range": [
+          0.4,
+          0.6
+        ]
+      },
+      "firstSidebarMs": {
+        "median": 255.1,
+        "range": [
+          252.2,
+          264.7
+        ]
+      },
+      "firstDiffMs": {
+        "median": 224.2,
+        "range": [
+          220,
+          272
+        ]
+      }
+    },
+    "bundleBytes": 349640
+  },
+  "before-legacy": {
+    "environment": {
+      "platform": "win32 10.0.19045",
+      "node": "v22.22.1",
+      "electron": "39.8.3",
+      "git": "git version 2.50.0.windows.1",
+      "obsidian": "1.15.0",
+      "installer": "1.12.7",
+      "plugin": "0.2.21",
+      "otherCommunityPlugins": []
+    },
+    "scenario": "Same live note_test vault; sidebar closed, openOnStartup=false; one warm-up, five reloads. loadPlugin includes script loading/evaluation, onload and CSS. First sidebar includes Git status and layout; first diff includes Git/file reads, MergeView creation and synchronous layout, not final paint. Warm OS/V8 cache; not a full application cold start.",
+    "preferences": "Existing preferences missing two newer default fields",
+    "scale": {
+      "indexedVaultFiles": 7,
+      "gitFiles": 8,
+      "commits": 6,
+      "stashes": 4,
+      "fixtureLines": 80
+    },
+    "samples": [
+      {
+        "beforeOnloadMs": 24.5,
+        "settingsReadMs": 7.6,
+        "settingsWrites": 1,
+        "onloadMs": 9.7,
+        "loadPluginMs": 35.4,
+        "readyAtLoad": false,
+        "firstSidebarMs": 241.8,
+        "firstDiffMs": 237.6,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 19.3,
+        "settingsReadMs": 0.9,
+        "settingsWrites": 1,
+        "onloadMs": 2.8,
+        "loadPluginMs": 22.8,
+        "readyAtLoad": false,
+        "firstSidebarMs": 238.7,
+        "firstDiffMs": 217,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 19.5,
+        "settingsReadMs": 0.8,
+        "settingsWrites": 1,
+        "onloadMs": 5.8,
+        "loadPluginMs": 26,
+        "readyAtLoad": false,
+        "firstSidebarMs": 245.3,
+        "firstDiffMs": 221.3,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 23.9,
+        "settingsReadMs": 0.4,
+        "settingsWrites": 1,
+        "onloadMs": 2.4,
+        "loadPluginMs": 27,
+        "readyAtLoad": false,
+        "firstSidebarMs": 233.8,
+        "firstDiffMs": 214,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 29.4,
+        "settingsReadMs": 7.1,
+        "settingsWrites": 1,
+        "onloadMs": 9.5,
+        "loadPluginMs": 40.2,
+        "readyAtLoad": false,
+        "firstSidebarMs": 242.5,
+        "firstDiffMs": 217.1,
+        "sessionsAfterClose": 0
+      }
+    ],
+    "summary": {
+      "loadPluginMs": {
+        "median": 27,
+        "range": [
+          22.8,
+          40.2
+        ]
+      },
+      "beforeOnloadMs": {
+        "median": 23.9,
+        "range": [
+          19.3,
+          29.4
+        ]
+      },
+      "onloadMs": {
+        "median": 5.8,
+        "range": [
+          2.4,
+          9.7
+        ]
+      },
+      "settingsReadMs": {
+        "median": 0.9,
+        "range": [
+          0.4,
+          7.6
+        ]
+      },
+      "firstSidebarMs": {
+        "median": 241.8,
+        "range": [
+          233.8,
+          245.3
+        ]
+      },
+      "firstDiffMs": {
+        "median": 217.1,
+        "range": [
+          214,
+          237.6
+        ]
+      }
+    },
+    "bundleBytes": 1076692
+  },
+  "after-legacy": {
+    "environment": {
+      "platform": "win32 10.0.19045",
+      "node": "v22.22.1",
+      "electron": "39.8.3",
+      "git": "git version 2.50.0.windows.1",
+      "obsidian": "1.15.0",
+      "installer": "1.12.7",
+      "plugin": "0.2.21",
+      "otherCommunityPlugins": []
+    },
+    "scenario": "Same live note_test vault; sidebar closed, openOnStartup=false; one warm-up, five reloads. loadPlugin includes script loading/evaluation, onload and CSS. First sidebar includes Git status and layout; first diff includes Git/file reads, MergeView creation and synchronous layout, not final paint. Warm OS/V8 cache; not a full application cold start.",
+    "preferences": "Existing preferences missing two newer default fields",
+    "scale": {
+      "indexedVaultFiles": 7,
+      "gitFiles": 8,
+      "commits": 6,
+      "stashes": 4,
+      "fixtureLines": 80
+    },
+    "samples": [
+      {
+        "beforeOnloadMs": 6.8,
+        "settingsReadMs": 0.5,
+        "onloadMs": 1,
+        "loadPluginMs": 12.4,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 255.9,
+        "firstDiffMs": 217.4,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 5.5,
+        "settingsReadMs": 0.6,
+        "onloadMs": 1.3,
+        "loadPluginMs": 8.1,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 257.5,
+        "firstDiffMs": 240.9,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 9.4,
+        "settingsReadMs": 0.4,
+        "onloadMs": 0.9,
+        "loadPluginMs": 11.4,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 245.3,
+        "firstDiffMs": 224.9,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 6.6,
+        "settingsReadMs": 0.4,
+        "onloadMs": 1.1,
+        "loadPluginMs": 9,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 281.9,
+        "firstDiffMs": 281.1,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 5.9,
+        "settingsReadMs": 0.5,
+        "onloadMs": 1,
+        "loadPluginMs": 22,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 249.8,
+        "firstDiffMs": 239,
+        "sessionsAfterClose": 0
+      }
+    ],
+    "summary": {
+      "loadPluginMs": {
+        "median": 11.4,
+        "range": [
+          8.1,
+          22
+        ]
+      },
+      "beforeOnloadMs": {
+        "median": 6.6,
+        "range": [
+          5.5,
+          9.4
+        ]
+      },
+      "onloadMs": {
+        "median": 1,
+        "range": [
+          0.9,
+          1.3
+        ]
+      },
+      "settingsReadMs": {
+        "median": 0.5,
+        "range": [
+          0.4,
+          0.6
+        ]
+      },
+      "firstSidebarMs": {
+        "median": 255.9,
+        "range": [
+          245.3,
+          281.9
+        ]
+      },
+      "firstDiffMs": {
+        "median": 239,
+        "range": [
+          217.4,
+          281.1
+        ]
+      }
+    },
+    "bundleBytes": 349640
+  }
+}

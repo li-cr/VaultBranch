@@ -6,14 +6,17 @@ const { t, setLanguage } = require("./i18n.js");
 const { Autosave, normalize, conflictMessage } = require("./autosave.js");
 const { dateTriggerRange } = require("./date.js");
 const { SOURCE_VIEW, DIFF_VIEW, HISTORY_VIEW, CONFLICT_VIEW, FILE_HISTORY_VIEW, DEFAULT_SETTINGS, el, button } = require("./views/shared.js");
-const { SourceControlView } = require("./views/source.js");
-const { DiffView } = require("./views/diff.js");
-const { HistoryView } = require("./views/history.js");
-const { ConflictView } = require("./views/conflict.js");
-const { FileHistoryView } = require("./views/file-history.js");
 const { MyGitSettings } = require("./settings.js");
 
-const VIEW_CLASSES = { [SOURCE_VIEW]: SourceControlView, [DIFF_VIEW]: DiffView, [HISTORY_VIEW]: HistoryView, [CONFLICT_VIEW]: ConflictView, [FILE_HISTORY_VIEW]: FileHistoryView };
+// Obsidian view factories are synchronous. Load each implementation only when
+// its first leaf is created, including restored workspace leaves.
+const VIEW_LOADERS = {
+  [SOURCE_VIEW]: () => require("./views/source.js").SourceControlView,
+  [DIFF_VIEW]: () => require("./views/diff.js").DiffView,
+  [HISTORY_VIEW]: () => require("./views/history.js").HistoryView,
+  [CONFLICT_VIEW]: () => require("./views/conflict.js").ConflictView,
+  [FILE_HISTORY_VIEW]: () => require("./views/file-history.js").FileHistoryView,
+};
 
 module.exports = class MyGitPlugin extends Plugin {
   async onload() {
@@ -22,7 +25,7 @@ module.exports = class MyGitPlugin extends Plugin {
     this.settings = { ...DEFAULT_SETTINGS, ...savedSettings };
     if (!["en", "zh"].includes(this.settings.language)) this.settings.language = DEFAULT_SETTINGS.language;
     setLanguage(this.settings.language);
-    if (Object.keys(DEFAULT_SETTINGS).some((key) => !Object.hasOwn(savedSettings || {}, key))) await this.saveData(this.settings);
+    // Apply new defaults in memory; persist them with the next preference change.
     this.core = require("./git.js");
     this.configureGit();
     this.status = null;
@@ -36,7 +39,11 @@ module.exports = class MyGitPlugin extends Plugin {
     this.diffDrafts = new Map();
     this.editSessions = new Map();
     this.editorTasks = new Map();
-    for (const [type, View] of Object.entries(VIEW_CLASSES)) this.registerView(type, (leaf) => new View(leaf, this));
+    this.viewClasses = {};
+    for (const [type, load] of Object.entries(VIEW_LOADERS)) this.registerView(type, leaf => {
+      const View = this.viewClasses[type] ||= load();
+      return new View(leaf, this);
+    });
     this.addSettingTab(new MyGitSettings(this.app, this));
     this.ribbonEl = this.addRibbonIcon("git-branch", t("VaultBranch · 源代码管理"), () => this.openSidebar());
     this.localizedCommands = this.commandDefinitions().map(([id, name, callback]) => this.addCommand({ id, name: t(name), callback }));
@@ -165,9 +172,9 @@ module.exports = class MyGitPlugin extends Plugin {
     this.dateCommand.name = `${this.manifest.name}: ${t("插入当前日期时间")}`;
     this.fileHistoryCommand.name = `${this.manifest.name}: ${t("查看当前文件历史")}`;
     this.ribbonEl.setAttribute("aria-label", t("VaultBranch · 源代码管理"));
-    for (const view of this.views(...Object.keys(VIEW_CLASSES))) {
-      if (view instanceof SourceControlView) await view.onOpen();
-      else if (view instanceof ConflictView) await view.render({ preserveDraft: true });
+    for (const view of this.views(...Object.keys(VIEW_LOADERS))) {
+      if (view.getViewType() === SOURCE_VIEW) await view.onOpen();
+      else if (view.getViewType() === CONFLICT_VIEW) await view.render({ preserveDraft: true });
       else await view.render();
       view.leaf.updateHeader?.();
     }
@@ -327,8 +334,10 @@ module.exports = class MyGitPlugin extends Plugin {
 
   views(...types) {
     return types.flatMap((type) => this.app.workspace.getLeavesOfType(type)
-      .map((leaf) => leaf.view).filter((view) => view instanceof VIEW_CLASSES[type]));
+      .map((leaf) => leaf.view).filter(view => this.isView(view, type)));
   }
+
+  isView(view, type) { return Boolean(this.viewClasses?.[type] && view instanceof this.viewClasses[type]); }
 
   renderViews(types = [SOURCE_VIEW]) {
     if (this.unloaded) return;
@@ -448,7 +457,7 @@ module.exports = class MyGitPlugin extends Plugin {
 
   async openDiff(file, area, graphReturn = null) {
     if (area === "history" && !graphReturn) {
-      const graph = this.app.workspace.getLeavesOfType(HISTORY_VIEW).find((item) => item.view instanceof HistoryView);
+      const graph = this.app.workspace.getLeavesOfType(HISTORY_VIEW).find(item => this.isView(item.view, HISTORY_VIEW));
       graphReturn = graph?.view.captureNavigation() || null;
     }
     // WorkspaceLeaf.setViewState itself is asynchronous; preserve click order.
@@ -486,7 +495,7 @@ module.exports = class MyGitPlugin extends Plugin {
     const leaf = this.app.workspace.activeLeaf;
     const context = leaf && this.graphReturns.get(leaf.id);
     if (!context) return null;
-    if (leaf.view instanceof DiffView && leaf.view.area === "history" && leaf.view.file?.path === context.filePath) return context;
+    if (this.isView(leaf.view, DIFF_VIEW) && leaf.view.area === "history" && leaf.view.file?.path === context.filePath) return context;
     if (leaf.view.getViewType() === "markdown" && leaf.view.file?.path === context.filePath) return context;
     return null;
   }
@@ -517,7 +526,7 @@ module.exports = class MyGitPlugin extends Plugin {
         const timer = window.setTimeout(resolve, 60);
         requestAnimationFrame(() => { window.clearTimeout(timer); resolve(); });
       });
-      if (leaf.view instanceof HistoryView) {
+      if (this.isView(leaf.view, HISTORY_VIEW)) {
         if (leaf.view.bodyEl) { leaf.view.bodyEl.scrollTop = context.scrollTop || 0; leaf.view.bodyEl.scrollLeft = context.scrollLeft || 0; }
         if (leaf.view.detailsEl) leaf.view.detailsEl.scrollTop = context.detailTop || 0;
       }
