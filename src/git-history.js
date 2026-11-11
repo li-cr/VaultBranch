@@ -58,7 +58,7 @@ async function fileHistory(git, filePath, { all = false, limit = 50, graph = fal
   const paths = new Set([filePath]);
   if (all && head) {
     // A combined --follow walk can miss forks made before a rename. Seed it with
-    // the current lineage's old names, including renames beyond git page.
+    // the current lineage's old names, including renames beyond this page.
     const renames = (await git.run(["log", head, "--follow", "--find-renames", "--diff-filter=R", "--max-count=1000", "--name-status", "-z", "--format=", "--", filePath])).split("\0").filter(Boolean);
     for (let n = 0; n + 2 < renames.length; n += 3) {
       git.checkPaths([renames[n + 1], renames[n + 2]]);
@@ -99,7 +99,7 @@ async function fileHistoryGraph(git, commits, refs, all) {
       if (visible.has(current) || !topology.has(current)) found.add(current);
       else pending.push(...topology.get(current));
     }
-    // Preserve an ancestry continuation below git page instead of inventing a root.
+    // Preserve an ancestry continuation below this page instead of inventing a root.
     return found.size ? [...found] : [hash];
   };
   const order = new Map([...topology.keys()].map((hash, index) => [hash, index]));

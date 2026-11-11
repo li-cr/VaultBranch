@@ -8,6 +8,11 @@
   const target = path.join(app.vault.adapter.getBasePath(), current.manifest.dir);
   const legacyEnabled = Boolean(manager.plugins["my-git"]), reports = {}, checks = [];
   window.__vaultbranchErrors = [];
+  const consoleErrors = [], originalConsoleError = console.error;
+  console.error = function (...args) {
+    consoleErrors.push({ messages: args.map(value => value?.stack || String(value)), callsite: new Error("Console error during release checks").stack });
+    return originalConsoleError.apply(this, args);
+  };
   const run = async file => await eval(await fs.readFile(path.join(options.sourceRoot, file), "utf8"));
   const store = async (name, data) => { await fs.writeFile(path.join(options.outputDir, name + ".json"), JSON.stringify(data, null, 2)); return data; };
   async function install(source) {
@@ -38,11 +43,13 @@
       checks.push({ name, checks: result.results?.length ?? result.checks?.length ?? 0 });
     }
     const plugin = manager.plugins.vaultbranch;
-    const result = { version: plugin.manifest.version, reports, checks, sessions: plugin.editors.sessions.size, pending: plugin.editors.pending.size, errors: window.__vaultbranchErrors || [] };
-    if (result.sessions || result.pending || result.errors.length) throw Error("Release suite cleanup/runtime errors: " + JSON.stringify(result));
+    const result = { version: plugin.manifest.version, reports, checks, sessions: plugin.editors.sessions.size, pending: plugin.editors.pending.size, errors: window.__vaultbranchErrors || [], consoleErrors };
+    if (result.sessions || result.pending || result.errors.length || consoleErrors.length) throw Error("Release suite cleanup/runtime errors: " + JSON.stringify(result));
     await store("release-ui", result);
     return { version: result.version, benchmarks: ["startup", "trusted file switching", "trusted Changed insert/newline/delete"], checks, sessions: result.sessions, pending: result.pending, errors: result.errors };
   } finally {
+    console.error = originalConsoleError;
+    await store("console-errors", consoleErrors);
     await window.__vbStagedSwitch?.cleanup();
     delete window.__vbSwitchProfile;
     await install(path.join(options.sourceRoot, "dist/vaultbranch"));
