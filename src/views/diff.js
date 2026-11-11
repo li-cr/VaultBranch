@@ -8,7 +8,7 @@ const { history, historyKeymap, defaultKeymap, indentWithTab } = require("@codem
 const { normalize } = require("../autosave.js");
 const { t } = require("../i18n.js");
 const { DIFF_VIEW, LABELS, el, button, GitView } = require("./shared.js");
-const { collapseOptions, updateCollapse, readOnlyMerge } = require("./merge.js");
+const { collapseOptions, updateCollapse, readOnlyMerge, updateDiffNavigation } = require("./merge.js");
 
 class DiffView extends GitView {
   constructor(leaf, plugin) {
@@ -110,6 +110,7 @@ class DiffView extends GitView {
           body.replaceChildren();
           this.merge = readOnlyMerge(body, versions, this.area === "history" ? [t("父提交"), t("当前提交")] : ["HEAD", t("暂存区（只读）")], this.plugin.settings);
           this.collapseEnabled = Boolean(this.plugin.settings.collapseUnchanged);
+          this.updateDiffNavigation();
           return;
         } catch (error) {
           if (request !== this.request) return;
@@ -155,6 +156,7 @@ class DiffView extends GitView {
     session?.listeners.delete(this.editorListener);
     this.merge?.destroy();
     this.merge = null;
+    this.updateDiffNavigation();
     this.session = null;
     this.editorText = this.editorIndex = this.editorListener = null;
     this.warningEl = this.saveButton = this.leftCaption = this.rightCaption = null;
@@ -220,6 +222,7 @@ class DiffView extends GitView {
       const locked = Boolean(this.plugin.busy || this.plugin.mutationPending);
       if (this.merge.b.state.readOnly !== locked) this.merge.b.dispatch({ effects: this.editable.reconfigure(this.editorAccess()) });
     } finally { this.syncingEditor = false; }
+    this.updateDiffNavigation();
     this.leftCaption.textContent = t("暂存区（只读）");
     this.rightCaption.textContent = saving ? t("工作区 · 正在保存…") : dirty ? t("工作区 · 未保存") : this.session.enabled ? t("工作区 · 已自动保存") : t("工作区 · 已保存");
     this.saveButton.disabled = !dirty || saving || this.plugin.busy || this.plugin.mutationPending;
@@ -240,6 +243,7 @@ class DiffView extends GitView {
   }
 
   updateCollapse() { updateCollapse(this); }
+  updateDiffNavigation() { updateDiffNavigation(this); }
 
   saveEditor(automatic = false) { return (automatic ? this.session?.autoFlush() : this.session?.flush()) || Promise.resolve(true); }
 

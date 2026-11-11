@@ -11,5 +11,6 @@
   "dateTrigger": "@date",
   "dateFormat": "YYYY-MM-DD HH:mm:ss",
   "diffAutosave": false,
-  "collapseUnchanged": true
+  "collapseUnchanged": true,
+  "showDiffNavigation": true
 }

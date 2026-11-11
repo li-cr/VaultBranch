@@ -3,6 +3,10 @@
 // Chinese source strings are the fallback; tagged templates keep values out of translation keys.
 let language = "zh";
 const english = {
+  "上一处差异": "Previous change",
+  "下一处差异": "Next change",
+  "显示差异跳转按钮": "Show diff navigation buttons",
+  "默认开启。在左右差异页和文件历史右上角显示 ↑ / ↓，跳转到上一处或下一处差异。": "On by default. Show ↑ / ↓ at the top right of side-by-side diffs and file history to jump to the previous or next change.",
   "文件历史": "File history",
   "查看当前文件历史": "View current file history",
   "请选择文件查看历史。": "Select a file to view its history.",

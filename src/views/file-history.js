@@ -2,7 +2,7 @@
 
 const { t } = require("../i18n.js");
 const { FILE_HISTORY_VIEW, GitView, el, button } = require("./shared.js");
-const { readOnlyMerge, updateCollapse } = require("./merge.js");
+const { readOnlyMerge, updateCollapse, updateDiffNavigation } = require("./merge.js");
 
 class FileHistoryView extends GitView {
   constructor(leaf, plugin) {
@@ -27,8 +27,9 @@ class FileHistoryView extends GitView {
     await super.setState(state, result);
   }
 
-  destroyMerge() { this.merge?.destroy(); this.merge = null; }
+  destroyMerge() { this.merge?.destroy(); this.merge = null; this.updateDiffNavigation(); }
   updateCollapse() { updateCollapse(this); }
+  updateDiffNavigation() { updateDiffNavigation(this); }
   async onClose() {
     this.detailRequest++;
     this.destroyMerge();
@@ -114,6 +115,7 @@ class FileHistoryView extends GitView {
       body.replaceChildren();
       this.merge = readOnlyMerge(body, versions, [t("父提交（只读）"), t("当前提交（只读）")], this.plugin.settings);
       this.collapseEnabled = Boolean(this.plugin.settings.collapseUnchanged);
+      this.updateDiffNavigation();
     } catch (error) {
       if (request !== this.detailRequest) return;
       body.replaceChildren(); el(body, "div", "vaultbranch-empty is-error", error.message);

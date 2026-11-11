@@ -1,10 +1,38 @@
 "use strict";
 
-const { MergeView } = require("@codemirror/merge");
+const { MergeView, goToPreviousChunk, goToNextChunk } = require("@codemirror/merge");
 const { EditorState } = require("@codemirror/state");
 const { EditorView, lineNumbers, drawSelection } = require("@codemirror/view");
 const { normalize } = require("../autosave.js");
-const { el } = require("./shared.js");
+const { el, button } = require("./shared.js");
+const { t } = require("../i18n.js");
+
+function updateDiffNavigation(view) {
+  const header = view.contentEl.querySelector(".vaultbranch-diff-header");
+  if (!header) return;
+  let controls = header.querySelector(".vaultbranch-diff-navigation");
+  if (!view.merge || !view.plugin.settings.showDiffNavigation) { controls?.remove(); return; }
+  if (!controls) {
+    controls = el(header, "div", "vaultbranch-diff-navigation");
+    for (const [icon, name, command] of [["arrow-up", "上一处差异", goToPreviousChunk], ["arrow-down", "下一处差异", goToNextChunk]]) {
+      const control = button(controls, icon, t(name), () => {
+        const merge = view.merge;
+        if (!merge) return;
+        const editor = merge.a.hasFocus ? merge.a : merge.b;
+        command(editor);
+        editor.focus();
+      });
+      control.dataset.label = name;
+      // Keep the active pane's selection when clicking a toolbar button.
+      control.addEventListener("mousedown", event => { if (event.button === 0) event.preventDefault(); });
+    }
+  }
+  for (const control of controls.children) {
+    control.title = t(control.dataset.label);
+    control.setAttribute("aria-label", control.title);
+    control.disabled = !view.merge.chunks.length;
+  }
+}
 
 function collapseOptions(settings) {
   return { collapseUnchanged: settings.collapseUnchanged ? {} : undefined };
@@ -34,4 +62,4 @@ function readOnlyMerge(body, versions, captions, settings) {
   return merge;
 }
 
-module.exports = { collapseOptions, updateCollapse, readOnlyMerge };
+module.exports = { collapseOptions, updateCollapse, readOnlyMerge, updateDiffNavigation };
