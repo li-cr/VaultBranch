@@ -4,6 +4,18 @@
   if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save drafts first.");
   await p.diffNavigationTask; await p.refreshTask; p.refreshSoon?.cancel();
   const testWindow = require("electron").remote.getCurrentWindow(); testWindow.show(); testWindow.focus();
+  const probe = window.__vbEditorProbe || {}, web = require("electron").remote.getCurrentWebContents();
+  const debuggerAttached = web.debugger.isAttached();
+  let profiling = false, trustedInputs = 0;
+  const nativeInput = () => new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { document.removeEventListener("input", done, true); reject(Error("Missing native input")); }, 3000);
+    function done(event) {
+      clearTimeout(timer); document.removeEventListener("input", done, true);
+      if (!event.isTrusted) { reject(Error("Untrusted input")); return; }
+      trustedInputs++; setTimeout(resolve, 0);
+    }
+    document.addEventListener("input", done, true); web.sendInputEvent({ type: "char", keyCode: "x" });
+  });
   const fs = require("node:fs/promises"), os = require("node:os"), path = require("node:path");
   const exec = require("node:util").promisify(require("node:child_process").execFile);
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "vaultbranch-editor-updates-"));
@@ -46,9 +58,19 @@
     for (const [name] of shapes) {
       const file = p.status.files.find(file => file.path === `changed/${name}`);
       leaf = await p.openDiff(file, "unstaged");
-      const view = leaf.view, editor = view.merge.b, original = editor.state.doc.toString(), at = original.indexOf("value") + 2;
+      const view = leaf.view, editor = view.merge.b, original = editor.state.doc.toString();
+      const at = original.indexOf("value", probe.nativeInput ? Math.floor(original.length / 2) : 0) + 2;
       editor.focus();
       await settle();
+      const materialize = { calls: 0, ms: 0 };
+      let prototype = Object.getPrototypeOf(editor.state.doc);
+      while (!Object.hasOwn(prototype, "toString")) prototype = Object.getPrototypeOf(prototype);
+      const toString = prototype.toString;
+      if (probe.materialize) prototype.toString = function(...args) {
+        const start = performance.now();
+        try { return toString.apply(this, args); }
+        finally { if (this.length > 100000) { materialize.calls++; materialize.ms += performance.now() - start; } }
+      };
       const observer = new MutationObserver(() => {});
       observer.observe(view.contentEl.querySelector(".vaultbranch-diff-header"), { subtree: true, attributes: true, attributeFilter: ["title", "aria-label", "disabled"] });
       for (const caption of [view.leftCaption, view.rightCaption]) observer.observe(caption, { childList: true, characterData: true, subtree: true });
@@ -58,16 +80,26 @@
         for (let round = 0; round < 6; round++) {
           await settle();
           editor.dispatch({ changes: { from: at, insert: "x" } });
+          if (probe.nativeInput) { editor.dispatch({ selection: { anchor: at } }); editor.focus(); await settle(); }
           observer.takeRecords();
+          materialize.calls = materialize.ms = 0;
+          if (probe.cpu && round === 1 && !profiling) {
+            if (!debuggerAttached) web.debugger.attach("1.3");
+            await web.debugger.sendCommand("Profiler.enable");
+            await web.debugger.sendCommand("Profiler.start"); profiling = true;
+          }
           const start = performance.now();
-          for (let key = 0; key < 30; key++) editor.dispatch({ changes: { from: at, insert: "x" } });
+          for (let key = 0; key < 30; key++) {
+            if (probe.nativeInput) await nativeInput();
+            else editor.dispatch({ changes: { from: at, insert: "x" } });
+          }
           const dispatchMs = +(performance.now() - start).toFixed(3);
           const mutations = observer.takeRecords();
-          if (round) samples.push({ path: name, round, edits: 30, dispatchMs, chromeMutations: mutations.length });
+          if (round) samples.push({ path: name, round, edits: 30, dispatchMs, chromeMutations: mutations.length, ...(probe.materialize ? { materialize: { calls: materialize.calls, ms: +materialize.ms.toFixed(3) } } : {}) });
           editor.dispatch({ changes: { from: at, to: at + 31 } });
           check(editor.state.doc.toString() === original && !view.session.dirty, `round ${round} restores the clean draft for ${name}`);
         }
-      } finally { observer.disconnect(); }
+      } finally { observer.disconnect(); prototype.toString = toString; }
       await leaf.detach(); leaf = null;
     }
     leaf = await p.openDiff(p.status.files.find(file => file.path === "staged/small/note.md"), "staged");
@@ -76,11 +108,14 @@
     check((await git("write-tree")) === index, "editing batches and previews leave the index unchanged");
     check(p.editSessions.size === 0, "closing releases all clean editor sessions");
     check(!(window.__vaultbranchErrors || []).length, "no runtime errors");
-    return { version: p.manifest.version, environment: { userAgent: navigator.userAgent, node: process.version, platform: process.platform, git: (await git("--version")).trim(), focused: document.hasFocus(), visibility: document.visibilityState },
+    if (profiling) { window.__vbEditorProfile = (await web.debugger.sendCommand("Profiler.stop")).profile; profiling = false; }
+    return { version: p.manifest.version, measurement: probe.nativeInput ? "Native input batch including event loop waits and rendering; not per-key latency or physical paint" : "Synchronous scripted CodeMirror dispatch; excludes asynchronous rendering and physical paint", probe: { nativeInput: Boolean(probe.nativeInput), cpu: Boolean(probe.cpu), materialize: Boolean(probe.materialize), trustedInputs }, environment: { userAgent: navigator.userAgent, node: process.version, platform: process.platform, git: (await git("--version")).trim(), focused: document.hasFocus(), visibility: document.visibilityState },
       scenario: "100 Staged + 100 Changed files; four mixed nested targets, six rounds each, discard one warm-up round. Focus the test window and editable pane; allow scheduled editor rendering between targets/rounds, outside timing. Thirty scripted CodeMirror insert transactions after the first dirty edit. Measures synchronous edit dispatch and toolbar/caption/warning/ARIA mutations only; excludes Git/file reads, navigation, asynchronous layout and physical paint. Autosave, folding, syntax highlighting and timing logging disabled. No GUI click latency claim.",
       fixtures: shapes.map(([name, text]) => ({ path: name, baseBytes: Buffer.byteLength(text), bytes: Buffer.byteLength(text.replace("value", "changed value")), lines: text.split("\n").length })), results, samples,
       summary: Object.fromEntries(shapes.map(([name]) => { const group = samples.filter(sample => sample.path === name); return [name, { dispatchMs: summary(group.map(sample => sample.dispatchMs)), chromeMutations: summary(group.map(sample => sample.chromeMutations)) }]; })) };
   } finally {
+    if (profiling) { window.__vbEditorProfile = (await web.debugger.sendCommand("Profiler.stop")).profile; }
+    if (!debuggerAttached && web.debugger.isAttached()) web.debugger.detach();
     if (leaf) { if (leaf.view.session?.dirty) leaf.view.session.draft.text = leaf.view.session.savedText; await leaf.detach(); }
     p.git = saved.git; p.status = saved.status; p.ready = saved.ready;
     Object.assign(p.settings, saved.settings); p.scheduleRefresh = saved.scheduleRefresh; p.lastAutoRefresh = saved.lastAutoRefresh;

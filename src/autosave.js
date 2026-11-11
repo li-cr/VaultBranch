@@ -1,6 +1,7 @@
 "use strict";
 
 const { t } = require("./i18n.js");
+const { EditorDocument } = require("./editor-document.js");
 const normalize = (text) => text.replace(/\r\n?/g, "\n");
 const conflictMessage = () => t("文件已被其他编辑器修改。自动保存已暂停，你的输入已保留。请核对文件，或放弃草稿并重新载入。");
 
@@ -27,7 +28,7 @@ class Autosave {
     }
     return this.normalizedWorking;
   }
-  get dirty() { return this.draft.text !== this.savedText; }
+  get dirty() { return this.document ? this.document.dirty(this.draft.working, this.savedText) : this.draft.text !== this.savedText; }
   notify() { this.changed(); for (const listener of this.listeners) listener(); }
   enqueue(action) {
     const task = this.task.then(action).catch((error) => { this.error = error.message; this.notify(); return false; });
@@ -36,6 +37,14 @@ class Autosave {
   }
   edit(text) {
     this.draft.text = text;
+    this.schedule();
+  }
+  editDocument(doc, previous) {
+    this.document ||= new EditorDocument(this.draft, !this.dirty ? previous : undefined);
+    this.document.edit(doc);
+    this.schedule();
+  }
+  schedule() {
     clearTimeout(this.timer);
     if (this.enabled && !this.error) this.timer = setTimeout(() => { void this.flush(); }, this.delay);
     this.notify();

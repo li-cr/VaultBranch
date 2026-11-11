@@ -216,8 +216,8 @@ class DiffView extends GitView {
         this.editable.of(this.editorAccess()),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !this.syncingEditor) {
-            this.editorText = update.state.doc.toString();
-            this.session.edit(this.editorText);
+            this.editorText = update.state.doc;
+            this.session.editDocument(this.editorText, update.startState.doc);
           }
         }),
         EditorView.domEventHandlers({
@@ -270,9 +270,10 @@ class DiffView extends GitView {
         this.merge.a.dispatch({ changes: { from: 0, to: this.merge.a.state.doc.length, insert: normalize(draft.index) }, annotations: Transaction.addToHistory.of(false) });
         this.editorIndex = draft.index;
       }
-      if (this.editorText !== draft.text) {
-        this.merge.b.dispatch({ changes: { from: 0, to: this.merge.b.state.doc.length, insert: draft.text }, annotations: Transaction.addToHistory.of(false) });
-        this.editorText = draft.text;
+      const text = this.session.document?.doc || draft.text;
+      if (this.editorText !== text) {
+        this.merge.b.dispatch({ changes: { from: 0, to: this.merge.b.state.doc.length, insert: text }, annotations: Transaction.addToHistory.of(false) });
+        this.editorText = text;
       }
       const locked = Boolean(this.plugin.busy || this.plugin.mutationPending);
       if (this.merge.b.state.readOnly !== locked) this.merge.b.dispatch({ effects: this.editable.reconfigure(this.editorAccess()) });
