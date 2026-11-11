@@ -190,6 +190,7 @@ module.exports = class MyGitPlugin extends Plugin {
     if (key === "diffAutosave") for (const session of this.editSessions.values()) session.setEnabled(value);
     if (key === "collapseUnchanged") for (const view of this.views(DIFF_VIEW, FILE_HISTORY_VIEW)) view.updateCollapse();
     if (key === "showDiffNavigation") for (const view of this.views(DIFF_VIEW, FILE_HISTORY_VIEW)) view.updateDiffNavigation();
+    if (key === "syntaxHighlighting") await Promise.all(this.views(DIFF_VIEW, FILE_HISTORY_VIEW).map(view => view.updateSyntaxHighlight()));
     if (key === "language") await this.applyLanguage();
     if (key === "gitPath" || key === "pullMethod") {
       if (this.refreshTask) await this.refreshTask;

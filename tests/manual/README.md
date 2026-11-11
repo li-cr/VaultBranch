@@ -8,9 +8,13 @@ Build and install VaultBranch into a disposable Obsidian vault named `note_test`
 - `startup-ui.js`: reloads the plugin with a closed workspace, then restores all five view types through native leaf state. Checks deferred loading, serialized manual drafts, editor access modes and cleanup. Creates and trashes one temporary note without staging it; restores preferences afterward.
 - `background-refresh-ui.js`: checks closed/collapsed/inactive sidebars, polling, refreshing when revealed, explicit refresh and editor external-change protection. Creates and trashes one temporary untracked note and restores preferences afterward. Required editor conflict safety reads remain enabled even when sidebar refreshes are suspended.
 - `chunk-revert-ui.js`: checks native index-to-working-copy chunk reverts, mouse and keyboard-equivalent activation, deletion/insertion blocks, manual save, autosave, undo, Git locks, translated labels, readonly comparisons and untracked drafts. Stages only its temporary fixture in note_test, removes that index entry and trashes the fixtures afterward.
+- `syntax-highlight-ui.js`: checks the native default-off setting, JSON/Markdown source colors, both panes, live toggles, draft/selection/undo preservation, staged readonly content, diff backgrounds, unsupported extensions, size limits and edit/undo limit transitions, hidden JSON autosave and cleanup. Stages only its disposable JSON fixture and restores settings afterward.
+- `syntax-history-ui.js`: uses an isolated temporary Git repository for readonly JSON history and a Markdown-to-text rename. Checks historical extension selection, live settings, index preservation and cleanup, then restores the original repository.
 
 All scripts refuse to run in a vault with a different name. They require a working Git executable and the normal file explorer enabled. Use a clean test session with no existing unsaved diff drafts. The normal `npm test` suite does not require Obsidian.
 
 For repeatable plugin reload and first-use measurements, run `scripts/benchmark-startup.js` separately. See `docs/performance/0.2.21.md` for the baseline, environment, sample results and limitations.
 
 For background Git subprocess counts, run `scripts/benchmark-background-refresh.js` separately. See `docs/performance/0.2.22.md`; it temporarily closes sidebar leaves and restores the startup, refresh and collapse preferences.
+
+For JSON/Markdown highlighting overhead, run `scripts/benchmark-highlighting.js` separately. It alternates off/on modes for five measured opens and thirty insert transactions per sample using synthetic files, then restores settings and trashes its files. See `docs/performance/0.2.24.md` for measurements and limitations. Do not run timing benchmarks alongside tests or builds.

@@ -76,6 +76,15 @@
 .view-content:is(.vaultbranch-diff, .vaultbranch-file-history) .vaultbranch-edit-panes .cm-merge-b .cm-changedText,
 .view-content:is(.vaultbranch-diff, .vaultbranch-file-history) .vaultbranch-edit-panes .cm-merge-b .cm-insertedLine { text-decoration: none; background-image: none; }
 .vaultbranch-edit-panes .cm-collapsedLines { color: var(--text-muted); background: var(--background-secondary); border-color: var(--background-modifier-border); }
+.vaultbranch-edit-panes .vb-syntax-property { color: var(--code-property, var(--color-cyan)); }
+.vaultbranch-edit-panes .vb-syntax-string { color: var(--code-string, var(--color-green)); }
+.vaultbranch-edit-panes .vb-syntax-number { color: var(--code-value, var(--color-orange)); }
+.vaultbranch-edit-panes .vb-syntax-heading { color: var(--h2-color, var(--text-accent)); font-weight: 600; }
+.vaultbranch-edit-panes .vb-syntax-emphasis { color: var(--italic-color, var(--text-normal)); font-style: italic; }
+.vaultbranch-edit-panes .vb-syntax-strong { color: var(--bold-color, var(--text-normal)); font-weight: 600; }
+.vaultbranch-edit-panes .vb-syntax-link { color: var(--link-color, var(--text-accent)); }
+.vaultbranch-edit-panes .vb-syntax-code { color: var(--code-normal, var(--text-muted)); }
+.vaultbranch-edit-panes .vb-syntax-meta { color: var(--text-faint); }
 .vaultbranch-file-history-layout { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 .vaultbranch-file-history-sidebar { flex: 0 0 260px; min-width: 180px; max-width: 40%; overflow: auto; border-right: 1px solid var(--background-modifier-border); padding: 6px; }
 .vaultbranch-file-history-details { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }

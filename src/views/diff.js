@@ -9,6 +9,7 @@ const { normalize } = require("../autosave.js");
 const { t } = require("../i18n.js");
 const { DIFF_VIEW, LABELS, el, button, GitView } = require("./shared.js");
 const { collapseOptions, updateCollapse, readOnlyMerge, updateDiffNavigation } = require("./merge.js");
+const { updateSyntaxHighlight } = require("./highlight.js");
 
 class DiffView extends GitView {
   constructor(leaf, plugin) {
@@ -111,6 +112,7 @@ class DiffView extends GitView {
           this.merge = readOnlyMerge(body, versions, this.area === "history" ? [t("父提交"), t("当前提交")] : ["HEAD", t("暂存区（只读）")], this.plugin.settings);
           this.collapseEnabled = Boolean(this.plugin.settings.collapseUnchanged);
           this.updateDiffNavigation();
+          void this.updateSyntaxHighlight();
           return;
         } catch (error) {
           if (request !== this.request) return;
@@ -247,6 +249,7 @@ class DiffView extends GitView {
       }
     } finally { this.syncingEditor = false; }
     this.updateDiffNavigation();
+    void this.updateSyntaxHighlight();
     for (const control of this.merge.dom.querySelectorAll(".cm-merge-revert button")) {
       control.title = t("将此差异块恢复为暂存区版本");
       control.setAttribute("aria-label", control.title);
@@ -271,6 +274,7 @@ class DiffView extends GitView {
   }
 
   updateCollapse() { updateCollapse(this); }
+  updateSyntaxHighlight() { return updateSyntaxHighlight(this); }
   updateDiffNavigation() { updateDiffNavigation(this); }
 
   saveEditor(automatic = false) { return (automatic ? this.session?.autoFlush() : this.session?.flush()) || Promise.resolve(true); }

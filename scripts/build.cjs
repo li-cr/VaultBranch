@@ -13,7 +13,7 @@ const { build } = require("esbuild");
     platform: "node",
     format: "cjs",
     target: "es2022",
-    external: ["obsidian", "@codemirror/state", "@codemirror/view", "@codemirror/commands", "@codemirror/language", ...builtinModules, ...builtinModules.map((name) => `node:${name}`)],
+    external: ["obsidian", "@codemirror/state", "@codemirror/view", "@codemirror/commands", "@codemirror/language", "@lezer/common", "@lezer/highlight", "@lezer/lr", ...builtinModules, ...builtinModules.map((name) => `node:${name}`)],
     banner: { js: "/* VaultBranch | MIT License | https://github.com/li-cr/VaultBranch */" },
   });
   const dist = path.join(root, "dist/vaultbranch");

@@ -12,5 +12,6 @@
   "dateFormat": "YYYY-MM-DD HH:mm:ss",
   "diffAutosave": false,
   "collapseUnchanged": true,
-  "showDiffNavigation": true
+  "showDiffNavigation": true,
+  "syntaxHighlighting": false
 }

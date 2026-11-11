@@ -1,6 +1,6 @@
 {
   "name": "vaultbranch",
-  "version": "0.2.23",
+  "version": "0.2.24",
   "private": true,
   "description": "Git source control and a commit graph for Obsidian.",
   "license": "MIT",
@@ -19,8 +19,12 @@
   },
   "dependencies": {
     "@codemirror/commands": "6.11.1",
+    "@codemirror/lang-json": "6.0.2",
+    "@codemirror/language": "6.12.1",
     "@codemirror/merge": "6.12.3",
     "@codemirror/state": "6.7.6",
-    "@codemirror/view": "6.43.15"
+    "@codemirror/view": "6.43.15",
+    "@lezer/highlight": "1.2.5",
+    "@lezer/markdown": "1.8.1"
   }
 }

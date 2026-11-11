@@ -1,0 +1,765 @@
+{
+  "initialBaseline": {
+    "environment": {
+      "platform": "win32 10.0.19045",
+      "node": "v24.22.1",
+      "electron": "43.8.4",
+      "git": "git version 2.50.0.windows.1",
+      "obsidian": "1.15.0",
+      "installer": "1.15.0",
+      "plugin": "0.2.23"
+    },
+    "scenario": "Same live note_test vault; sidebar closed, openOnStartup=false; one warm-up, five reloads. loadPlugin includes script loading/evaluation, onload and CSS. First sidebar includes Git status and layout; first diff includes Git/file reads, MergeView creation and synchronous layout, not final paint. Warm OS/V8 cache; not a full application cold start.",
+    "preferences": "Existing preferences with all default fields",
+    "scale": {
+      "indexedVaultFiles": 7,
+      "gitFiles": 8,
+      "commits": 6,
+      "stashes": 4,
+      "fixtureLines": 80
+    },
+    "samples": [
+      {
+        "beforeOnloadMs": 13.4,
+        "settingsReadMs": 3,
+        "onloadMs": 3.6,
+        "loadPluginMs": 17.9,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 208.9,
+        "firstDiffMs": 279.1,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 13,
+        "settingsReadMs": 0.6,
+        "onloadMs": 1.3,
+        "loadPluginMs": 15.4,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 203.8,
+        "firstDiffMs": 243.2,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 7.1,
+        "settingsReadMs": 0.4,
+        "onloadMs": 0.9,
+        "loadPluginMs": 8.6,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 207.4,
+        "firstDiffMs": 232.8,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 6.6,
+        "settingsReadMs": 3.1,
+        "onloadMs": 3.7,
+        "loadPluginMs": 11,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 181.4,
+        "firstDiffMs": 234.3,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 5.4,
+        "settingsReadMs": 4.9,
+        "onloadMs": 5.4,
+        "loadPluginMs": 11.6,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 204.9,
+        "firstDiffMs": 231.3,
+        "sessionsAfterClose": 0
+      }
+    ],
+    "summary": {
+      "loadPluginMs": {
+        "median": 11.6,
+        "range": [
+          8.6,
+          17.9
+        ]
+      },
+      "beforeOnloadMs": {
+        "median": 7.1,
+        "range": [
+          5.4,
+          13.4
+        ]
+      },
+      "onloadMs": {
+        "median": 3.6,
+        "range": [
+          0.9,
+          5.4
+        ]
+      },
+      "settingsReadMs": {
+        "median": 3,
+        "range": [
+          0.4,
+          4.9
+        ]
+      },
+      "firstSidebarMs": {
+        "median": 204.9,
+        "range": [
+          181.4,
+          208.9
+        ]
+      },
+      "firstDiffMs": {
+        "median": 234.3,
+        "range": [
+          231.3,
+          279.1
+        ]
+      }
+    },
+    "bundleBytes": 351290
+  },
+  "initialCandidate": {
+    "environment": {
+      "platform": "win32 10.0.19045",
+      "node": "v24.22.1",
+      "electron": "43.8.4",
+      "git": "git version 2.50.0.windows.1",
+      "obsidian": "1.15.0",
+      "installer": "1.15.0",
+      "plugin": "0.2.23"
+    },
+    "scenario": "Same live note_test vault; sidebar closed, openOnStartup=false; one warm-up, five reloads. loadPlugin includes script loading/evaluation, onload and CSS. First sidebar includes Git status and layout; first diff includes Git/file reads, MergeView creation and synchronous layout, not final paint. Warm OS/V8 cache; not a full application cold start.",
+    "preferences": "Existing preferences with all default fields",
+    "scale": {
+      "indexedVaultFiles": 7,
+      "gitFiles": 8,
+      "commits": 6,
+      "stashes": 4,
+      "fixtureLines": 80
+    },
+    "samples": [
+      {
+        "beforeOnloadMs": 12.9,
+        "settingsReadMs": 0.6,
+        "onloadMs": 1.1,
+        "loadPluginMs": 14.5,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 236.6,
+        "firstDiffMs": 275.1,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 11.3,
+        "settingsReadMs": 0.5,
+        "onloadMs": 1,
+        "loadPluginMs": 12.9,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 204.2,
+        "firstDiffMs": 270.9,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 11.1,
+        "settingsReadMs": 0.6,
+        "onloadMs": 1.3,
+        "loadPluginMs": 13.1,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 216.3,
+        "firstDiffMs": 271.5,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 8.1,
+        "settingsReadMs": 0.4,
+        "onloadMs": 0.9,
+        "loadPluginMs": 9.6,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 193.4,
+        "firstDiffMs": 273.5,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 8.1,
+        "settingsReadMs": 3.2,
+        "onloadMs": 3.7,
+        "loadPluginMs": 12.6,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 213.7,
+        "firstDiffMs": 264.9,
+        "sessionsAfterClose": 0
+      }
+    ],
+    "summary": {
+      "loadPluginMs": {
+        "median": 12.9,
+        "range": [
+          9.6,
+          14.5
+        ]
+      },
+      "beforeOnloadMs": {
+        "median": 11.1,
+        "range": [
+          8.1,
+          12.9
+        ]
+      },
+      "onloadMs": {
+        "median": 1.1,
+        "range": [
+          0.9,
+          3.7
+        ]
+      },
+      "settingsReadMs": {
+        "median": 0.6,
+        "range": [
+          0.4,
+          3.2
+        ]
+      },
+      "firstSidebarMs": {
+        "median": 213.7,
+        "range": [
+          193.4,
+          236.6
+        ]
+      },
+      "firstDiffMs": {
+        "median": 271.5,
+        "range": [
+          264.9,
+          275.1
+        ]
+      }
+    },
+    "bundleBytes": 342931
+  },
+  "recheckBaseline": {
+    "environment": {
+      "platform": "win32 10.0.19045",
+      "node": "v24.22.1",
+      "electron": "43.8.4",
+      "git": "git version 2.50.0.windows.1",
+      "obsidian": "1.15.0",
+      "installer": "1.15.0",
+      "plugin": "0.2.23"
+    },
+    "scenario": "Same live note_test vault; sidebar closed, openOnStartup=false; one warm-up, five reloads. loadPlugin includes script loading/evaluation, onload and CSS. First sidebar includes Git status and layout; first diff includes Git/file reads, MergeView creation and synchronous layout, not final paint. Warm OS/V8 cache; not a full application cold start.",
+    "preferences": "Existing preferences with all default fields",
+    "scale": {
+      "indexedVaultFiles": 7,
+      "gitFiles": 8,
+      "commits": 6,
+      "stashes": 4,
+      "fixtureLines": 80
+    },
+    "samples": [
+      {
+        "beforeOnloadMs": 12.4,
+        "settingsReadMs": 0.8,
+        "onloadMs": 1.8,
+        "loadPluginMs": 15,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 177.9,
+        "firstDiffMs": 246.7,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 7.7,
+        "settingsReadMs": 0.4,
+        "onloadMs": 1.5,
+        "loadPluginMs": 12.4,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 198.1,
+        "firstDiffMs": 302.9,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 23.4,
+        "settingsReadMs": 7.3,
+        "onloadMs": 7.9,
+        "loadPluginMs": 32,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 257.5,
+        "firstDiffMs": 292.4,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 12.7,
+        "settingsReadMs": 0.4,
+        "onloadMs": 0.8,
+        "loadPluginMs": 14.2,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 191.6,
+        "firstDiffMs": 285.5,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 9.8,
+        "settingsReadMs": 3.2,
+        "onloadMs": 3.8,
+        "loadPluginMs": 14.3,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 223.2,
+        "firstDiffMs": 274.8,
+        "sessionsAfterClose": 0
+      }
+    ],
+    "summary": {
+      "loadPluginMs": {
+        "median": 14.3,
+        "range": [
+          12.4,
+          32
+        ]
+      },
+      "beforeOnloadMs": {
+        "median": 12.4,
+        "range": [
+          7.7,
+          23.4
+        ]
+      },
+      "onloadMs": {
+        "median": 1.8,
+        "range": [
+          0.8,
+          7.9
+        ]
+      },
+      "settingsReadMs": {
+        "median": 0.8,
+        "range": [
+          0.4,
+          7.3
+        ]
+      },
+      "firstSidebarMs": {
+        "median": 198.1,
+        "range": [
+          177.9,
+          257.5
+        ]
+      },
+      "firstDiffMs": {
+        "median": 285.5,
+        "range": [
+          246.7,
+          302.9
+        ]
+      }
+    },
+    "bundleBytes": 351290
+  },
+  "recheckCandidate": {
+    "environment": {
+      "platform": "win32 10.0.19045",
+      "node": "v24.22.1",
+      "electron": "43.8.4",
+      "git": "git version 2.50.0.windows.1",
+      "obsidian": "1.15.0",
+      "installer": "1.15.0",
+      "plugin": "0.2.23"
+    },
+    "scenario": "Same live note_test vault; sidebar closed, openOnStartup=false; one warm-up, five reloads. loadPlugin includes script loading/evaluation, onload and CSS. First sidebar includes Git status and layout; first diff includes Git/file reads, MergeView creation and synchronous layout, not final paint. Warm OS/V8 cache; not a full application cold start.",
+    "preferences": "Existing preferences with all default fields",
+    "scale": {
+      "indexedVaultFiles": 7,
+      "gitFiles": 8,
+      "commits": 6,
+      "stashes": 4,
+      "fixtureLines": 80
+    },
+    "samples": [
+      {
+        "beforeOnloadMs": 12.5,
+        "settingsReadMs": 0.5,
+        "onloadMs": 1.1,
+        "loadPluginMs": 14.2,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 208.3,
+        "firstDiffMs": 275,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 14.7,
+        "settingsReadMs": 0.5,
+        "onloadMs": 1,
+        "loadPluginMs": 16.3,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 202.3,
+        "firstDiffMs": 297.4,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 10.4,
+        "settingsReadMs": 2.6,
+        "onloadMs": 3.2,
+        "loadPluginMs": 14.4,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 195.6,
+        "firstDiffMs": 257.5,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 10.7,
+        "settingsReadMs": 0.4,
+        "onloadMs": 0.9,
+        "loadPluginMs": 12.1,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 190.6,
+        "firstDiffMs": 255.9,
+        "sessionsAfterClose": 0
+      },
+      {
+        "beforeOnloadMs": 13.1,
+        "settingsReadMs": 0.5,
+        "onloadMs": 1.2,
+        "loadPluginMs": 15.2,
+        "settingsWrites": 0,
+        "readyAtLoad": false,
+        "firstSidebarMs": 196.3,
+        "firstDiffMs": 253.4,
+        "sessionsAfterClose": 0
+      }
+    ],
+    "summary": {
+      "loadPluginMs": {
+        "median": 14.4,
+        "range": [
+          12.1,
+          16.3
+        ]
+      },
+      "beforeOnloadMs": {
+        "median": 12.5,
+        "range": [
+          10.4,
+          14.7
+        ]
+      },
+      "onloadMs": {
+        "median": 1.1,
+        "range": [
+          0.9,
+          3.2
+        ]
+      },
+      "settingsReadMs": {
+        "median": 0.5,
+        "range": [
+          0.4,
+          2.6
+        ]
+      },
+      "firstSidebarMs": {
+        "median": 196.3,
+        "range": [
+          190.6,
+          208.3
+        ]
+      },
+      "firstDiffMs": {
+        "median": 257.5,
+        "range": [
+          253.4,
+          297.4
+        ]
+      }
+    },
+    "bundleBytes": 342931
+  },
+  "highlighting": {
+    "environment": {
+      "obsidian": "1.15.0",
+      "node": "v24.22.1",
+      "electron": "43.8.4",
+      "platform": "win32"
+    },
+    "scenario": "Warm live note_test, untracked synthetic files. Five opens per mode/language after one discarded warm-up; modes alternate. Open layout includes Git/file reads, editor creation, highlight configuration and synchronous layout. Frames adds two animation frames (not guaranteed complete background parsing). Typing measures 30 visible-line insert transactions with synchronous layout, excluding final paint, disk writes and Git. Autosave and folding off. No cold-start claim.",
+    "scale": {
+      "json": {
+        "characters": 71783,
+        "lines": 2003
+      },
+      "md": {
+        "characters": 146090,
+        "lines": 2001
+      }
+    },
+    "samples": [
+      {
+        "extension": "json",
+        "enabled": true,
+        "iteration": 1,
+        "openLayoutMs": 275.7,
+        "openFramesMs": 279.4,
+        "typingBatchMs": 107.6
+      },
+      {
+        "extension": "json",
+        "enabled": false,
+        "iteration": 1,
+        "openLayoutMs": 289.8,
+        "openFramesMs": 302.6,
+        "typingBatchMs": 60.7
+      },
+      {
+        "extension": "json",
+        "enabled": false,
+        "iteration": 2,
+        "openLayoutMs": 237.2,
+        "openFramesMs": 242.7,
+        "typingBatchMs": 61.6
+      },
+      {
+        "extension": "json",
+        "enabled": true,
+        "iteration": 2,
+        "openLayoutMs": 295.7,
+        "openFramesMs": 306.1,
+        "typingBatchMs": 106.7
+      },
+      {
+        "extension": "json",
+        "enabled": true,
+        "iteration": 3,
+        "openLayoutMs": 243.8,
+        "openFramesMs": 250.3,
+        "typingBatchMs": 73.6
+      },
+      {
+        "extension": "json",
+        "enabled": false,
+        "iteration": 3,
+        "openLayoutMs": 242,
+        "openFramesMs": 267.8,
+        "typingBatchMs": 60.1
+      },
+      {
+        "extension": "json",
+        "enabled": false,
+        "iteration": 4,
+        "openLayoutMs": 240.6,
+        "openFramesMs": 244.1,
+        "typingBatchMs": 71.4
+      },
+      {
+        "extension": "json",
+        "enabled": true,
+        "iteration": 4,
+        "openLayoutMs": 252.9,
+        "openFramesMs": 271,
+        "typingBatchMs": 74.3
+      },
+      {
+        "extension": "json",
+        "enabled": true,
+        "iteration": 5,
+        "openLayoutMs": 248.5,
+        "openFramesMs": 263.1,
+        "typingBatchMs": 75.2
+      },
+      {
+        "extension": "json",
+        "enabled": false,
+        "iteration": 5,
+        "openLayoutMs": 283.6,
+        "openFramesMs": 290,
+        "typingBatchMs": 47.6
+      },
+      {
+        "extension": "md",
+        "enabled": true,
+        "iteration": 1,
+        "openLayoutMs": 252.3,
+        "openFramesMs": 256.3,
+        "typingBatchMs": 99.1
+      },
+      {
+        "extension": "md",
+        "enabled": false,
+        "iteration": 1,
+        "openLayoutMs": 236.6,
+        "openFramesMs": 256.5,
+        "typingBatchMs": 49.9
+      },
+      {
+        "extension": "md",
+        "enabled": false,
+        "iteration": 2,
+        "openLayoutMs": 248.7,
+        "openFramesMs": 253.9,
+        "typingBatchMs": 75.5
+      },
+      {
+        "extension": "md",
+        "enabled": true,
+        "iteration": 2,
+        "openLayoutMs": 272.7,
+        "openFramesMs": 302.5,
+        "typingBatchMs": 94.6
+      },
+      {
+        "extension": "md",
+        "enabled": true,
+        "iteration": 3,
+        "openLayoutMs": 242.7,
+        "openFramesMs": 245.7,
+        "typingBatchMs": 131.9
+      },
+      {
+        "extension": "md",
+        "enabled": false,
+        "iteration": 3,
+        "openLayoutMs": 261.6,
+        "openFramesMs": 265.2,
+        "typingBatchMs": 58
+      },
+      {
+        "extension": "md",
+        "enabled": false,
+        "iteration": 4,
+        "openLayoutMs": 245.8,
+        "openFramesMs": 259.2,
+        "typingBatchMs": 54.7
+      },
+      {
+        "extension": "md",
+        "enabled": true,
+        "iteration": 4,
+        "openLayoutMs": 279.6,
+        "openFramesMs": 295.1,
+        "typingBatchMs": 113.8
+      },
+      {
+        "extension": "md",
+        "enabled": true,
+        "iteration": 5,
+        "openLayoutMs": 262,
+        "openFramesMs": 270.6,
+        "typingBatchMs": 95.5
+      },
+      {
+        "extension": "md",
+        "enabled": false,
+        "iteration": 5,
+        "openLayoutMs": 244.5,
+        "openFramesMs": 252,
+        "typingBatchMs": 63.8
+      }
+    ],
+    "summary": {
+      "json-off": {
+        "openLayoutMs": {
+          "median": 242,
+          "range": [
+            237.2,
+            289.8
+          ]
+        },
+        "openFramesMs": {
+          "median": 267.8,
+          "range": [
+            242.7,
+            302.6
+          ]
+        },
+        "typingBatchMs": {
+          "median": 60.7,
+          "range": [
+            47.6,
+            71.4
+          ]
+        }
+      },
+      "json-on": {
+        "openLayoutMs": {
+          "median": 252.9,
+          "range": [
+            243.8,
+            295.7
+          ]
+        },
+        "openFramesMs": {
+          "median": 271,
+          "range": [
+            250.3,
+            306.1
+          ]
+        },
+        "typingBatchMs": {
+          "median": 75.2,
+          "range": [
+            73.6,
+            107.6
+          ]
+        }
+      },
+      "md-off": {
+        "openLayoutMs": {
+          "median": 245.8,
+          "range": [
+            236.6,
+            261.6
+          ]
+        },
+        "openFramesMs": {
+          "median": 256.5,
+          "range": [
+            252,
+            265.2
+          ]
+        },
+        "typingBatchMs": {
+          "median": 58,
+          "range": [
+            49.9,
+            75.5
+          ]
+        }
+      },
+      "md-on": {
+        "openLayoutMs": {
+          "median": 262,
+          "range": [
+            242.7,
+            279.6
+          ]
+        },
+        "openFramesMs": {
+          "median": 270.6,
+          "range": [
+            245.7,
+            302.5
+          ]
+        },
+        "typingBatchMs": {
+          "median": 99.1,
+          "range": [
+            94.6,
+            131.9
+          ]
+        }
+      }
+    }
+  }
+}

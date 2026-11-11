@@ -71,6 +71,14 @@ test("startup registers every view without evaluating view implementations or st
   assert.equal(h.writes.length, 0);
 });
 
+test("opting into highlighting still defers every editor and parser until a diff opens", async () => {
+  const h = harness({ ...defaults, syntaxHighlighting: true, openOnStartup: false });
+  await h.plugin.onload(); h.layout();
+  assert.deepEqual([...h.loaded].filter(file => file.includes(path.sep + "views" + path.sep)).map(file => path.basename(file)), ["shared.js"]);
+  assert.equal(h.plugin.ready, false);
+  assert.equal(h.writes.length, 0);
+});
+
 test("restored sidebar factory loads synchronously and leaves editors deferred until a diff is requested", async () => {
   const h = harness(defaults);
   await h.plugin.onload();
@@ -89,6 +97,7 @@ test("new and legacy settings get defaults without a startup write; actual prefe
     await h.plugin.onload();
     assert.equal(h.plugin.settings.showDiffNavigation, true);
     assert.equal(h.plugin.settings.collapseUnchanged, true);
+    assert.equal(h.plugin.settings.syntaxHighlighting, false);
     assert.equal(h.plugin.settings.refreshSeconds, saved?.refreshSeconds || defaults.refreshSeconds);
     assert.equal(h.writes.length, 0);
     await h.plugin.updateSetting("dateFormat", "YYYY");

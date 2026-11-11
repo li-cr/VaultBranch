@@ -1,10 +1,11 @@
-VaultBranch 0.2.23 enables native change-block revert controls in editable diffs.
+VaultBranch 0.2.24 adds optional JSON and Markdown syntax highlighting, off by default.
 
-- Use the arrow between panes to restore one working-copy change block to its staged version through CodeMirror MergeView's native a-to-b revert operation. Other change blocks and the staged index stay intact.
-- Keep reverts in the existing editor session: Ctrl/Cmd+Z undoes them, manual mode waits for Save or Ctrl/Cmd+S, and optional autosave uses the normal save path. This does not stage content.
-- Support mouse and keyboard/assistive button activation, translated labels and theme-aware styling. Remove controls while Git operations lock editing; block stale controls and non-primary mouse presses.
-- Keep staged and historical comparisons read-only without revert controls. For untracked text, restoring the empty index creates an empty editable draft rather than deleting the file.
+- Enable Diff syntax highlighting under Settings → Other for editable, staged and file-history comparisons. Only `.json`, `.md` and `.markdown` are supported; other types remain plain text.
+- Color JSON keys, strings and values, and Markdown source headings, emphasis, links and code using theme variables. Markdown stays source text; fenced code has a single code style without nested language parsing.
+- Apply setting changes without replacing editors or changing drafts, selection, undo, diff backgrounds or the staged index. Preserve native chunk reverts, navigation and existing manual-save/autosave behavior.
+- Use plain text if either pane exceeds 200,000 characters or a line exceeds 10,000 characters. Editing across a limit disables highlighting safely; undo restores it. Historical revisions use their historical extensions after renames.
+- Defer parser initialization until an enabled supported comparison opens. Reuse host CodeMirror/Lezer runtimes rather than bundling duplicate runtime code.
 
-Validated with 70 local automated tests and 56 Obsidian UI checks: 24 native chunk-revert checks, 24 diff-navigation checks and 8 folding/editor checks. The reproducible script is tests/manual/chunk-revert-ui.js; run only in the note_test vault. Syntax, CSS and build checks pass. No performance improvement is claimed. Syntax highlighting configuration is not included in this release.
+Validated with 80 local automated tests and 81 Obsidian UI checks. In local warm five-sample tests, enabling highlighting increased median synthetic 2,000-line open/layout time by about 11 ms for JSON and 16 ms for Markdown; editing also costs more. Default-off plugin reload recheck medians were 14.3 ms for 0.2.23 and 14.4 ms for the candidate. Initial and repeat first-diff measurements varied in opposite directions; no startup improvement or zero-cost claim is made. See docs/performance/0.2.24.md and the reproducible benchmark/UI scripts. Full application cold start was not measured.
 
 Release assets retain GitHub provenance attestations. Desktop only; requires Git installed separately.
