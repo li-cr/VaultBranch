@@ -42,6 +42,7 @@
     delete window.__vbGuiTiming;
     delete window.__vbGuiTimingMode;
     delete window.__vbGuiTimingRapid;
+    delete window.__vbGuiTimingCold;
   };
   window.__vbGuiTiming = { cleanup };
   try {
@@ -96,6 +97,7 @@
     document.addEventListener("click", click, true);
     Object.assign(window.__vbGuiTiming, {
       position(n) {
+        if (window.__vbGuiTimingCold) { p.git.previewBlobs?.clear(); p.git.previewBlobBytes = 0; }
         const rows = [...source.treeEl.querySelectorAll(".vaultbranch-file-row")].filter(row => row.dataset.path === files[n].path);
         const control = rows.at(-1)?.querySelector(".vaultbranch-file-open");
         if (!control) throw Error("Fixture row unavailable");

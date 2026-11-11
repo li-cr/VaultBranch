@@ -152,7 +152,7 @@ class GitService {
     this.pullMethod = options.pullMethod === "merge" ? "merge" : "rebase";
   }
 
-  run(args, { timeout = 20000, allowDiffExit = false, timing } = {}) {
+  run(args, { timeout = 20000, allowDiffExit = false, maxBuffer = MAX_OUTPUT, timing } = {}) {
     const end = timing?.span(`git:${args[0]}${args[0] === "cat-file" ? ":" + args[1] : ""}`);
     return new Promise((resolve, reject) => {
       execFile(this.binary, ["-c", "core.quotepath=false", "-c", "color.ui=false", ...args], {
@@ -161,12 +161,13 @@ class GitService {
         windowsHide: true,
         encoding: "utf8",
         timeout,
-        maxBuffer: MAX_OUTPUT,
+        maxBuffer,
         // Stash uses Git's own pathspecs to remove saved untracked files.
         env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_PAGER: "cat", GIT_EDITOR: "true", GIT_SEQUENCE_EDITOR: "true", GIT_LITERAL_PATHSPECS: ["check-ignore", "stash"].includes(args[0]) ? "0" : "1" },
       }, (error, stdout, stderr) => {
         end?.();
         if (!error || (allowDiffExit && error.code === 1)) return resolve(stdout);
+        if (error.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER" && maxBuffer === MAX_PREVIEW) return reject(new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。")));
         const detail = error.killed ? t("Git 操作超时；请检查网络、SSH 或凭据配置。") : ([stderr, stdout].filter((value) => value?.trim()).join("\n").trim() || error.message);
         if (/non-fast-forward|fetch first|remote contains work|tip of your current branch is behind/i.test(detail)) {
           reject(new Error(t`Push 被拒绝：远程有新提交。请先 Pull，解决可能的冲突后再 Push。\n\n${detail}`));
@@ -186,15 +187,16 @@ class GitService {
   }
 
   async operation() {
-    for (const [name, label] of [["rebase-merge", "rebase"], ["rebase-apply", "rebase"], ["MERGE_HEAD", "merge"], ["CHERRY_PICK_HEAD", "cherry-pick"], ["REVERT_HEAD", "revert"], ["sequencer", "sequencer"]]) {
+    const operations = await Promise.all([["rebase-merge", "rebase"], ["rebase-apply", "rebase"], ["MERGE_HEAD", "merge"], ["CHERRY_PICK_HEAD", "cherry-pick"], ["REVERT_HEAD", "revert"], ["sequencer", "sequencer"]].map(async ([name, label]) => {
       try {
         await fs.access(path.join(this.gitDir, name));
         return label;
       } catch (error) {
         if (error.code !== "ENOENT") throw error;
       }
-    }
-    return null;
+      return null;
+    }));
+    return operations.find(Boolean) || null;
   }
 
   async status({ includeStash = true, timing } = {}) {
@@ -336,12 +338,23 @@ class GitService {
   async readWorktreeVersions(filePath, timing) {
     this.checkPaths([filePath]);
     const absolute = path.resolve(this.root, filePath);
-    const [status, [stat, actual, root], entries] = await Promise.all([
-      this.status({ includeStash: false, timing }),
+    const [operation, [stat, actual, root], entries] = await Promise.all([
+      measure(timing, "check-repository-operation", () => this.operation()),
       measure(timing, "validate-file-path", () => Promise.all([fs.lstat(absolute), fs.realpath(absolute), fs.realpath(this.root)])),
-      this.run(["ls-files", "--stage", "-z", "--", filePath], { timing }),
+      // Stage numbers expose conflicts anywhere in the index without scanning
+      // working files, untracked directories, branches or upstream refs.
+      this.run(["ls-files", "--stage", "-z"], { timing }),
     ]);
-    this.assertNormal(status);
+    let entry;
+    const files = [];
+    for (const record of entries.split("\0")) {
+      if (!record) continue;
+      const match = /^(\d+) ([a-f0-9]+) ([0-3])\t([\s\S]*)$/.exec(record);
+      if (!match) throw new Error(t("文件状态已改变，请刷新后重试。"));
+      if (match[3] !== "0") files.push({ conflict: true });
+      if (match[4] === filePath && match[3] === "0") entry = match;
+    }
+    this.assertNormal({ operation, files });
     const relative = path.relative(root, actual);
     if (!stat.isFile() || stat.isSymbolicLink() || relative.startsWith("..") || path.isAbsolute(relative)) {
       throw new Error(t("此文件不支持在差异视图中编辑。"));
@@ -353,18 +366,16 @@ class GitService {
     };
     if (stat.size > MAX_PREVIEW) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
     const working = decode(await measure(timing, "read-working-file", () => fs.readFile(absolute)));
-    const entry = entries.split("\0").find(Boolean);
     let index = "";
     if (entry) {
-      const hash = entry.split(" ")[1];
+      const hash = entry[2];
       if (this.previewBlobs?.has(hash)) {
         index = this.previewBlobs.get(hash);
         this.previewBlobs.delete(hash); this.previewBlobs.set(hash, index);
         if (timing) timing.record.blobCacheHits = (timing.record.blobCacheHits || 0) + 1;
       }
       else {
-        if (Number(await this.run(["cat-file", "-s", hash], { timing })) > MAX_PREVIEW) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
-        index = await this.run(["cat-file", "blob", hash], { timing });
+        index = await this.run(["cat-file", "blob", hash], { maxBuffer: MAX_PREVIEW, timing });
         if (index.includes("\0") || index.includes("\ufffd")) throw new Error(t("仅支持编辑 2 MB 以内的 UTF-8 文本文件。"));
         // Only immutable blobs are cached; mutable index and disk state stay live.
         this.previewBlobs ||= new Map();

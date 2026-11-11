@@ -436,10 +436,10 @@ test("editable snapshots reuse immutable index blobs and reload them after stagi
   const snapshot = await service.worktreeVersions("note.md");
   assert.equal(snapshot.index, "index one\n");
   assert.equal(snapshot.working, "working change\n");
-  assert.deepEqual(commands, ["status", "ls-files"]);
+  assert.deepEqual(commands, ["ls-files"]);
   await service.stage(["note.md"]);
   assert.equal((await service.worktreeVersions("note.md")).index, "working change\n");
-  assert.equal(commands.filter((cmd) => cmd === "cat-file").length, 2);
+  assert.equal(commands.filter((cmd) => cmd === "cat-file").length, 1);
 });
 
 test("editable versions handle untracked empty files and retain CRLF and UTF-8 BOM", async () => {
@@ -461,11 +461,11 @@ test("alternating index blobs remain cached while disk and staging changes stay 
   assert.deepEqual(await service.worktreeVersions("small/note.md"), { index: "small index\n", working: "external working change\n" });
   await service.worktreeVersions("large/deep/data.json");
   assert.equal(commands.filter(cmd => cmd === "cat-file").length, 0);
-  assert.equal(commands.filter(cmd => cmd === "status").length, 2);
+  assert.equal(commands.filter(cmd => cmd === "status").length, 0);
   assert.equal(commands.filter(cmd => cmd === "ls-files").length, 2);
   await service.stage(["small/note.md"]);
   assert.equal((await service.worktreeVersions("small/note.md")).index, "external working change\n");
-  assert.equal(commands.filter(cmd => cmd === "cat-file").length, 2);
+  assert.equal(commands.filter(cmd => cmd === "cat-file").length, 1);
 });
 
 test("index blob cache stays within eight entries and four MiB with LRU eviction", async () => {
@@ -484,18 +484,56 @@ test("index blob cache stays within eight entries and four MiB with LRU eviction
   assert.equal(service.previewBlobBytes, 3 * 1024 * 1024);
 });
 
-test("parallel index lookup still waits for live conflict and operation checks before exposing text", async () => {
+test("index lookup starts alongside operation checks and still blocks repository operations", async () => {
   const { root, service } = await fixture();
   await write(root, "note.md", "index\n"); await service.stage(["note.md"]); await service.worktreeVersions("note.md");
   let release, indexStarted = false;
   const blocked = new Promise(resolve => { release = resolve; });
-  service.status = () => blocked;
+  service.operation = () => blocked;
   const original = service.run;
   service.run = function (args, options) { if (args[0] === "ls-files") indexStarted = true; return original.call(this, args, options); };
   const reading = service.worktreeVersions("note.md");
-  assert.equal(indexStarted, true, "independent index lookup starts while status is pending");
-  release({ operation: "rebase", files: [] });
+  assert.equal(indexStarted, true, "index lookup starts while operation checks are pending");
+  release("rebase");
   await assert.rejects(reading, /rebase/);
+});
+
+test("a conflict in another file still prevents editing without a status scan", async () => {
+  const { root, service } = await fixture();
+  await write(root, "note.md", "index\n"); await service.stage(["note.md"]);
+  const hash = git(root, "rev-parse", ":note.md").trim();
+  execFileSync("git", ["update-index", "--index-info"], { cwd: root, windowsHide: true,
+    input: [1, 2, 3].map(stage => `100644 ${hash} ${stage}\telsewhere/conflict.md\n`).join("") });
+  assert.equal(await service.operation(), null);
+  await assert.rejects(service.worktreeVersions("note.md"), /冲突/);
+});
+
+test("full index lookup selects the exact literal file among many unrelated entries", async () => {
+  const { root, service } = await fixture();
+  const name = "deep/[literal]/note.md";
+  await write(root, name, "selected index\n"); await service.stage([name]);
+  const hash = git(root, "rev-parse", `:${name}`).trim();
+  execFileSync("git", ["update-index", "--index-info"], { cwd: root, windowsHide: true,
+    input: Array.from({ length: 10000 }, (_, n) => `100644 ${hash}\tother/${n}/note.md\n`).join("") });
+  await write(root, name, "selected worktree\n");
+  const index = git(root, "write-tree");
+  const commands = [], run = service.run;
+  service.run = function(args, options) { commands.push(args[0]); return run.call(this, args, options); };
+  assert.deepEqual(await service.worktreeVersions(name), { index: "selected index\n", working: "selected worktree\n" });
+  assert.deepEqual(commands, ["ls-files", "cat-file"]);
+  commands.length = 0; await service.worktreeVersions(name);
+  assert.deepEqual(commands, ["ls-files"]);
+  assert.equal(git(root, "write-tree"), index);
+});
+
+test("bounded blob reads accept exactly two MiB of multibyte UTF-8 and reject larger index text", async () => {
+  const { root, service } = await fixture();
+  const text = "界".repeat(Math.floor(2 * 1024 * 1024 / 3)) + "xx";
+  assert.equal(Buffer.byteLength(text), 2 * 1024 * 1024);
+  await write(root, "note.md", text); await service.stage(["note.md"]); await write(root, "note.md", "small\n");
+  assert.equal((await service.worktreeVersions("note.md")).index, text);
+  await write(root, "note.md", text + "x"); await service.stage(["note.md"]); await write(root, "note.md", "small\n");
+  await assert.rejects(service.worktreeVersions("note.md"), /2 MB/);
 });
 
 test("editable versions reject binary, invalid UTF-8, oversized files and unsafe paths", async () => {

@@ -21,7 +21,7 @@
     await p.openDiff(entry, "unstaged");
     let record = p.timingLog.records.at(-1);
     check(record.status === "complete" && record.domReadyMs >= 0 && record.completedMs >= record.domReadyMs, "content-ready and operation-complete times are separate");
-    check(record.stages.some(s => s.name === "git:status") && record.stages.some(s => s.name === "git:ls-files"), "live Git status and index reads appear in the trace");
+    check(record.stages.some(s => s.name === "check-repository-operation") && record.stages.some(s => s.name === "git:ls-files") && !record.stages.some(s => s.name === "git:status"), "live operation and conflict/index checks replace whole-worktree status in the trace");
     check(record.stages.some(s => s.name === "create-editor") && record.stages.some(s => s.name === "verify-after-render"), "editor creation and required final verification appear separately");
     check(record.source === "command" && !record.trusted, "programmatic openings are not mislabeled as GUI clicks");
     await p.updateSetting("performanceLogLimit", 1);

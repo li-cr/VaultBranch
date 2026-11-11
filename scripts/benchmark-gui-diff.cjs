@@ -32,6 +32,7 @@ const path = require("node:path");
     await evaluate(`window.__vbGuiTimingMode = ${JSON.stringify(process.argv[3] === "off" ? "off" : "on")}`);
     const rapid = process.argv[4] === "rapid";
     await evaluate(`window.__vbGuiTimingRapid = ${rapid}`);
+    await evaluate(`window.__vbGuiTimingCold = ${process.argv[5] === "cold"}`);
     await evaluate(await fs.readFile(path.resolve(__dirname, "../tests/manual/gui-timing-fixture.js"), "utf8"));
     for (let round = 0; round < 6; round++) for (let n = 0; n < 4; n += rapid ? 2 : 1) {
       for (const index of rapid ? [n + 1, n] : [n]) {
@@ -53,6 +54,7 @@ const path = require("node:path");
     }
     const report = await evaluate("window.__vbGuiTiming.report()");
     report.mode = rapid ? "rapid-pairs" : "sequential";
+    report.cache = process.argv[5] === "cold" ? "blob cache cleared before each click" : "warm after first cycle";
     report.samples = report.samples.slice(4); // Discard the warm-up cycle.
     if (!report.samples.every(sample => sample.trusted)) throw Error("Expected trusted GUI clicks");
     console.log(JSON.stringify(report, null, 2));
