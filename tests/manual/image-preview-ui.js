@@ -53,11 +53,47 @@
     };
     let images = await open(name);
     check(images.length === 2 && images[0].naturalWidth === 120 && images[1].naturalWidth === 80, "Changes uses index and disk images, fully decoded");
+    const zoomImage = images[0], otherImage = images[1];
+    const preview = zoomImage.parentElement, grid = preview.closest(".vaultbranch-image-comparison");
+    const initial = zoomImage.getBoundingClientRect(), gridSize = grid.getBoundingClientRect();
+    const wheel = (deltaY, deltaMode = 0) => zoomImage.dispatchEvent(new WheelEvent("wheel", { deltaY, deltaMode, clientX: initial.x + initial.width / 2, clientY: initial.y + initial.height / 2, bubbles: true, cancelable: true }));
+    check(!wheel(-100) && zoomImage.getBoundingClientRect().width > initial.width, "wheel up zooms the hovered image and prevents page scrolling");
+    check(!otherImage.style.transform, "zooming one image leaves the other version unchanged");
+    check(Math.abs(grid.getBoundingClientRect().width - gridSize.width) < 1 && Math.abs(grid.getBoundingClientRect().height - gridSize.height) < 1, "zooming does not resize the comparison layout");
+    for (let n = 0; n < 40; n++) wheel(-100);
+    check(Math.abs(zoomImage.getBoundingClientRect().width / initial.width - 8) < 0.01, "image zoom is bounded at eight times the initial size");
+    for (let n = 0; n < 40; n++) wheel(100);
+    check(Math.abs(zoomImage.getBoundingClientRect().width - initial.width) < 1 && !preview.classList.contains("is-zoomed"), "wheel down never shrinks below the initial fit");
+    wheel(-3, 1); check(preview.classList.contains("is-zoomed"), "line-mode wheel events also zoom");
+    zoomImage.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    check(Math.abs(zoomImage.getBoundingClientRect().width - initial.width) < 1 && !preview.classList.contains("is-zoomed"), "double click resets the initial fit");
+    const electron = require("electron").remote;
+    electron.getCurrentWindow().show(); electron.getCurrentWindow().focus();
+    const web = electron.getCurrentWebContents();
+    const input = (type, data, expected) => new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { document.removeEventListener(expected, done, true); reject(Error(`Missing native ${expected} event`)); }, 3000);
+      const done = event => { clearTimeout(timer); document.removeEventListener(expected, done, true); setTimeout(() => resolve(event), 0); };
+      document.addEventListener(expected, done, true); web.sendInputEvent({ type, ...data });
+    });
+    const point = { x: Math.round(initial.x + initial.width / 2), y: Math.round(initial.y + initial.height / 2) };
+    const nativeWheel = await input("mouseWheel", { ...point, deltaX: 0, deltaY: 200, canScroll: true }, "wheel");
+    check(nativeWheel.isTrusted && preview.classList.contains("is-zoomed"), "native trusted mouse wheel enlarges the hovered image");
+    // Use a larger scale so this small fixture overflows its pane and can pan.
+    for (let n = 0; n < 20; n++) wheel(-100);
+    const xBefore = new DOMMatrix(zoomImage.style.transform).m41;
+    const down = await input("mouseDown", { ...point, button: "left", clickCount: 1 }, "pointerdown");
+    const move = await input("mouseMove", { x: point.x + 40, y: point.y, modifiers: ["leftButtonDown"] }, "pointermove");
+    await input("mouseUp", { x: point.x + 40, y: point.y, button: "left", clickCount: 1 }, "pointerup");
+    check(down.isTrusted && move.isTrusted && new DOMMatrix(zoomImage.style.transform).m41 > xBefore, "native mouse drag pans the enlarged image");
+    check(!preview.hasPointerCapture(down.pointerId), "mouse release ends pointer capture");
+    for (let n = 0; n < 8; n++) await input("mouseWheel", { ...point, deltaX: 0, deltaY: -200, canScroll: true }, "wheel");
+    check(Math.abs(zoomImage.getBoundingClientRect().width - initial.width) < 1 && !preview.classList.contains("is-zoomed"), "native wheel down returns to the original fit without shrinking below it");
     check(!leaf.view.merge && !leaf.view.session && !leaf.view.contentEl.querySelector(".vaultbranch-diff-navigation"), "image previews create no text editor, save or chunk controls");
     const oldImages = images;
     images = await open(name, "staged");
     check(images[0].naturalWidth === 100 && images[1].naturalWidth === 120, "Staged uses HEAD and index, ignoring later disk contents");
     check(oldImages.every(image => !image.getAttribute("src")), "switching releases old image sources");
+    check(images.every(image => !image.style.transform), "switching image versions starts at the initial fit");
     images = await open("new.png");
     check(images.length === 1 && images[0].naturalWidth === 120 && leaf.view.contentEl.querySelectorAll(".vaultbranch-image-pane").length === 2, "new image shows current image and an empty old version");
     for (const extension of ["jpg", "webp", "gif"]) {

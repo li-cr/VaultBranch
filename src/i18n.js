@@ -3,6 +3,7 @@
 // Chinese source strings are the fallback; tagged templates keep values out of translation keys.
 let language = "zh";
 const english = {
+  "滚轮缩放 · 放大后拖动 · 双击复原": "Scroll to zoom · Drag when zoomed · Double-click to reset",
   "图片超过 10 MB，请在外部查看。": "Image exceeds 10 MB. View it externally.",
   "此文件不支持图片预览。": "This file cannot be previewed as an image.",
   "无法预览此图片；文件可能损坏或格式不受支持。": "Cannot preview this image; the file may be damaged or its format unsupported.",

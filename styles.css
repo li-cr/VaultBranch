@@ -48,10 +48,13 @@
 .vaultbranch-diff-body { flex: 1; min-height: 0; overflow: auto; user-select: text; }
 .vaultbranch-diff-body.has-editor { display: flex; flex-direction: column; overflow: hidden; }
 .vaultbranch-image-comparison { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 100%; }
-.vaultbranch-image-pane { min-width: 0; display: flex; flex-direction: column; }
+.vaultbranch-image-pane { min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
 .vaultbranch-image-pane + .vaultbranch-image-pane { border-left: 1px solid var(--background-modifier-border); }
 .vaultbranch-image-caption { padding: 8px 16px; color: var(--text-muted); font-size: var(--font-ui-smaller); border-bottom: 1px solid var(--background-modifier-border); }
-.vaultbranch-image-preview { display: flex; align-items: center; justify-content: center; flex: 1; padding: 16px; min-height: 120px; }
+.vaultbranch-image-preview { display: flex; align-items: center; justify-content: center; flex: 1; padding: 16px; min-height: 120px; overflow: hidden; }
+.vaultbranch-image-preview.is-zoomed { touch-action: none; }
+.vaultbranch-image-preview.is-zoomed img { cursor: grab; }
+.vaultbranch-image-preview.is-zoomed img:active { cursor: grabbing; }
 .vaultbranch-image-preview img { display: block; max-width: 100%; max-height: 65vh; object-fit: contain; background-color: var(--background-primary); background-image: conic-gradient(var(--background-secondary) 25%, transparent 0 50%, var(--background-secondary) 0 75%, transparent 0); background-size: 16px 16px; }
 .vaultbranch-image-size { padding: 8px 16px; color: var(--text-muted); text-align: center; font-size: var(--font-ui-smaller); }
 .vaultbranch-edit-panes { flex: 1; min-height: 0; overflow: auto; }
