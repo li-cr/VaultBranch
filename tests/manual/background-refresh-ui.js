@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in the note_test vault.");
   const plugin = app.plugins.plugins.vaultbranch, workspace = app.workspace;
-  if (!plugin || [...plugin.editSessions.values()].some(session => session.dirty || session.saving)) throw Error("Enable VaultBranch and save diff drafts first.");
+  if (!plugin || [...plugin.editors.sessions.values()].some(session => session.dirty || session.saving)) throw Error("Enable VaultBranch and save diff drafts first.");
   const results = [], check = (condition, message) => { if (!condition) throw Error(message); results.push(message); };
   const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
   const settle = async () => { await pause(850); if (plugin.refreshTask) await plugin.refreshTask; };
@@ -49,7 +49,7 @@
     await plugin.refresh(true);
     check(statusCalls === 1, "explicit refresh remains available without sidebar");
     await diff.view.session.reload(); await diff.detach(); diff = null;
-    check(!plugin.editSessions.has(filePath), "closing clean editor releases its session");
+    check(!plugin.editors.sessions.has(filePath), "closing clean editor releases its session");
     check(!(window.__vaultbranchErrors || []).length, "no runtime errors");
     return { results, errors: window.__vaultbranchErrors || [] };
   } finally {

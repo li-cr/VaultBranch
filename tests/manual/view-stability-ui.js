@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in note_test.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save drafts first.");
+  if (!p || [...p.editors.sessions.values()].some(s => s.dirty || s.saving)) throw Error("Save drafts first.");
   const fs = require("node:fs/promises"), path = require("node:path"), os = require("node:os");
   const exec = require("node:util").promisify(require("node:child_process").execFile);
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "vb-stability-"));

@@ -1,9 +1,9 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in the note_test vault.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save drafts first.");
+  if (!p || [...p.editors.sessions.values()].some(s => s.dirty || s.saving)) throw Error("Save drafts first.");
   if (p.diffNavigationTask) await p.diffNavigationTask;
-  const saved = { logging: p.settings.performanceLogging, limit: p.settings.performanceLogLimit, autosave: p.settings.diffAutosave, ensureReady: p.ensureReady, editorSession: p.editorSession };
+  const saved = { logging: p.settings.performanceLogging, limit: p.settings.performanceLogLimit, autosave: p.settings.diffAutosave, ensureReady: p.ensureReady, editorSession: p.editors.acquire };
   const files = [], results = [];
   const check = (value, name) => { if (!value) throw Error(name); results.push(name); };
   let leaf, staged, release, pending, modal, clipboardWrite;
@@ -59,9 +59,9 @@
     modal.querySelector(".modal-close-button,.modal-header-button").click(); modal = null;
     let start;
     const started = new Promise(resolve => { start = resolve; }), gate = new Promise(resolve => { release = resolve; });
-    p.editorSession = async (...args) => { const session = await saved.editorSession.apply(p, args); start(); await gate; return session; };
+    p.editors.acquire = async (...args) => { const session = await saved.editorSession.apply(p.editors, args); start(); await gate; return session; };
     pending = p.openDiff({ path: files[1].path, untracked: true }, "unstaged"); await started;
-    await p.updateSetting("performanceLogging", false); release(); await pending; pending = null; p.editorSession = saved.editorSession;
+    await p.updateSetting("performanceLogging", false); release(); await pending; pending = null; p.editors.acquire = saved.editorSession;
     check(!p.timingLog.records.length, "disabling mid-load prevents late completion from restoring cleared records");
     check(!(window.__vaultbranchErrors || []).length, "no runtime errors");
     return { results, errors: window.__vaultbranchErrors || [] };
@@ -69,7 +69,7 @@
     if (clipboardWrite) navigator.clipboard.writeText = clipboardWrite;
     modal?.querySelector(".modal-close-button,.modal-header-button")?.click();
     release?.(); if (pending) await pending.catch(() => {});
-    p.ensureReady = saved.ensureReady; p.editorSession = saved.editorSession;
+    p.ensureReady = saved.ensureReady; p.editors.acquire = saved.editorSession;
     if (leaf) { await leaf.view.session?.reload(); await leaf.detach(); }
     if (staged) await p.git.run(["rm", "--cached", "--force", "--", staged]);
     for (const file of files) if (app.vault.getAbstractFileByPath(file.path)) await app.vault.trash(file, false);

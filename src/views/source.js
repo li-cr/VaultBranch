@@ -1,5 +1,7 @@
 "use strict";
 
+const { groupsFor, treeFor } = require("../git-data.js");
+
 const { ItemView, Menu, Notice, setIcon } = require("obsidian");
 const { t } = require("../i18n.js");
 const { SOURCE_VIEW, LABELS, STATUS_LABELS, el, button } = require("./shared.js");
@@ -67,7 +69,7 @@ class SourceControlView extends ItemView {
     if (!this.commitButton) return;
     const { status, busy, ready } = this.plugin;
     const blocked = !ready || busy || !status || Boolean(status.operation) || Boolean(status?.files.some((file) => file.conflict));
-    const staged = status ? this.plugin.core.groupsFor(status.files).staged.length : 0;
+    const staged = status ? groupsFor(status.files).staged.length : 0;
     const message = this.plugin.commitMessage();
     this.messageEl.placeholder = this.plugin.commitMessage("") || t("提交说明（Ctrl+Enter）");
     this.messageEl.title = t`最终提交说明：${message || t("（空）")}`;
@@ -126,7 +128,7 @@ class SourceControlView extends ItemView {
       el(this.treeEl, "div", "vaultbranch-empty", error ? t("无法读取 Git 仓库，请查看上方错误。") : t("正在读取文件改动…"));
       return;
     }
-    const groups = this.plugin.core.groupsFor(status.files);
+    const groups = groupsFor(status.files);
     if (groups.conflicts.length) this.renderGroup("conflicts", groups.conflicts);
     this.renderGroup("staged", groups.staged);
     this.renderGroup("unstaged", groups.unstaged);
@@ -156,7 +158,7 @@ class SourceControlView extends ItemView {
       const tree = el(group, "div", "vaultbranch-group-tree");
       tree.setAttribute("role", "tree");
       tree.setAttribute("aria-label", t`${t(LABELS[area])}文件`);
-      this.renderTree(tree, this.plugin.core.treeFor(files), area, 0);
+      this.renderTree(tree, treeFor(files), area, 0);
     }
   }
 

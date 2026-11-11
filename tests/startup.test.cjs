@@ -171,8 +171,8 @@ test("revealing the sidebar refreshes once and coalesces repeated layout and tim
 
 test("hidden-sidebar file events still sync editor sessions and explicit refresh remains available", async () => {
   const h = await refreshHarness();
-  h.plugin.editSessions.set("file.md", { sync() { h.counts.sync++; } });
-  h.plugin.editSessions.set("hidden.json", { sync() { h.counts.sync++; } });
+  h.plugin.editors.sessions.set("file.md", { sync() { h.counts.sync++; } });
+  h.plugin.editors.sessions.set("hidden.json", { sync() { h.counts.sync++; } });
   h.plugin.app.vault.getAbstractFileByPath = () => null;
   h.vaultEvents.get("modify")({ path: "file.md" });
   h.vaultEvents.get("raw")("hidden.json"); h.flush(); await h.settle();

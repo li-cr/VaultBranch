@@ -2,7 +2,7 @@
   if (app.vault.getName() !== "note_test") throw Error("Run only in the note_test vault.");
   const id = "vaultbranch", manager = app.plugins;
   const initial = manager.plugins[id];
-  if (!initial || [...initial.editSessions.values()].some(session => session.dirty || session.saving)) throw Error("Enable VaultBranch and save all diff drafts first.");
+  if (!initial || [...(initial.editors?.sessions || initial.editSessions).values()].some(session => session.dirty || session.saving)) throw Error("Enable VaultBranch and save all diff drafts first.");
   const settings = { ...initial.settings };
   const legacy = Boolean(window.__vaultbranchBenchmarkLegacy);
   const fs = require("node:fs/promises"), os = require("node:os"), path = require("node:path");
@@ -57,19 +57,29 @@
       sample.loadPluginMs = round(performance.now() - started);
       sample.settingsWrites ||= 0;
       sample.readyAtLoad = plugin.ready;
+      const run = plugin.git.run, gitCalls = [];
+      let phase = "first-sidebar";
+      plugin.git.run = function (...args) {
+        const call = { phase, command: args[0][0], start: performance.now() };
+        gitCalls.push(call);
+        return run.apply(this, args).finally(() => { call.ms = round(performance.now() - call.start); delete call.start; });
+      };
       let now = performance.now();
       const sidebar = await plugin.openSidebar();
       await plugin.refresh();
       sidebar.view.contentEl.getBoundingClientRect();
       sample.firstSidebarMs = round(performance.now() - now);
+      phase = "first-diff";
       now = performance.now();
       const diff = await plugin.openDiff({ path: filePath, untracked: true, index: "?", worktree: "?" }, "unstaged");
       diff.view.merge.b.dom.getBoundingClientRect();
       sample.firstDiffMs = round(performance.now() - now);
+      sample.gitCalls = gitCalls;
+      plugin.git.run = run;
       if (!diff.view.merge.a.state.readOnly || diff.view.merge.b.state.readOnly) throw Error("Editor access regression.");
       await diff.detach();
-      if (plugin.editSessions.size) throw Error("Clean editor session leaked.");
-      sample.sessionsAfterClose = plugin.editSessions.size;
+      if ((plugin.editors?.sessions || plugin.editSessions).size) throw Error("Clean editor session leaked.");
+      sample.sessionsAfterClose = (plugin.editors?.sessions || plugin.editSessions).size;
       if (iteration) samples.push(sample);
       sample = null;
     }

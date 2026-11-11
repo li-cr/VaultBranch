@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in the note_test vault.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save all diff drafts first.");
+  if (!p || [...p.editors.sessions.values()].some(s => s.dirty || s.saving)) throw Error("Save all diff drafts first.");
   const fs = require("node:fs/promises"), os = require("node:os"), path = require("node:path");
   const exec = require("node:util").promisify(require("node:child_process").execFile);
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "vaultbranch-syntax-history-"));
@@ -37,7 +37,7 @@
     check(leaf.view.merge.b.contentDOM.querySelector(".vb-syntax-heading"), "older revision uses historical Markdown extension after rename");
     check(await git("write-tree") === index, "history highlighting leaves the staged index unchanged");
     await leaf.detach(); leaf = null;
-    check(!p.editSessions.size, "history creates no editable sessions");
+    check(!p.editors.sessions.size, "history creates no editable sessions");
     check(!(window.__vaultbranchErrors || []).length, "no runtime errors");
     return { results, errors: window.__vaultbranchErrors || [] };
   } finally {

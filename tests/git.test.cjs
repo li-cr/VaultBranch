@@ -6,7 +6,8 @@ const { execFileSync } = require("node:child_process");
 const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
-const { GitService, parseStatus, groupsFor, treeFor, splitPatch } = require("../src/git.js");
+const { GitService } = require("../src/git.js");
+const { parseStatus, groupsFor, treeFor, splitPatch } = require("../src/git-data.js");
 
 const cleanup = [];
 after(async () => {

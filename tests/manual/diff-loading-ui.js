@@ -1,11 +1,11 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in the note_test vault.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save all diff drafts first.");
+  if (!p || [...p.editors.sessions.values()].some(s => s.dirty || s.saving)) throw Error("Save all diff drafts first.");
   if (p.diffNavigationTask) await p.diffNavigationTask;
   if (p.refreshTask) await p.refreshTask;
   p.refreshSoon?.cancel();
-  const saved = { settings: { ...p.settings }, editorSession: p.editorSession, ensureReady: p.ensureReady, scheduleRefresh: p.scheduleRefresh, lastAutoRefresh: p.lastAutoRefresh };
+  const saved = { settings: { ...p.settings }, editorSession: p.editors.acquire, ensureReady: p.ensureReady, scheduleRefresh: p.scheduleRefresh, lastAutoRefresh: p.lastAutoRefresh };
   const results = [], files = [], root = `vb-loading-${Date.now()}`;
   const check = (value, name) => { if (!value) throw Error(name); results.push(name); };
   const nextFrame = () => new Promise(resolve => {
@@ -17,8 +17,8 @@
     let start;
     const started = new Promise(resolve => { start = resolve; });
     const gate = new Promise(resolve => { release = resolve; });
-    p.editorSession = async (...args) => {
-      const session = await saved.editorSession.apply(p, args);
+    p.editors.acquire = async (...args) => {
+      const session = await saved.editorSession.apply(p.editors, args);
       start(); await gate; return session;
     };
     return started;
@@ -63,7 +63,7 @@
     await nextFrame();
     check(!leaf.view.contentEl.querySelector(".vaultbranch-diff-header"), "first open does not expose a partial toolbar while data is pending");
     check(leaf.view.contentEl.inert && leaf.view.contentEl.getAttribute("aria-busy") === "true", "pending first open is inert and reports busy to accessibility tools");
-    release(); await pending; pending = null; p.editorSession = saved.editorSession;
+    release(); await pending; pending = null; p.editors.acquire = saved.editorSession;
     const complete = () => leaf.view.contentEl.querySelector(".vaultbranch-diff-header") && leaf.view.saveButton && leaf.view.contentEl.querySelectorAll(".vaultbranch-diff-navigation button").length === 2 && leaf.view.merge && leaf.view.leftCaption.textContent && leaf.view.rightCaption.textContent;
     check(complete() && !leaf.view.contentEl.inert, "first committed editable page contains path, save/navigation controls, both captions and editor together");
     const oldHeader = leaf.view.contentEl.querySelector(".vaultbranch-diff-header"), oldMerge = leaf.view.merge;
@@ -71,7 +71,7 @@
     check(leaf.view.contentEl.querySelector(".vaultbranch-diff-header") === oldHeader && leaf.view.merge === oldMerge && leaf.view.contentEl.inert, "pending switch exposes no new incomplete header and prevents old-page interaction");
     await leaf.view.render();
     check(leaf.view.merge === oldMerge, "background refresh cannot interrupt a pending switch");
-    release(); await pending; pending = null; p.editorSession = saved.editorSession;
+    release(); await pending; pending = null; p.editors.acquire = saved.editorSession;
     check(complete() && leaf.view.file.path === files[1].path, "large JSON commits a complete page after its read completes");
     for (const n of [2, 3, 0, 1, 2, 3]) {
       await click(n);
@@ -105,31 +105,31 @@
     let blocked;
     const blockedStarted = new Promise(resolve => { blocked = resolve; });
     const blockedGate = new Promise(resolve => { release = resolve; });
-    p.editorSession = async (...args) => {
-      const session = await saved.editorSession.apply(p, args);
+    p.editors.acquire = async (...args) => {
+      const session = await saved.editorSession.apply(p.editors, args);
       if (args[0] === files[1].path) { blocked(); await blockedGate; }
       return session;
     };
     pending = p.openDiff(entries[1], "unstaged"); await blockedStarted;
     await p.openDiff(entries[2], "unstaged");
     check(leaf.view.file.path === files[2].path && complete() && !leaf.view.contentEl.inert, "B becomes fully interactive before the blocked large-file A read finishes");
-    release(); await pending; pending = null; p.editorSession = saved.editorSession;
+    release(); await pending; pending = null; p.editors.acquire = saved.editorSession;
     check(leaf.view.file.path === files[2].path && complete(), "late A result cannot replace the completed B page");
-    check(!p.editSessions.has(files[1].path), "superseded large-file A session is released");
+    check(!p.editors.sessions.has(files[1].path), "superseded large-file A session is released");
     p.ensureReady = async () => { throw Error("expected test read failure"); };
     await p.openDiff(entries[2], "unstaged");
     check(!!leaf.view.contentEl.querySelector(".is-error") && !leaf.view.contentEl.inert, "failed load displays an error and restores interaction");
     p.ensureReady = saved.ensureReady; await p.openDiff(entries[2], "unstaged");
     check(complete(), "a later file opens successfully after a read failure");
     started = holdSession(); pending = p.openDiff(entries[1], "unstaged"); await started;
-    await leaf.detach(); leaf = null; release(); await pending; pending = null; p.editorSession = saved.editorSession;
-    check(!p.editSessions.size, "closing during a large-file load releases current and late editor sessions");
+    await leaf.detach(); leaf = null; release(); await pending; pending = null; p.editors.acquire = saved.editorSession;
+    check(!p.editors.sessions.size, "closing during a large-file load releases current and late editor sessions");
     check(await p.git.run(["write-tree"]) === index, "all navigation, edits and saves leave the staged index unchanged");
     check(!(window.__vaultbranchErrors || []).length, "no runtime errors");
     return { results, fixtures: fixtures.map(([path, text]) => ({ path, bytes: new TextEncoder().encode(text).length, lines: text.split("\n").length })), errors: window.__vaultbranchErrors || [] };
   } finally {
     release?.(); if (pending) await pending.catch(() => {});
-    p.editorSession = saved.editorSession; p.ensureReady = saved.ensureReady;
+    p.editors.acquire = saved.editorSession; p.ensureReady = saved.ensureReady;
     if (leaf) { await leaf.view.session?.reload(); await leaf.detach(); }
     if (files.length) await p.git.run(["rm", "--cached", "--force", "--", ...files.map(f => f.path)]);
     if (folder) await app.vault.trash(folder, false);

@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in the note_test vault.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save all diff drafts first.");
+  if (!p || [...p.editors.sessions.values()].some(s => s.dirty || s.saving)) throw Error("Save all diff drafts first.");
   if (p.refreshTask) await p.refreshTask; p.refreshSoon?.cancel();
   const source = (await p.openSidebar()).view;
   if (p.refreshTask) await p.refreshTask;
@@ -70,7 +70,7 @@
     check(await p.git.run(["show", ":"+a.path]) === index, "clicking and editing preserve the staged index");
     check(await app.vault.read(a) === base.replace("line 40", "edited line 40"), "selection changes do not save a manual draft");
     await leaf.view.session.reload(); await leaf.detach(); leaf = null;
-    check(!p.editSessions.size, "closing clean diff releases editor sessions");
+    check(!p.editors.sessions.size, "closing clean diff releases editor sessions");
     check(!(window.__vaultbranchErrors || []).length, "no runtime errors");
     return { results, errors: window.__vaultbranchErrors || [] };
   } finally {

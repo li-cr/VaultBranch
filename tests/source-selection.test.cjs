@@ -43,6 +43,7 @@ function harness() {
     module, Intl, require(name) {
       if (name === "obsidian") return { ItemView: class {}, setIcon() {}, Notice: class {} };
       if (name === "../i18n.js") return i18n;
+      if (name === "../git-data.js") return require("../src/git-data.js");
       if (name === "../branches.js") return {};
       if (name === "./shared.js") return { el, button, LABELS: { staged: "staged", unstaged: "unstaged", conflicts: "conflicts" }, STATUS_LABELS: {} };
       throw Error(name);

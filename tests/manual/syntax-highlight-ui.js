@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in the note_test vault.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save all diff drafts first.");
+  if (!p || [...p.editors.sessions.values()].some(s => s.dirty || s.saving)) throw Error("Save all diff drafts first.");
   const settings = { ...p.settings }, files = [], results = [];
   const check = (value, label) => { if (!value) throw Error(label); results.push(label); };
   const pause = () => new Promise(resolve => setTimeout(resolve, 120));
@@ -94,7 +94,7 @@
       if (leaf) { await leaf.view.session?.reload(); await leaf.detach(); leaf = null; }
       await app.vault.adapter.trashLocal(hidden);
     }
-    check(!p.editSessions.size, "closing clean comparisons releases all edit sessions");
+    check(!p.editors.sessions.size, "closing clean comparisons releases all edit sessions");
     check(!(window.__vaultbranchErrors || []).length, "no runtime errors");
     return { results, errors: window.__vaultbranchErrors || [] };
   } finally {

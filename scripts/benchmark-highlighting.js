@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in the note_test vault.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save all diff drafts first.");
+  if (!p || [...(p.editors?.sessions || p.editSessions).values()].some(s => s.dirty || s.saving)) throw Error("Save all diff drafts first.");
   const original = { ...p.settings }, files = [], samples = [];
   const frame = () => new Promise(resolve => requestAnimationFrame(resolve));
   const round = n => Number(n.toFixed(3));
@@ -37,7 +37,7 @@
         editor.dispatch({ changes: { from: position, to: position + 30 } });
         if (editor.state.doc.toString() !== text || leaf.view.session.dirty) throw Error("Draft correctness failed.");
         await leaf.detach(); leaf = null;
-        if (p.editSessions.size) throw Error("Editor session leaked.");
+        if ((p.editors?.sessions || p.editSessions).size) throw Error("Editor session leaked.");
         if (iteration) samples.push({ extension, enabled, iteration, openLayoutMs, openFramesMs, typingBatchMs });
       }
     }

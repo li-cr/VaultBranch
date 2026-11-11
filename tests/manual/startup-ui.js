@@ -2,7 +2,7 @@
   if (app.vault.getName() !== "note_test") throw Error("Run only in the note_test vault.");
   const id = "vaultbranch", manager = app.plugins;
   let plugin = manager.plugins[id];
-  if (!plugin || [...plugin.editSessions.values()].some(session => session.dirty || session.saving)) throw Error("Enable VaultBranch and save diff drafts first.");
+  if (!plugin || [...plugin.editors.sessions.values()].some(session => session.dirty || session.saving)) throw Error("Enable VaultBranch and save diff drafts first.");
   const settings = { ...plugin.settings }, results = [];
   const check = (condition, message) => { if (!condition) throw Error(message); results.push(message); };
   const filePath = "vaultbranch-startup-ui.md";
@@ -48,7 +48,7 @@
     check(await app.vault.read(file) === contents, "restoring manual draft does not save to disk");
     diff.view.merge.b.dispatch({ changes: { from: 0, to: diff.view.merge.b.state.doc.length, insert: contents } });
     await diff.detach();
-    check(plugin.editSessions.size === 0, "closing restored clean diff releases its editor session");
+    check(plugin.editors.sessions.size === 0, "closing restored clean diff releases its editor session");
     await restore("vaultbranch-history");
     await restore("vaultbranch-file-history");
     await restore("vaultbranch-conflict");
@@ -57,7 +57,7 @@
     check(!(window.__vaultbranchErrors || []).length, "no runtime errors");
     return { results, errors: window.__vaultbranchErrors || [] };
   } finally {
-    const session = plugin.editSessions.get(filePath);
+    const session = plugin.editors.sessions.get(filePath);
     if (session && !session.saving) session.edit(contents);
     await closeViews();
     if (app.vault.getAbstractFileByPath(filePath)) await app.vault.trash(file, false);

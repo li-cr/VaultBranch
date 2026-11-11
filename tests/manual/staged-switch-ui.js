@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in note_test.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || window.__vbStagedSwitch || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save drafts and finish previous tests first.");
+  if (!p || window.__vbStagedSwitch || [...(p.editors?.sessions || p.editSessions).values()].some(s => s.dirty || s.saving)) throw Error("Save drafts and finish previous tests first.");
   if (p.diffNavigationTask) await p.diffNavigationTask;
   if (p.refreshTask) await p.refreshTask;
   p.refreshSoon?.cancel();
@@ -119,7 +119,7 @@
       },
       poll() { return { count: samples.length, done: samples.every(sample => sample.done) }; },
       async report() {
-        const groups = p.core.groupsFor(p.status.files);
+        const groups = { staged: p.status.files.filter(file => !file.conflict && !file.untracked && file.index !== " "), unstaged: p.status.files.filter(file => !file.conflict && (file.untracked || file.worktree !== " ")) };
         return { version: p.manifest.version, userAgent: navigator.userAgent,
           statusCounts: { staged: groups.staged.length, changed: groups.unstaged.length },
           indexUnchanged: (await git("write-tree")) === index,

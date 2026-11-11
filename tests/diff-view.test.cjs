@@ -80,7 +80,6 @@ test("hidden JSON uses adapter processing without a TFile and preserves the inde
   const index = '{"value":"index"}\n';
   let disk = '{"value":"working"}\n';
   let processes = 0;
-  plugin.editSessions = new Map(); plugin.editorTasks = new Map(); plugin.diffDrafts = new Map();
   plugin.git = { worktreeVersions: async () => ({ index, working: disk }) };
   plugin.scheduleRefresh = () => {};
   plugin.app = {
@@ -91,7 +90,8 @@ test("hidden JSON uses adapter processing without a TFile and preserves the inde
       adapter: { process: async (path, update) => { assert.equal(path, filePath); processes++; disk = update(disk); } },
     },
   };
-  const session = await plugin.editorSession(filePath);
+  plugin.editors = plugin.createEditorSessions();
+  const session = await plugin.editors.acquire(filePath);
   session.edit('{"value":"edited"}\n');
   assert.equal(await session.flush(), true);
   assert.equal(disk, '{"value":"edited"}\n');
@@ -126,7 +126,6 @@ test("non-Git settings update without refreshing the repository or rewriting unc
 function editorFixture() {
   const plugin = new Plugin();
   plugin.settings = { diffAutosave: false };
-  plugin.editSessions = new Map(); plugin.editorTasks = new Map(); plugin.diffDrafts = new Map();
   let disk = "working\n";
   plugin.git = { worktreeVersions: async () => ({ index: "index\n", working: disk }) };
   plugin.scheduleRefresh = () => {};
@@ -134,34 +133,35 @@ function editorFixture() {
     workspace: { requestSaveLayout() {} },
     vault: { getAbstractFileByPath: () => null, adapter: { process: async (_, update) => { disk = update(disk); } } },
   };
+  plugin.editors = plugin.createEditorSessions();
   return plugin;
 }
 
 test("shared clean editor sessions are released only after the last view releases them", async () => {
   const plugin = editorFixture();
-  const [first, second] = await Promise.all([plugin.editorSession("a.json", true), plugin.editorSession("a.json", true)]);
+  const [first, second] = await Promise.all([plugin.editors.acquire("a.json", true), plugin.editors.acquire("a.json", true)]);
   assert.equal(first, second);
   assert.equal(first.users, 2);
-  plugin.releaseEditorSession("a.json", first);
-  assert.equal(plugin.editSessions.get("a.json"), second);
-  plugin.releaseEditorSession("a.json", second);
-  assert.equal(plugin.editSessions.size, 0);
-  assert.equal(plugin.diffDrafts.size, 0);
+  plugin.editors.release("a.json", first);
+  assert.equal(plugin.editors.sessions.get("a.json"), second);
+  plugin.editors.release("a.json", second);
+  assert.equal(plugin.editors.sessions.size, 0);
+  assert.equal(plugin.editors.drafts.size, 0);
 });
 
 test("closed manual drafts survive reopening and are released after saving and closing", async () => {
   const plugin = editorFixture();
-  const session = await plugin.editorSession("a.json", true);
+  const session = await plugin.editors.acquire("a.json", true);
   session.edit("unsaved draft\n");
-  plugin.releaseEditorSession("a.json", session);
-  assert.equal(plugin.editSessions.get("a.json"), session);
-  const reopened = await plugin.editorSession("a.json", true);
+  plugin.editors.release("a.json", session);
+  assert.equal(plugin.editors.sessions.get("a.json"), session);
+  const reopened = await plugin.editors.acquire("a.json", true);
   assert.equal(reopened, session);
   assert.equal(reopened.draft.text, "unsaved draft\n");
   await reopened.flush();
-  plugin.releaseEditorSession("a.json", reopened);
-  assert.equal(plugin.editSessions.size, 0);
-  assert.equal(plugin.diffDrafts.size, 0);
+  plugin.editors.release("a.json", reopened);
+  assert.equal(plugin.editors.sessions.size, 0);
+  assert.equal(plugin.editors.drafts.size, 0);
 });
 
 test("closing during a pending save retains its session until the write finishes", async () => {
@@ -170,16 +170,16 @@ test("closing during a pending save retains its session until the write finishes
   const started = new Promise((resolve) => { begin = resolve; });
   const blocked = new Promise((resolve) => { release = resolve; });
   plugin.app.vault.adapter.process = async (_, update) => { begin(); await blocked; assert.equal(update("working\n"), "saved\n"); };
-  const session = await plugin.editorSession("a.json", true);
+  const session = await plugin.editors.acquire("a.json", true);
   session.edit("saved\n");
   const saving = session.flush();
   await started;
-  plugin.releaseEditorSession("a.json", session);
-  assert.equal(plugin.editSessions.get("a.json"), session);
+  plugin.editors.release("a.json", session);
+  assert.equal(plugin.editors.sessions.get("a.json"), session);
   release();
   assert.equal(await saving, true);
-  assert.equal(plugin.editSessions.size, 0);
-  assert.equal(plugin.diffDrafts.size, 0);
+  assert.equal(plugin.editors.sessions.size, 0);
+  assert.equal(plugin.editors.drafts.size, 0);
 });
 
 test("return-context cleanup visits every leaf and only removes closed leaves", () => {
@@ -217,9 +217,8 @@ function loadingFixture() {
   view.contentEl.children.push("complete previous page");
   Object.assign(view, { request: 0, stateRequest: 0, file: { path: "new.json" }, area: "unstaged", app: { keymap: { popScope() {} } } });
   view.plugin = {
-    git: {}, settings: {}, diffDrafts: new Map(), ensureReady: async () => {},
-    editorSession: () => gate.promise,
-    releaseEditorSession: (filePath, session) => released.push({ filePath, session }),
+    git: {}, settings: {}, ensureReady: async () => {},
+    editors: { drafts: new Map(), acquire: () => gate.promise, release: (filePath, session) => released.push({ filePath, session }) },
     setGraphReturn() {},
   };
   view.updateDiffNavigation = () => {};
@@ -259,7 +258,7 @@ test("switching releases the displayed session under its original path", async (
 test("an obsolete read releases its session while a newer file becomes ready first", async () => {
   const { view, session, gate, released } = loadingFixture();
   const other = { ...session, listeners: new Set() };
-  view.plugin.editorSession = path => path === "large.json" ? gate.promise : Promise.resolve(other);
+  view.plugin.editors.acquire = path => path === "large.json" ? gate.promise : Promise.resolve(other);
   const first = view.setState({ file: { path: "large.json" } }, {});
   await Promise.resolve(); await Promise.resolve();
   await view.setState({ file: { path: "small.md" } }, {});
@@ -301,14 +300,14 @@ test("a failed diff load clears busy state and allows a subsequent file to load"
   assert.equal(view.contentEl.inert, false);
   assert.equal(view.contentEl.children[2].children[0].textContent, "unavailable");
   view.plugin.ensureReady = async () => {};
-  view.plugin.editorSession = async () => session;
+  view.plugin.editors.acquire = async () => session;
   await view.render(true);
   assert.equal(view.contentEl.children[2].children[0], "complete editor");
 });
 
 test("uneditable files still fall back to patch previews after preparation", async () => {
   const { view } = loadingFixture();
-  view.plugin.editorSession = async () => { throw Error("size limit"); };
+  view.plugin.editors.acquire = async () => { throw Error("size limit"); };
   view.plugin.git = { diff: async () => ({ message: "patch preview", patch: "" }) };
   await view.render(true);
   assert.equal(view.contentEl.children[2].children[0].textContent, "patch preview");

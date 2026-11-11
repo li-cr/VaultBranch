@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in the note_test vault.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save all diff drafts first.");
+  if (!p || [...(p.editors?.sessions || p.editSessions).values()].some(s => s.dirty || s.saving)) throw Error("Save all diff drafts first.");
   if (p.refreshTask) await p.refreshTask;
   p.refreshSoon?.cancel();
   const saved = { settings: { ...p.settings }, scheduleRefresh: p.scheduleRefresh, lastAutoRefresh: p.lastAutoRefresh };

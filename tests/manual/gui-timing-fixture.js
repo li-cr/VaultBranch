@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in the note_test vault.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving) || window.__vbGuiTiming) throw Error("Save drafts and finish previous GUI benchmark first.");
+  if (!p || [...p.editors.sessions.values()].some(s => s.dirty || s.saving) || window.__vbGuiTiming) throw Error("Save drafts and finish previous GUI benchmark first.");
   if (p.diffNavigationTask) await p.diffNavigationTask;
   if (p.refreshTask) await p.refreshTask;
   p.refreshSoon?.cancel();
@@ -70,7 +70,7 @@
     source.collapsed.clear(); source.renderSnapshot = null; source.render();
     leaf = await p.openDiff(p.status.files.find(f => f.path === files[3].path), "unstaged");
     for (const [object, key, label] of [
-      [p, "editorSession", "editor-session"], [p.git, "worktreeVersions", "read-versions"],
+      [p.editors, "acquire", "editor-session"], [p.git, "worktreeVersions", "read-versions"],
       [p.git, "run", args => `git:${args[0][0]}${args[0][0] === "cat-file" ? ":" + args[0][1] : ""}`],
       [leaf.view, "readComparison", "prepare-comparison"], [leaf.view, "renderEditor", "build-editor"], [leaf.view, "destroyEditor", "destroy-editor"],
     ]) wrap(object, key, label);

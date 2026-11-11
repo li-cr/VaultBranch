@@ -3,10 +3,11 @@
   if (app.vault.getName() !== "note_test") throw Error("Use the isolated note_test vault.");
   const p = app.plugins.plugins.vaultbranch;
   const git = p.git, old = { history: git.history, historyData: git.historyData, commitFiles: git.commitFiles, run: git.run, stashExists: git.stashExists, lastAutoRefresh: p.lastAutoRefresh };
-  const commits = p.core.graphFor(Array.from({length:1000}, (_, i) => ({
+  const commits = Array.from({length:1000}, (_, i) => ({
     hash:(1000-i).toString(16).padStart(40,"0"), parents:i<999?[(999-i).toString(16).padStart(40,"0")]:[],
     short:(1000-i).toString(16).padStart(7,"0"), subject:`Synthetic commit ${i}`, author:"Benchmark", date:"2026-01-01T00:00:00Z", refs:i===0?"main":""
-  })));
+  })).map((commit, index) => ({ ...commit, column: 0, incoming: index > 0, before: [commit.hash], after: commit.parents,
+    edges: commit.parents.map(() => ({ from: 0, to: 0, through: false })), width: 1 }));
   const data = { commits, branches: ["main"], hasStash:false, currentBranch:"main" };
   let leaf;
   try {

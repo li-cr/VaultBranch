@@ -3,7 +3,7 @@
 const { Plugin, Notice, setIcon, Platform, Modal, moment, debounce } = require("obsidian");
 const { hostname } = require("node:os");
 const { t, setLanguage } = require("./i18n.js");
-const { Autosave, normalize, conflictMessage } = require("./autosave.js");
+const { EditorSessions } = require("./editor-sessions.js");
 const { dateTriggerRange } = require("./date.js");
 const { TimingLog, timingLimit } = require("./timing.js");
 const { SOURCE_VIEW, DIFF_VIEW, HISTORY_VIEW, CONFLICT_VIEW, FILE_HISTORY_VIEW, DEFAULT_SETTINGS, el, button } = require("./views/shared.js");
@@ -27,7 +27,6 @@ module.exports = class MyGitPlugin extends Plugin {
     if (!["en", "zh"].includes(this.settings.language)) this.settings.language = DEFAULT_SETTINGS.language;
     setLanguage(this.settings.language);
     // Apply new defaults in memory; persist them with the next preference change.
-    this.core = require("./git.js");
     this.configureGit();
     this.status = null;
     this.ready = false;
@@ -37,9 +36,7 @@ module.exports = class MyGitPlugin extends Plugin {
     this.lastOutput = "";
     this.draft = "";
     this.graphReturns = new Map();
-    this.diffDrafts = new Map();
-    this.editSessions = new Map();
-    this.editorTasks = new Map();
+    this.editors = this.createEditorSessions();
     this.viewClasses = {};
     for (const [type, load] of Object.entries(VIEW_LOADERS)) this.registerView(type, leaf => {
       const View = this.viewClasses[type] ||= load();
@@ -110,11 +107,11 @@ module.exports = class MyGitPlugin extends Plugin {
     }, true);
     for (const event of ["modify", "create", "delete", "rename"]) this.registerEvent(this.app.vault.on(event, (file, oldPath) => {
       this.scheduleRefresh();
-      for (const path of new Set([file.path, oldPath])) void this.editSessions.get(path)?.sync();
+      for (const path of new Set([file.path, oldPath])) void this.editors.sessions.get(path)?.sync();
     }));
     this.registerEvent(this.app.vault.on("raw", (path) => {
       // Hidden configuration files have no TFile and do not emit normal modify events.
-      const session = this.editSessions.get(path);
+      const session = this.editors.sessions.get(path);
       if (session && !this.app.vault.getAbstractFileByPath(path)) {
         this.scheduleRefresh();
         void session.sync();
@@ -145,11 +142,12 @@ module.exports = class MyGitPlugin extends Plugin {
       view.destroyEditor();
     }
     for (const view of this.views(FILE_HISTORY_VIEW)) { view.request++; view.detailRequest++; view.destroyMerge(); }
-    for (const session of this.editSessions.values()) session.stop();
+    this.editors.stop();
   }
 
   configureGit() {
-    this.git = new this.core.GitService(this.app.vault.adapter.getBasePath(), { binary: this.settings.gitPath || "git", pullMethod: this.settings.pullMethod, settingsPath: `${this.manifest.dir}/data.json` });
+    const { GitService } = require("./git.js");
+    this.git = new GitService(this.app.vault.adapter.getBasePath(), { binary: this.settings.gitPath || "git", pullMethod: this.settings.pullMethod, settingsPath: `${this.manifest.dir}/data.json` });
     this.ready = false;
   }
 
@@ -193,7 +191,7 @@ module.exports = class MyGitPlugin extends Plugin {
     if (key === "performanceLogLimit") this.timingLog?.setLimit(value);
     await this.saveData(this.settings);
     if (key === "performanceLogging" || key === "performanceLogLimit") return true;
-    if (key === "diffAutosave") for (const session of this.editSessions.values()) session.setEnabled(value);
+    if (key === "diffAutosave") for (const session of this.editors.sessions.values()) session.setEnabled(value);
     if (key === "collapseUnchanged") for (const view of this.views(DIFF_VIEW, FILE_HISTORY_VIEW)) view.updateCollapse();
     if (key === "showDiffNavigation") for (const view of this.views(DIFF_VIEW, FILE_HISTORY_VIEW)) view.updateDiffNavigation();
     if (key === "syntaxHighlighting") await Promise.all(this.views(DIFF_VIEW, FILE_HISTORY_VIEW).map(view => view.updateSyntaxHighlight()));
@@ -313,49 +311,14 @@ module.exports = class MyGitPlugin extends Plugin {
     await this.initTask;
   }
 
-  async editorSession(filePath, retain = false, timing) {
-    if (!this.editSessions.has(filePath) && !this.editorTasks.has(filePath)) this.editorTasks.set(filePath, (async () => {
-      const versions = await this.git.worktreeVersions(filePath, timing);
-      const draft = this.diffDrafts.get(filePath) || { ...versions, text: normalize(versions.working) };
-      this.diffDrafts.set(filePath, draft);
-      const session = new Autosave(draft, {
-        enabled: this.settings.diffAutosave,
-        read: timing => this.git.worktreeVersions(filePath, timing),
-        write: async (expected, content) => {
-          const file = this.app.vault.getAbstractFileByPath(filePath);
-          const update = (current) => {
-            if (current !== expected) throw new Error(conflictMessage());
-            return content;
-          };
-          if (file && typeof file.extension === "string") await this.app.vault.process(file, update);
-          else if (!file && typeof this.app.vault.adapter.process === "function") await this.app.vault.adapter.process(filePath, update);
-          else throw new Error(t("文件状态已改变，请刷新后重试。"));
-        },
-        changed: () => {
-          if (!this.unloaded) this.app.workspace.requestSaveLayout();
-          if (session.released) this.pruneEditorSession(filePath, session);
-        },
-        saved: () => this.scheduleRefresh(),
-      });
-      this.editSessions.set(filePath, session);
-      return session;
-    })().finally(() => this.editorTasks.delete(filePath)));
-    const session = this.editSessions.get(filePath) || await this.editorTasks.get(filePath);
-    if (retain) { session.users = (session.users || 0) + 1; session.released = false; }
-    return session;
-  }
-
-  releaseEditorSession(filePath, session) {
-    session.users = Math.max(0, (session.users || 0) - 1);
-    session.released = true;
-    this.pruneEditorSession(filePath, session);
-  }
-
-  pruneEditorSession(filePath, session) {
-    if (this.editSessions.get(filePath) !== session || session.users || session.dirty || session.saving) return;
-    session.stop();
-    this.editSessions.delete(filePath);
-    this.diffDrafts.delete(filePath);
+  createEditorSessions() {
+    return new EditorSessions({
+      vault: this.app.vault,
+      read: (filePath, timing) => this.git.worktreeVersions(filePath, timing),
+      enabled: () => this.settings.diffAutosave,
+      changed: () => { if (!this.unloaded) this.app.workspace.requestSaveLayout(); },
+      saved: () => this.scheduleRefresh(),
+    });
   }
 
   scheduleRefresh() {
@@ -419,7 +382,7 @@ module.exports = class MyGitPlugin extends Plugin {
     if (this.busy || this.mutationPending) { new Notice(t("已有 Git 操作执行中，请稍候。")); return false; }
     this.mutationPending = true;
     for (const view of this.views(DIFF_VIEW)) view.updateEditor();
-    const saved = await Promise.all([...this.editSessions.values()].map((session) => session.autoFlush()));
+    const saved = await Promise.all([...this.editors.sessions.values()].map((session) => session.autoFlush()));
     this.mutationPending = false;
     if (saved.some((success) => !success)) {
       for (const view of this.views(DIFF_VIEW)) view.updateEditor();

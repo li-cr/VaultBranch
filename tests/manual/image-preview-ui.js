@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in note_test.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save drafts first.");
+  if (!p || [...p.editors.sessions.values()].some(s => s.dirty || s.saving)) throw Error("Save drafts first.");
   await p.diffNavigationTask; await p.refreshTask; p.refreshSoon?.cancel();
   const fs = require("node:fs/promises"), os = require("node:os"), path = require("node:path");
   const exec = require("node:util").promisify(require("node:child_process").execFile);
@@ -138,7 +138,7 @@
     await fs.unlink(path.join(root, name)); images = await open(name);
     check(images.length === 1 && images[0].naturalWidth === 120, "deleted working image retains its index preview");
     await leaf.detach(); leaf = null;
-    check(!images[0].getAttribute("src") && !p.editSessions.size, "closing clears image sources and leaves no editor sessions");
+    check(!images[0].getAttribute("src") && !p.editors.sessions.size, "closing clears image sources and leaves no editor sessions");
     check((await git("write-tree")) === index, "all previews and history navigation leave the index unchanged");
     check(!(window.__vaultbranchErrors || []).length, "no runtime errors");
     return { results, fixtures, errors: window.__vaultbranchErrors || [] };

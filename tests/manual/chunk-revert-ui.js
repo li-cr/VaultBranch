@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in the note_test vault.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save existing diff drafts first.");
+  if (!p || [...p.editors.sessions.values()].some(s => s.dirty || s.saving)) throw Error("Save existing diff drafts first.");
   const results = [], check = (value, label) => { if (!value) throw Error(label); results.push(label); };
   const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
   const filePath = `vaultbranch-revert-ui-${Date.now()}.md`;
@@ -63,7 +63,7 @@
     await p.openDiff({ path: filePath, index: "A", worktree: "M" }, "staged"); await pause(100);
     check(controls(view).length === 0 && view.merge.a.state.readOnly && view.merge.b.state.readOnly, "staged comparison stays readonly without revert controls");
     await leaf.detach(); leaf = null;
-    check(!p.editSessions.has(filePath), "closing the saved diff releases its editor session");
+    check(!p.editors.sessions.has(filePath), "closing the saved diff releases its editor session");
     const untrackedPath = filePath.replace(/\.md$/, ".json");
     untracked = await app.vault.create(untrackedPath, '{"value":"new"}\n');
     leaf = await p.openDiff({ path: untrackedPath, untracked: true, index: "?", worktree: "?" }, "unstaged");

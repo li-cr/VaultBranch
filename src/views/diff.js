@@ -6,6 +6,7 @@ const { EditorState, Compartment, Transaction } = require("@codemirror/state");
 const { EditorView, keymap, lineNumbers, drawSelection } = require("@codemirror/view");
 const { history, historyKeymap, defaultKeymap, indentWithTab } = require("@codemirror/commands");
 const { normalize } = require("../autosave.js");
+const { splitPatch } = require("../git-data.js");
 const { t } = require("../i18n.js");
 const { DIFF_VIEW, LABELS, el, button, GitView } = require("./shared.js");
 const { collapseOptions, updateCollapse, readOnlyMerge, updateDiffNavigation } = require("./merge.js");
@@ -32,7 +33,7 @@ class DiffView extends GitView {
   getViewType() { return DIFF_VIEW; }
   getDisplayText() { return this.file ? `${this.file.path.split("/").at(-1)} · ${t(LABELS[this.area])}` : t("VaultBranch · 差异"); }
   getIcon() { return "git-compare"; }
-  getState() { return { file: this.file, area: this.area, unified: this.unified, graphReturn: this.graphReturn, editDraft: this.area === "unstaged" ? this.plugin.diffDrafts.get(this.file?.path) : undefined }; }
+  getState() { return { file: this.file, area: this.area, unified: this.unified, graphReturn: this.graphReturn, editDraft: this.area === "unstaged" ? this.plugin.editors.drafts.get(this.file?.path) : undefined }; }
   async setState(state, result) {
     const timing = state.timing;
     const request = ++this.stateRequest;
@@ -44,8 +45,8 @@ class DiffView extends GitView {
     this.unified = Boolean(state.unified);
     this.graphReturn = this.area === "history" ? state.graphReturn || null : null;
     const draft = state.editDraft;
-    if (this.area === "unstaged" && this.file && draft && ["index", "working", "text"].every((key) => typeof draft[key] === "string") && !this.plugin.diffDrafts.has(this.file.path)) {
-      this.plugin.diffDrafts.set(this.file.path, draft);
+    if (this.area === "unstaged" && this.file && draft && ["index", "working", "text"].every((key) => typeof draft[key] === "string") && !this.plugin.editors.drafts.has(this.file.path)) {
+      this.plugin.editors.drafts.set(this.file.path, draft);
     }
     this.plugin.setGraphReturn(this.leaf, this.file?.path, this.graphReturn);
     await this.render(true, timing);
@@ -58,7 +59,7 @@ class DiffView extends GitView {
     await this.session?.autoFlush();
     this.destroyEditor();
     this.app.keymap.popScope(this.editScope);
-    const draft = this.plugin.diffDrafts.get(this.file?.path);
+    const draft = this.plugin.editors.drafts.get(this.file?.path);
     if (draft && draft.text !== draft.working.replace(/\r\n?/g, "\n")) {
       new Notice(t("未保存的草稿会在本次会话中保留，重新打开此文件可继续编辑。"));
     }
@@ -73,7 +74,7 @@ class DiffView extends GitView {
       return { images: await prepareImages(this.contentEl.ownerDocument, versions.images), warnings };
     }
     if (area === "unstaged" && file.worktree !== "D") {
-      try { return { session: await this.plugin.editorSession(file.path, true, timing), warnings }; }
+      try { return { session: await this.plugin.editors.acquire(file.path, true, timing), warnings }; }
       catch (error) { warnings.push(error.message); }
     }
     if (!unified && ["history", "staged"].includes(area)) {
@@ -100,7 +101,7 @@ class DiffView extends GitView {
     catch (error) { loaded = { error }; }
     if (request !== this.request) {
       timing?.mark("cancelledMs");
-      if (loaded.session) this.plugin.releaseEditorSession(file.path, loaded.session);
+      if (loaded.session) this.plugin.editors.release(file.path, loaded.session);
       loaded.images?.destroy();
       return;
     }
@@ -162,7 +163,7 @@ class DiffView extends GitView {
         el(captions, "span", "", this.area === "history" ? t("父提交") : this.area === "staged" ? "HEAD" : t("暂存区"));
         el(captions, "span", "", this.area === "history" ? t("当前提交") : this.area === "staged" ? t("暂存区") : t("工作区"));
         const grid = el(body, "div", "vaultbranch-split");
-        for (const row of this.plugin.core.splitPatch(result.patch)) {
+        for (const row of splitPatch(result.patch)) {
           if (row.kind === "hunk" || row.kind === "meta") {
             el(grid, "div", `vaultbranch-diff-meta is-${row.kind}`, row.text || " ");
           } else {
@@ -194,7 +195,7 @@ class DiffView extends GitView {
     this.session = null;
     this.editorText = this.editorIndex = this.editorListener = null;
     this.warningEl = this.saveButton = this.leftCaption = this.rightCaption = null;
-    if (session) this.plugin.releaseEditorSession(this.sessionPath, session);
+    if (session) this.plugin.editors.release(this.sessionPath, session);
     this.sessionPath = null;
     this.app.keymap.popScope(this.editScope);
   }

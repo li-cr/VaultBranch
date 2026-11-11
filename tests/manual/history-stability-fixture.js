@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in note_test.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || window.__vbHistoryStability || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Finish other tests and save drafts.");
+  if (!p || window.__vbHistoryStability || [...p.editors.sessions.values()].some(s => s.dirty || s.saving)) throw Error("Finish other tests and save drafts.");
   const fs = require("node:fs/promises"), os = require("node:os"), path = require("node:path");
   const exec = require("node:util").promisify(require("node:child_process").execFile);
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "vb-history-click-"));

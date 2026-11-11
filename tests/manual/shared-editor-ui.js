@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in note_test.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save drafts first.");
+  if (!p || [...p.editors.sessions.values()].some(s => s.dirty || s.saving)) throw Error("Save drafts first.");
   const saved = { ...p.settings }, results = [], check = (value, label) => { if (!value) throw Error(label); results.push(label); };
   const name = `vaultbranch-shared-${Date.now()}.md`, original = "# Original\nvalue\n";
   const file = await app.vault.create(name, original);
@@ -22,12 +22,12 @@
     check(typeof state.editDraft.text === "string" && state.editDraft.text === a.merge.b.state.doc.toString(), "workspace snapshots serialize the latest plain-text draft");
     check(await app.vault.read(file) === original, "shared manual drafts do not write to disk");
     await first.detach(); first = null;
-    check(session.users === 1 && p.editSessions.get(name) === session, "closing one view retains the shared session");
+    check(session.users === 1 && p.editors.sessions.get(name) === session, "closing one view retains the shared session");
     b.merge.b.dispatch({ changes: { from: 0, insert: "latest\n" } });
     await b.saveEditor();
     check(await app.vault.read(file) === b.merge.b.state.doc.toString() && !session.dirty, "remaining view saves the latest native document");
     await second.detach(); second = null;
-    check(!p.editSessions.has(name) && !p.diffDrafts.has(name), "closing the saved final view releases session and draft");
+    check(!p.editors.sessions.has(name) && !p.editors.drafts.has(name), "closing the saved final view releases session and draft");
     check(!(window.__vaultbranchErrors || []).length, "no runtime errors");
     return { results };
   } finally {

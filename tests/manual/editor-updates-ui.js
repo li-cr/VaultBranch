@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in note_test.");
   const p = app.plugins.plugins.vaultbranch;
-  if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save drafts first.");
+  if (!p || [...(p.editors?.sessions || p.editSessions).values()].some(s => s.dirty || s.saving)) throw Error("Save drafts first.");
   await p.diffNavigationTask; await p.refreshTask; p.refreshSoon?.cancel();
   const testWindow = require("electron").remote.getCurrentWindow(); testWindow.show(); testWindow.focus();
   const probe = window.__vbEditorProbe || {}, web = require("electron").remote.getCurrentWebContents();
@@ -52,7 +52,7 @@
     }
     const index = await git("write-tree");
     p.git = new saved.git.constructor(root, { binary: saved.git.binary }); await p.git.init(); p.ready = true; p.status = await p.git.status();
-    const groups = p.core.groupsFor(p.status.files);
+    const groups = { staged: p.status.files.filter(file => !file.conflict && !file.untracked && file.index !== " "), unstaged: p.status.files.filter(file => !file.conflict && (file.untracked || file.worktree !== " ")) };
     check(groups.staged.length === 100 && groups.unstaged.length === 100, "fixture has exactly 100 staged and 100 changed files");
     source = (await p.openSidebar()).view; collapsed = new Set(source.collapsed); selected = source.selected;
     for (const [name] of shapes) {
@@ -106,7 +106,7 @@
     check(leaf.view.merge.a.state.readOnly && leaf.view.merge.b.state.readOnly, "Staged stays read-only");
     await leaf.detach(); leaf = null;
     check((await git("write-tree")) === index, "editing batches and previews leave the index unchanged");
-    check(p.editSessions.size === 0, "closing releases all clean editor sessions");
+    check((p.editors?.sessions || p.editSessions).size === 0, "closing releases all clean editor sessions");
     check(!(window.__vaultbranchErrors || []).length, "no runtime errors");
     if (profiling) { window.__vbEditorProfile = (await web.debugger.sendCommand("Profiler.stop")).profile; profiling = false; }
     return { version: p.manifest.version, measurement: probe.nativeInput ? "Native input batch including event loop waits and rendering; not per-key latency or physical paint" : "Synchronous scripted CodeMirror dispatch; excludes asynchronous rendering and physical paint", probe: { nativeInput: Boolean(probe.nativeInput), cpu: Boolean(probe.cpu), materialize: Boolean(probe.materialize), trustedInputs }, environment: { userAgent: navigator.userAgent, node: process.version, platform: process.platform, git: (await git("--version")).trim(), focused: document.hasFocus(), visibility: document.visibilityState },

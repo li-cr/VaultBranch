@@ -1,7 +1,7 @@
 (async () => {
   if (app.vault.getName() !== "note_test") throw Error("Run only in the note_test vault.");
   const plugin = app.plugins.plugins.vaultbranch;
-  if (!plugin || [...plugin.editSessions.values()].some(session => session.dirty || session.saving)) throw Error("Enable VaultBranch and save diff drafts first.");
+  if (!plugin || [...(plugin.editors?.sessions || plugin.editSessions).values()].some(session => session.dirty || session.saving)) throw Error("Enable VaultBranch and save diff drafts first.");
   const workspace = app.workspace, fs = require("node:fs/promises"), path = require("node:path"), crypto = require("node:crypto");
   const original = { open: plugin.settings.openOnStartup, seconds: plugin.settings.refreshSeconds, last: plugin.lastAutoRefresh, collapsed: workspace.rightSplit.collapsed };
   const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
