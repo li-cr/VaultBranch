@@ -1,24 +1,24 @@
-VaultBranch 1.0.3 separates editor session ownership and pure Git data calculations.
+VaultBranch 1.0.4 separates plugin coordination and Git workflows.
 
-- Move session sharing, draft retention, release rules and normal/hidden file write adapters into EditorSessions. Keep Autosave responsible for scheduling and external-write protection, and EditorDocument responsible for native document/text handling.
-- Put status parsing, file grouping/tree building, patch rows and commit graph calculations in git-data.js. Views import these functions directly; the plugin coordinates lifecycle, Git operations and navigation.
-- Add a single release-check command that runs validation, all automated tests, build, both builds' three performance benchmarks, then UI regressions. No new dependencies or changes to Git command/safety behavior.
+- Extract host event registration, view navigation and save-before-Git/refresh coordination from the plugin entry point.
+- Separate Git history, Stash and conflict/Rebase workflows, sharing existing read limits. Keep public calls, current service/settings, draft ownership and safety checks.
+- Expand the single release-check suite with history, native editor menu, graph batching and conflict-page stability regressions. No new dependencies or Git command changes.
 
-Local Windows / Obsidian 1.15.0 measurements (ms, median):
+Local Windows / Obsidian 1.15.0, ms (median):
 
 | Measurement | Current | Samples |
 | --- | ---: | --- |
-| Plugin reload, warm cache | 20.9 | 5 |
-| Trusted click to Staged / Changed page ready | 165.2 / 114.7 | 20 each |
-| Changed 1.6 MB JSON, type / Enter / Backspace | 6.0 / 6.4 / 3.0 | 5 each |
-| Changed 1.28 MB Markdown, type / Enter / Backspace | 4.7 / 7.5 / 5.6 | 5 each |
+| Plugin reload, warm cache | 10.8 | 5 |
+| Trusted click → Staged / Changed page ready | 140.8 / 97.4 | 20 each |
+| Changed 1.6 MB JSON, type / Enter / Backspace | 7.3 / 4.4 / 1.1 | 5 each |
+| Changed 1.28 MB Markdown, type / Enter / Backspace | 7.6 / 5.9 / 7.1 | 5 each |
 
-First sidebar: 355.0 ms; first diff: 314.3 ms, measured separately from plugin load. Switching includes CPU sampling overhead; typing is event-to-document update, not physical paint. Initial and reversed-order runs vary with Git/filesystem waiting. No speedup or 50 ms switching claim.
+First sidebar: 324.4 ms; first diff: 221.8 ms, separate from plugin load. Switching includes CPU sampling overhead; typing is native event-to-document update. No speedup, physical-paint or 50 ms switching claim.
 
-Validated with 115 automated tests and 226 Obsidian UI assertions in the complete release-check run. Both performance probes preserve the index; final sessions/pending reads/runtime errors are zero.
+Validated in one complete release-check run: 119 automated tests, 310 Obsidian UI assertions, both builds' three required performance probes. Index preserved; final sessions/pending reads/runtime errors: zero.
 
-Version/tag: [1.0.3](https://github.com/li-cr/VaultBranch/tree/1.0.3). Baseline: [1.0.2 / c04b9ed](https://github.com/li-cr/VaultBranch/tree/1.0.2). Tested source: [fda69dfd3d9b03484ab30f0b2b8e90edf78b2952](https://github.com/li-cr/VaultBranch/commit/fda69dfd3d9b03484ab30f0b2b8e90edf78b2952). [Compare versions](https://github.com/li-cr/VaultBranch/compare/1.0.2...1.0.3).
+Version/tag: [1.0.4](https://github.com/li-cr/VaultBranch/tree/1.0.4). Baseline: [1.0.3 / e2524af](https://github.com/li-cr/VaultBranch/tree/1.0.3). Tested source: [7a9603151582740f7c7fa80dafdaeea0407500e8](https://github.com/li-cr/VaultBranch/commit/7a9603151582740f7c7fa80dafdaeea0407500e8). [Compare](https://github.com/li-cr/VaultBranch/compare/1.0.3...1.0.4).
 
-[Performance report, ranges and reproduction](https://github.com/li-cr/VaultBranch/blob/1.0.3/docs/performance/1.0.3.md) · [Raw samples](https://github.com/li-cr/VaultBranch/blob/1.0.3/docs/performance/1.0.3-samples.json). Final release commit is appended by the tag workflow; tested source/dependency hashes are recorded in the samples.
+[Performance report and reproduction](https://github.com/li-cr/VaultBranch/blob/1.0.4/docs/performance/1.0.4.md) · [Raw samples](https://github.com/li-cr/VaultBranch/blob/1.0.4/docs/performance/1.0.4-samples.json). The tag workflow appends the exact final commit; tested runtime and dependency hashes are in the samples.
 
 Release assets retain GitHub provenance attestations. Desktop only; requires Git installed separately.
