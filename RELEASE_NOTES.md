@@ -1,11 +1,24 @@
-VaultBranch 1.0.2 reduces whole-document conversion during diff editing.
+VaultBranch 1.0.3 separates editor session ownership and pure Git data calculations.
 
-- Keep CodeMirror's persistent document while typing; convert to a string when saving or serializing a workspace draft needs it.
-- Separate document/text handling from save scheduling and conflict protection. Preserve exact dirty checks, undo-to-saved state, shared views, manual save, autosave, CRLF/BOM and restored drafts.
-- Keep live Git and path safety checks unchanged; no new dependencies or Git caches.
+- Move session sharing, draft retention, release rules and normal/hidden file write adapters into EditorSessions. Keep Autosave responsible for scheduling and external-write protection, and EditorDocument responsible for native document/text handling.
+- Put status parsing, file grouping/tree building, patch rows and commit graph calculations in git-data.js. Views import these functions directly; the plugin coordinates lifecycle, Git operations and navigation.
+- Add a single release-check command that runs validation, all automated tests, build, both builds' three performance benchmarks, then UI regressions. No new dependencies or changes to Git command/safety behavior.
 
-V8 debug sampling identified whole-document conversion in the input listener as a hotspot. In the matched profiled benchmark, 30 synchronous edits to a 1.6 MB JSON file took a median 125.1 ms before and 13.9 ms after; a 1.28 MB Markdown file changed from 42.7 to 10.5 ms. Large-document conversions dropped from 30 to 0 per batch. Each target has five measured batches. Native trusted input also ran, with smaller and variable improvements once event scheduling/rendering were included. These are local synthetic tests, not a universal latency promise. File-switch speed was not improved by this change. Raw CPU profiles, samples and reproduction: docs/performance/1.0.2.md.
+Local Windows / Obsidian 1.15.0 measurements (ms, median):
 
-Validated with 112 automated tests and 141 Obsidian UI checks covering shared views, draft serialization/reload, navigation, chunk reverts, highlighting, saving/undo and mixed-size loading. Trusted native GUI switching checks preserve readonly modes and the index.
+| Measurement | Current | Samples |
+| --- | ---: | --- |
+| Plugin reload, warm cache | 20.9 | 5 |
+| Trusted click to Staged / Changed page ready | 165.2 / 114.7 | 20 each |
+| Changed 1.6 MB JSON, type / Enter / Backspace | 6.0 / 6.4 / 3.0 | 5 each |
+| Changed 1.28 MB Markdown, type / Enter / Backspace | 4.7 / 7.5 / 5.6 | 5 each |
+
+First sidebar: 355.0 ms; first diff: 314.3 ms, measured separately from plugin load. Switching includes CPU sampling overhead; typing is event-to-document update, not physical paint. Initial and reversed-order runs vary with Git/filesystem waiting. No speedup or 50 ms switching claim.
+
+Validated with 115 automated tests and 226 Obsidian UI assertions in the complete release-check run. Both performance probes preserve the index; final sessions/pending reads/runtime errors are zero.
+
+Version/tag: [1.0.3](https://github.com/li-cr/VaultBranch/tree/1.0.3). Baseline: [1.0.2 / c04b9ed](https://github.com/li-cr/VaultBranch/tree/1.0.2). Tested source: [fda69dfd3d9b03484ab30f0b2b8e90edf78b2952](https://github.com/li-cr/VaultBranch/commit/fda69dfd3d9b03484ab30f0b2b8e90edf78b2952). [Compare versions](https://github.com/li-cr/VaultBranch/compare/1.0.2...1.0.3).
+
+[Performance report, ranges and reproduction](https://github.com/li-cr/VaultBranch/blob/1.0.3/docs/performance/1.0.3.md) · [Raw samples](https://github.com/li-cr/VaultBranch/blob/1.0.3/docs/performance/1.0.3-samples.json). Final release commit is appended by the tag workflow; tested source/dependency hashes are recorded in the samples.
 
 Release assets retain GitHub provenance attestations. Desktop only; requires Git installed separately.

@@ -69,10 +69,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
+          cp RELEASE_NOTES.md "$RUNNER_TEMP/vaultbranch-release-notes.md"
+          printf '\nRelease tag: `%s`\n\nRelease commit: [%s](%s/%s/commit/%s)\n' \
+            "$RELEASE_TAG" "$GITHUB_SHA" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA" \
+            >> "$RUNNER_TEMP/vaultbranch-release-notes.md"
           gh release create "$RELEASE_TAG" \
             dist/vaultbranch/main.js \
             dist/vaultbranch/manifest.json \
             dist/vaultbranch/styles.css \
             --title "VaultBranch $RELEASE_TAG" \
-            --notes-file RELEASE_NOTES.md \
+            --notes-file "$RUNNER_TEMP/vaultbranch-release-notes.md" \
             --verify-tag
