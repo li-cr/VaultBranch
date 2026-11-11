@@ -41,8 +41,29 @@ class FileHistoryView extends GitView {
   async render() {
     const request = ++this.request;
     this.detailRequest++;
+    this.loading = true;
+    this.contentEl.inert = true;
+    this.contentEl.setAttribute("aria-busy", "true");
+    let data, prepared;
+    try {
+      if (this.filePath) {
+        await this.plugin.ensureReady();
+        data = await this.plugin.git.fileHistory(this.filePath, { all: this.all, limit: this.limit });
+        if (request !== this.request) return;
+        const commit = data.commits.find(commit => commit.hash === this.selected) || data.commits[0];
+        if (commit) {
+          try { prepared = { versions: await this.plugin.git.comparisonVersions(commit, "history") }; }
+          catch (error) { prepared = { error }; }
+        }
+      }
+    } catch (error) { prepared = { error }; }
+    if (request !== this.request) return;
+    const scroll = this.contentEl.querySelector(".vaultbranch-file-history-sidebar")?.scrollTop || 0;
     this.destroyMerge();
     this.contentEl.empty();
+    this.loading = false;
+    this.contentEl.inert = false;
+    this.contentEl.removeAttribute("aria-busy");
     if (!this.filePath) { el(this.contentEl, "div", "vaultbranch-empty", t("请选择文件查看历史。")); return; }
     const header = el(this.contentEl, "div", "vaultbranch-diff-header");
     const path = el(header, "div", "vaultbranch-diff-path", this.filePath);
@@ -63,12 +84,8 @@ class FileHistoryView extends GitView {
     const list = el(sidebar, "div", "vaultbranch-file-history-list");
     list.setAttribute("aria-label", t("文件历史"));
     this.detailsEl = el(layout, "div", "vaultbranch-file-history-details");
-    el(list, "div", "vaultbranch-empty", t("读取历史中…"));
     try {
-      await this.plugin.ensureReady();
-      const data = await this.plugin.git.fileHistory(this.filePath, { all: this.all, limit: this.limit });
-      if (request !== this.request) return;
-      list.replaceChildren();
+      if (!data) throw prepared.error;
       this.commits = data.commits;
       if (!data.commits.length) { el(list, "div", "vaultbranch-empty", t("没有文件历史。")); return; }
       this.rows = data.commits.map((commit, index) => {
@@ -88,15 +105,25 @@ class FileHistoryView extends GitView {
         return row;
       });
       if (data.hasMore) button(sidebar, "chevrons-down", t("加载更多"), () => { this.limit += 50; return this.render(); }, t("加载更多"));
-      await this.selectCommit(data.commits.find(commit => commit.hash === this.selected) || data.commits[0]);
+      await this.selectCommit(data.commits.find(commit => commit.hash === this.selected) || data.commits[0], prepared);
+      sidebar.scrollTop = scroll;
     } catch (error) {
       if (request === this.request) { list.replaceChildren(); el(list, "div", "vaultbranch-empty is-error", error.message); }
     }
   }
 
-  async selectCommit(commit) {
+  async selectCommit(commit, prepared) {
+    if (this.loading) return;
     const request = ++this.detailRequest;
     const details = this.detailsEl;
+    details.inert = true;
+    details.setAttribute("aria-busy", "true");
+    let versions, failure;
+    try {
+      if (prepared?.error) throw prepared.error;
+      versions = prepared ? prepared.versions : await this.plugin.git.comparisonVersions(commit, "history");
+    } catch (error) { failure = error; }
+    if (request !== this.detailRequest || details !== this.detailsEl) return;
     this.destroyMerge();
     this.selected = commit.hash;
     this.rows.forEach((row, index) => {
@@ -110,19 +137,18 @@ class FileHistoryView extends GitView {
     description.title = t("相对第一父提交，只读");
     el(details, "div", "vaultbranch-file-history-path", commit.oldPath ? `${commit.oldPath} → ${commit.path}` : commit.path);
     const body = el(details, "div", "vaultbranch-diff-body");
-    el(body, "div", "vaultbranch-empty", t("读取差异中…"));
     try {
-      const versions = await this.plugin.git.comparisonVersions(commit, "history");
-      if (request !== this.detailRequest || details !== this.detailsEl) return;
-      body.replaceChildren();
+      if (failure) throw failure;
       this.merge = readOnlyMerge(body, versions, [t("父提交（只读）"), t("当前提交（只读）")], this.plugin.settings);
       this.highlightPath = commit.path;
       this.collapseEnabled = Boolean(this.plugin.settings.collapseUnchanged);
       this.updateDiffNavigation();
       void this.updateSyntaxHighlight();
     } catch (error) {
-      if (request !== this.detailRequest) return;
       body.replaceChildren(); el(body, "div", "vaultbranch-empty is-error", error.message);
+    } finally {
+      details.inert = false;
+      details.removeAttribute("aria-busy");
     }
   }
 }

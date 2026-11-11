@@ -19,6 +19,7 @@ class SourceControlView extends ItemView {
 
   async onOpen() {
     this.renderSnapshot = null;
+    this.treeSnapshot = null;
     this.contentEl.empty();
     this.contentEl.addClass("vaultbranch-source");
     const header = el(this.contentEl, "div", "vaultbranch-header");
@@ -114,6 +115,12 @@ class SourceControlView extends ItemView {
     }
 
     const scroll = this.treeEl.scrollTop;
+    const treeSnapshot = JSON.stringify([status?.files, !status && error, [...this.collapsed], this.plugin.settings.language]);
+    if (this.treeSnapshot === treeSnapshot) {
+      for (const control of this.treeEl.querySelectorAll("button[data-git-action]")) control.disabled = busy || (control.dataset.gitAction === "discard" && Boolean(status?.operation));
+      return;
+    }
+    this.treeSnapshot = treeSnapshot;
     this.treeEl.replaceChildren();
     if (!status) {
       el(this.treeEl, "div", "vaultbranch-empty", error ? t("无法读取 Git 仓库，请查看上方错误。") : t("正在读取文件改动…"));
@@ -139,6 +146,7 @@ class SourceControlView extends ItemView {
     el(header, "span", "vaultbranch-count", String(files.length));
     if (files.length && area !== "conflicts") {
       const action = button(header, area === "staged" ? "minus" : "plus", area === "staged" ? t("全部取消暂存") : t("全部暂存"), () => this.plugin.changeStage(files, area));
+      action.dataset.gitAction = "true";
       action.disabled = this.plugin.busy;
     }
     if (!files.length) {
@@ -214,10 +222,12 @@ class SourceControlView extends ItemView {
       if (area !== "conflicts") {
         const stage = button(row, area === "staged" ? "minus" : "plus", area === "staged" ? t("取消暂存") : t("暂存文件"), () => this.plugin.changeStage([file], area));
         stage.classList.add("vaultbranch-row-action");
+        stage.dataset.gitAction = "stage";
         stage.disabled = this.plugin.busy;
         if (area === "unstaged") {
           const discard = button(row, "undo-2", t("撤销更改"), () => this.plugin.confirmDiscard(file));
           discard.classList.add("vaultbranch-row-action", "vaultbranch-discard");
+          discard.dataset.gitAction = "discard";
           discard.disabled = this.plugin.busy || Boolean(this.plugin.status?.operation);
         }
       }

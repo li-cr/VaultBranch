@@ -60,7 +60,9 @@
     await Promise.all([view.selectCommit(side),view.selectCommit(main)]);
     check(view.selected===main.hash&&view.merge.b.state.doc.toString().includes('revision 51'),'rapid commit selection cannot display a stale result');
     p.git.comparisonVersions=originalRead;
-    view.rows[0].focus(); view.rows[0].dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true})); await pause(150);
+    view.rows[0].focus(); view.rows[0].dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));
+    const selectionDeadline=Date.now()+5000;
+    while(view.selected!==view.commits[1].hash&&Date.now()<selectionDeadline) await pause(20);
     check(document.activeElement===view.rows[1]&&view.selected===view.commits[1].hash,'arrow key focuses and selects next commit');
     check((await git('write-tree'))===index,'browsing file history preserves the original index');
     await fs.writeFile(path.join(root,'.obsidian/history-ui.json'),base.replace('unchanged line 40','staged version')); await git('add','.obsidian/history-ui.json');

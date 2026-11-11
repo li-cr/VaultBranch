@@ -1,0 +1,671 @@
+{
+  "stability-before": {
+    "checks": [
+      {
+        "name": "file history detail 0: no placeholder or mismatched title before data",
+        "ok": false
+      },
+      {
+        "name": "file history detail 0: complete and interactive after read",
+        "ok": true
+      },
+      {
+        "name": "file history detail 1: no placeholder or mismatched title before data",
+        "ok": false
+      },
+      {
+        "name": "file history detail 1: complete and interactive after read",
+        "ok": true
+      },
+      {
+        "name": "file history detail 2: no placeholder or mismatched title before data",
+        "ok": false
+      },
+      {
+        "name": "file history detail 2: complete and interactive after read",
+        "ok": true
+      },
+      {
+        "name": "file history detail 3: no placeholder or mismatched title before data",
+        "ok": false
+      },
+      {
+        "name": "file history detail 3: complete and interactive after read",
+        "ok": true
+      },
+      {
+        "name": "file history detail 4: no placeholder or mismatched title before data",
+        "ok": false
+      },
+      {
+        "name": "file history detail 4: complete and interactive after read",
+        "ok": true
+      },
+      {
+        "name": "file history refresh retains complete connected page while querying",
+        "ok": false
+      },
+      {
+        "name": "graph detail 0: no heading-only intermediate state",
+        "ok": false
+      },
+      {
+        "name": "graph detail 1: no heading-only intermediate state",
+        "ok": false
+      },
+      {
+        "name": "graph detail 2: no heading-only intermediate state",
+        "ok": false
+      },
+      {
+        "name": "graph detail 3: no heading-only intermediate state",
+        "ok": false
+      },
+      {
+        "name": "graph detail 4: no heading-only intermediate state",
+        "ok": false
+      },
+      {
+        "name": "graph batches 250 rows without exposing a partial new list",
+        "ok": false
+      },
+      {
+        "name": "busy-only sidebar updates preserve file tree nodes",
+        "ok": false
+      },
+      {
+        "name": "browsing does not change the staged index",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 0: retains the complete result while reading",
+        "ok": false
+      },
+      {
+        "name": "conflict refresh 0: retains manual resolution",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 1: retains the complete result while reading",
+        "ok": false
+      },
+      {
+        "name": "conflict refresh 1: retains manual resolution",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 2: retains the complete result while reading",
+        "ok": false
+      },
+      {
+        "name": "conflict refresh 2: retains manual resolution",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 3: retains the complete result while reading",
+        "ok": false
+      },
+      {
+        "name": "conflict refresh 3: retains manual resolution",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 4: retains the complete result while reading",
+        "ok": false
+      },
+      {
+        "name": "conflict refresh 4: retains manual resolution",
+        "ok": true
+      },
+      {
+        "name": "conflict browsing does not stage the resolution",
+        "ok": true
+      },
+      {
+        "name": "no runtime errors",
+        "ok": true
+      }
+    ],
+    "failed": [
+      {
+        "name": "file history detail 0: no placeholder or mismatched title before data",
+        "ok": false
+      },
+      {
+        "name": "file history detail 1: no placeholder or mismatched title before data",
+        "ok": false
+      },
+      {
+        "name": "file history detail 2: no placeholder or mismatched title before data",
+        "ok": false
+      },
+      {
+        "name": "file history detail 3: no placeholder or mismatched title before data",
+        "ok": false
+      },
+      {
+        "name": "file history detail 4: no placeholder or mismatched title before data",
+        "ok": false
+      },
+      {
+        "name": "file history refresh retains complete connected page while querying",
+        "ok": false
+      },
+      {
+        "name": "graph detail 0: no heading-only intermediate state",
+        "ok": false
+      },
+      {
+        "name": "graph detail 1: no heading-only intermediate state",
+        "ok": false
+      },
+      {
+        "name": "graph detail 2: no heading-only intermediate state",
+        "ok": false
+      },
+      {
+        "name": "graph detail 3: no heading-only intermediate state",
+        "ok": false
+      },
+      {
+        "name": "graph detail 4: no heading-only intermediate state",
+        "ok": false
+      },
+      {
+        "name": "graph batches 250 rows without exposing a partial new list",
+        "ok": false
+      },
+      {
+        "name": "busy-only sidebar updates preserve file tree nodes",
+        "ok": false
+      },
+      {
+        "name": "conflict refresh 0: retains the complete result while reading",
+        "ok": false
+      },
+      {
+        "name": "conflict refresh 1: retains the complete result while reading",
+        "ok": false
+      },
+      {
+        "name": "conflict refresh 2: retains the complete result while reading",
+        "ok": false
+      },
+      {
+        "name": "conflict refresh 3: retains the complete result while reading",
+        "ok": false
+      },
+      {
+        "name": "conflict refresh 4: retains the complete result while reading",
+        "ok": false
+      }
+    ],
+    "samples": [
+      {
+        "operation": "file-history-detail",
+        "exposedPartial": true,
+        "elapsedWithGateMs": 363.60000002384186
+      },
+      {
+        "operation": "file-history-detail",
+        "exposedPartial": true,
+        "elapsedWithGateMs": 325.39999997615814
+      },
+      {
+        "operation": "file-history-detail",
+        "exposedPartial": true,
+        "elapsedWithGateMs": 310.0999999642372
+      },
+      {
+        "operation": "file-history-detail",
+        "exposedPartial": true,
+        "elapsedWithGateMs": 322.5
+      },
+      {
+        "operation": "file-history-detail",
+        "exposedPartial": true,
+        "elapsedWithGateMs": 315.80000001192093
+      },
+      {
+        "operation": "graph-detail",
+        "exposedPartial": true
+      },
+      {
+        "operation": "graph-detail",
+        "exposedPartial": true
+      },
+      {
+        "operation": "graph-detail",
+        "exposedPartial": true
+      },
+      {
+        "operation": "graph-detail",
+        "exposedPartial": true
+      },
+      {
+        "operation": "graph-detail",
+        "exposedPartial": true
+      }
+    ],
+    "fixtures": [
+      {
+        "path": "small/note.md",
+        "bytes": 16,
+        "lines": 3
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1356893,
+        "lines": 96003
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 12,
+        "lines": 2
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1280000,
+        "lines": 40001
+      }
+    ],
+    "note": "Gated UI correctness checks, not latency benchmarks. 250-row batch case duplicates real commit metadata."
+  },
+  "stability-after": {
+    "checks": [
+      {
+        "name": "file history detail 0: no placeholder or mismatched title before data",
+        "ok": true
+      },
+      {
+        "name": "file history detail 0: complete and interactive after read",
+        "ok": true
+      },
+      {
+        "name": "file history detail 1: no placeholder or mismatched title before data",
+        "ok": true
+      },
+      {
+        "name": "file history detail 1: complete and interactive after read",
+        "ok": true
+      },
+      {
+        "name": "file history detail 2: no placeholder or mismatched title before data",
+        "ok": true
+      },
+      {
+        "name": "file history detail 2: complete and interactive after read",
+        "ok": true
+      },
+      {
+        "name": "file history detail 3: no placeholder or mismatched title before data",
+        "ok": true
+      },
+      {
+        "name": "file history detail 3: complete and interactive after read",
+        "ok": true
+      },
+      {
+        "name": "file history detail 4: no placeholder or mismatched title before data",
+        "ok": true
+      },
+      {
+        "name": "file history detail 4: complete and interactive after read",
+        "ok": true
+      },
+      {
+        "name": "file history refresh retains complete connected page while querying",
+        "ok": true
+      },
+      {
+        "name": "graph detail 0: no heading-only intermediate state",
+        "ok": true
+      },
+      {
+        "name": "graph detail 1: no heading-only intermediate state",
+        "ok": true
+      },
+      {
+        "name": "graph detail 2: no heading-only intermediate state",
+        "ok": true
+      },
+      {
+        "name": "graph detail 3: no heading-only intermediate state",
+        "ok": true
+      },
+      {
+        "name": "graph detail 4: no heading-only intermediate state",
+        "ok": true
+      },
+      {
+        "name": "graph batches 250 rows without exposing a partial new list",
+        "ok": true
+      },
+      {
+        "name": "busy-only sidebar updates preserve file tree nodes",
+        "ok": true
+      },
+      {
+        "name": "browsing does not change the staged index",
+        "ok": true
+      },
+      {
+        "name": "graph row handlers remain valid after unchanged-data refreshes",
+        "ok": true
+      },
+      {
+        "name": "history read failure restores interaction and shows a complete error state",
+        "ok": true
+      },
+      {
+        "name": "history recovers from a failed comparison",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 0: retains the complete result while reading",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 0: retains manual resolution",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 1: retains the complete result while reading",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 1: retains manual resolution",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 2: retains the complete result while reading",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 2: retains manual resolution",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 3: retains the complete result while reading",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 3: retains manual resolution",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 4: retains the complete result while reading",
+        "ok": true
+      },
+      {
+        "name": "conflict refresh 4: retains manual resolution",
+        "ok": true
+      },
+      {
+        "name": "conflict browsing does not stage the resolution",
+        "ok": true
+      },
+      {
+        "name": "closing history during a read does not resurrect its editor",
+        "ok": true
+      },
+      {
+        "name": "closing graph during a read rejects the late detail result",
+        "ok": true
+      },
+      {
+        "name": "no runtime errors",
+        "ok": true
+      }
+    ],
+    "failed": [],
+    "samples": [
+      {
+        "operation": "file-history-detail",
+        "exposedPartial": false,
+        "elapsedWithGateMs": 329.89999997615814
+      },
+      {
+        "operation": "file-history-detail",
+        "exposedPartial": false,
+        "elapsedWithGateMs": 335.89999997615814
+      },
+      {
+        "operation": "file-history-detail",
+        "exposedPartial": false,
+        "elapsedWithGateMs": 314.5
+      },
+      {
+        "operation": "file-history-detail",
+        "exposedPartial": false,
+        "elapsedWithGateMs": 346.30000001192093
+      },
+      {
+        "operation": "file-history-detail",
+        "exposedPartial": false,
+        "elapsedWithGateMs": 315.89999997615814
+      },
+      {
+        "operation": "graph-detail",
+        "exposedPartial": false
+      },
+      {
+        "operation": "graph-detail",
+        "exposedPartial": false
+      },
+      {
+        "operation": "graph-detail",
+        "exposedPartial": false
+      },
+      {
+        "operation": "graph-detail",
+        "exposedPartial": false
+      },
+      {
+        "operation": "graph-detail",
+        "exposedPartial": false
+      }
+    ],
+    "fixtures": [
+      {
+        "path": "small/note.md",
+        "bytes": 16,
+        "lines": 3
+      },
+      {
+        "path": "large/deep/json/data.json",
+        "bytes": 1356893,
+        "lines": 96003
+      },
+      {
+        "path": "small/deep/json/data.json",
+        "bytes": 12,
+        "lines": 2
+      },
+      {
+        "path": "large/note.md",
+        "bytes": 1280000,
+        "lines": 40001
+      }
+    ],
+    "note": "Gated UI correctness checks, not latency benchmarks. 250-row batch case duplicates real commit metadata."
+  },
+  "stability-gui-before": {
+    "version": "0.2.33",
+    "samples": [
+      {
+        "trusted": true,
+        "partial": true,
+        "expected": "d803be3ad1303ccb824106a6101da1bb1343cd41",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": true,
+        "expected": "6d9b9ff6ea25ef7eee27caff68a60fbf70172575",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": true,
+        "expected": "d803be3ad1303ccb824106a6101da1bb1343cd41",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": true,
+        "expected": "6d9b9ff6ea25ef7eee27caff68a60fbf70172575",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": true,
+        "expected": "d803be3ad1303ccb824106a6101da1bb1343cd41",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": true,
+        "expected": "6d9b9ff6ea25ef7eee27caff68a60fbf70172575",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": true,
+        "expected": "d803be3ad1303ccb824106a6101da1bb1343cd41",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": true,
+        "expected": "6d9b9ff6ea25ef7eee27caff68a60fbf70172575",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": true,
+        "expected": "d803be3ad1303ccb824106a6101da1bb1343cd41",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": true,
+        "expected": "6d9b9ff6ea25ef7eee27caff68a60fbf70172575",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": true,
+        "expected": "d803be3ad1303ccb824106a6101da1bb1343cd41",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": true,
+        "expected": "6d9b9ff6ea25ef7eee27caff68a60fbf70172575",
+        "done": true
+      }
+    ],
+    "fixtures": [
+      {
+        "bytes": 12,
+        "lines": 2
+      },
+      {
+        "bytes": 1356893,
+        "lines": 96003
+      }
+    ],
+    "errors": [],
+    "note": "Real trusted GUI stability checks; no latency claim."
+  },
+  "stability-gui-after": {
+    "version": "0.2.33",
+    "samples": [
+      {
+        "trusted": true,
+        "partial": false,
+        "expected": "cfaceb912b0d47dfa7e48bef763b986ca9195257",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": false,
+        "expected": "a0e5cc3d38cc5cb93481b63225e490ce48fd976d",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": false,
+        "expected": "cfaceb912b0d47dfa7e48bef763b986ca9195257",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": false,
+        "expected": "a0e5cc3d38cc5cb93481b63225e490ce48fd976d",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": false,
+        "expected": "cfaceb912b0d47dfa7e48bef763b986ca9195257",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": false,
+        "expected": "a0e5cc3d38cc5cb93481b63225e490ce48fd976d",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": false,
+        "expected": "cfaceb912b0d47dfa7e48bef763b986ca9195257",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": false,
+        "expected": "a0e5cc3d38cc5cb93481b63225e490ce48fd976d",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": false,
+        "expected": "cfaceb912b0d47dfa7e48bef763b986ca9195257",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": false,
+        "expected": "a0e5cc3d38cc5cb93481b63225e490ce48fd976d",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": false,
+        "expected": "cfaceb912b0d47dfa7e48bef763b986ca9195257",
+        "done": true
+      },
+      {
+        "trusted": true,
+        "partial": false,
+        "expected": "a0e5cc3d38cc5cb93481b63225e490ce48fd976d",
+        "done": true
+      }
+    ],
+    "fixtures": [
+      {
+        "bytes": 12,
+        "lines": 2
+      },
+      {
+        "bytes": 1356893,
+        "lines": 96003
+      }
+    ],
+    "errors": [],
+    "note": "Real trusted GUI stability checks; no latency claim."
+  }
+}

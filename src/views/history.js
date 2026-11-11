@@ -41,9 +41,12 @@ class HistoryView extends GitView {
   captureNavigation() {
     return { leafId: this.leaf.id, state: this.getState(), scrollTop: this.bodyEl?.scrollTop || 0, scrollLeft: this.bodyEl?.scrollLeft || 0, detailTop: this.detailsEl?.scrollTop || 0 };
   }
-  async onClose() { this.renderedData = null; await super.onClose(); }
+  async onClose() { this.detailRequest++; this.renderedData = null; await super.onClose(); }
   async render(force = false) {
     const request = ++this.request;
+    this.detailRequest++;
+    this.contentEl.inert = true;
+    this.contentEl.setAttribute("aria-busy", "true");
     try {
       await this.plugin.ensureReady();
       const data = await this.plugin.git.historyData(this.limit, this.ref, force);
@@ -51,8 +54,8 @@ class HistoryView extends GitView {
       const snapshot = JSON.stringify([this.plugin.settings.language, this.plugin.busy, this.selected, this.query, this.ref, this.limit]);
       if (data === this.renderedData && snapshot === this.renderedSnapshot && this.bodyEl?.isConnected) return;
       const scroll = { top: this.bodyEl?.scrollTop || 0, left: this.bodyEl?.scrollLeft || 0, detail: this.detailsEl?.scrollTop || 0 };
-      this.contentEl.empty();
-      const toolbar = el(this.contentEl, "div", "vaultbranch-history-toolbar");
+      const page = this.contentEl.ownerDocument.createElement("div");
+      const toolbar = el(page, "div", "vaultbranch-history-toolbar");
       el(toolbar, "strong", "", "Git Graph");
       button(toolbar, "git-branch", t("切换本地分支…"), () => chooseBranch(this.plugin));
       button(toolbar, "git-branch-plus", t("创建并切换分支"), () => createBranch(this.plugin));
@@ -66,18 +69,20 @@ class HistoryView extends GitView {
       button(toolbar, "arrow-up", t("Push 当前分支"), () => this.plugin.runGit("push"));
       button(toolbar, "archive", t("Stash 当前修改（含未跟踪文件）"), () => this.plugin.runGit("stash"));
       button(toolbar, "refresh-cw", t("刷新历史"), () => this.render(true));
-      const body = el(this.contentEl, "div", "vaultbranch-history-body");
-      const details = el(this.contentEl, "div", "vaultbranch-history-details");
-      this.bodyEl = body; this.detailsEl = details;
-      el(body, "div", "vaultbranch-empty", t("读取历史…"));
+      const body = el(page, "div", "vaultbranch-history-body");
+      const details = el(page, "div", "vaultbranch-history-details");
       const { commits, branches, hasStash } = data;
       if (request !== this.request) return;
       for (const ref of branches) el(branch, "option", "", ref).value = ref;
       if (hasStash) el(branch, "option", "", t("stash（临时修改）")).value = "stash";
       branch.value = this.ref;
       branch.addEventListener("change", () => { this.ref = branch.value; void this.render(); });
-      body.replaceChildren();
-      if (!commits.length) { el(body, "div", "vaultbranch-empty", t("还没有提交。")); return; }
+      if (!commits.length) {
+        el(body, "div", "vaultbranch-empty", t("还没有提交。"));
+        this.contentEl.replaceChildren(...page.childNodes);
+        this.bodyEl = body; this.detailsEl = details;
+        return;
+      }
       const columns = Math.max(...commits.map((commit) => commit.width));
       const width = Math.max(36, columns * 16 + 14);
       body.style.setProperty("--vaultbranch-graph-width", `${Math.max(width, 70)}px`);
@@ -112,6 +117,12 @@ class HistoryView extends GitView {
         el(row, "code", "vaultbranch-history-hash", commit.short);
         row.onclick = async () => {
           const detailRequest = ++this.detailRequest;
+          details.inert = true;
+          details.setAttribute("aria-busy", "true");
+          let files, failure;
+          try { files = commit.stash ? await this.plugin.git.stashFiles(commit.hash) : await this.plugin.git.commitFiles(commit.hash); }
+          catch (error) { failure = error; }
+          if (detailRequest !== this.detailRequest || (this.bodyEl !== body && request !== this.request)) return;
           this.selected = commit.hash;
           for (const item of rows) item.classList.toggle("is-selected", item === row);
           details.replaceChildren();
@@ -121,11 +132,11 @@ class HistoryView extends GitView {
             button(actions, action.icon, action.title, action.run, action.title).disabled = this.plugin.busy;
           }
           try {
-            const files = commit.stash ? await this.plugin.git.stashFiles(commit.hash) : await this.plugin.git.commitFiles(commit.hash);
-            if (detailRequest !== this.detailRequest || this.bodyEl !== body || !body.isConnected) return;
+            if (failure) throw failure;
             for (const file of files) button(details, "file-diff", `${file.index} ${file.path}`, () => this.plugin.openDiff(file, "history", this.captureNavigation()), `${file.index}  ${file.path}`);
             if (!files.length) el(details, "div", "vaultbranch-empty", t("此提交相对第一父提交没有文件改动。"));
-          } catch (error) { if (detailRequest === this.detailRequest && this.bodyEl === body && body.isConnected) el(details, "div", "is-error", error.message); }
+          } catch (error) { el(details, "div", "is-error", error.message); }
+          finally { details.inert = false; details.removeAttribute("aria-busy"); }
         };
         if (rows.length % 100 === 0) {
           body.appendChild(batch);
@@ -148,6 +159,8 @@ class HistoryView extends GitView {
       const selectedRow = rows.find((row) => row.dataset.commit === this.selected);
       if (selectedRow) await selectedRow.onclick();
       if (request === this.request) {
+        this.contentEl.replaceChildren(...page.childNodes);
+        this.bodyEl = body; this.detailsEl = details;
         body.scrollTop = scroll.top; body.scrollLeft = scroll.left; details.scrollTop = scroll.detail;
         this.renderedData = data; this.renderedSnapshot = snapshot;
       }
@@ -158,6 +171,8 @@ class HistoryView extends GitView {
         el(this.contentEl, "div", "vaultbranch-empty is-error", error.message);
         button(this.contentEl, "git-branch", t("全部分支"), () => { this.ref = ""; return this.render(true); }, t("全部分支"));
       }
+    } finally {
+      if (request === this.request) { this.contentEl.inert = false; this.contentEl.removeAttribute("aria-busy"); }
     }
   }
 

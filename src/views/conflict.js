@@ -13,14 +13,18 @@ class ConflictView extends GitView {
   async render({ preserveDraft = false } = {}) {
     const draft = preserveDraft ? this.contentEl.querySelector(".vaultbranch-conflict-result")?.value : undefined;
     const request = ++this.request;
-    this.contentEl.empty();
-    if (!this.filePath) return;
-    const header = el(this.contentEl, "div", "vaultbranch-diff-header");
-    el(header, "div", "vaultbranch-diff-path", this.filePath);
-    const body = el(this.contentEl, "div", "vaultbranch-conflict-body");
+    this.contentEl.inert = true;
+    this.contentEl.setAttribute("aria-busy", "true");
+    const filePath = this.filePath;
+    const scroll = this.contentEl.querySelector(".vaultbranch-conflict-body")?.scrollTop || 0;
+    const page = this.contentEl.ownerDocument.createElement("div");
+    const header = el(page, "div", "vaultbranch-diff-header");
+    el(header, "div", "vaultbranch-diff-path", filePath);
+    const body = el(page, "div", "vaultbranch-conflict-body");
     try {
+      if (!filePath) return;
       await this.plugin.ensureReady();
-      const versions = await this.plugin.git.conflictVersions(this.filePath);
+      const versions = await this.plugin.git.conflictVersions(filePath);
       if (request !== this.request) return;
       const expected = draft !== undefined && this.loadedPath === this.filePath ? this.expectedResult : versions.result;
       this.loadedPath = this.filePath;
@@ -39,7 +43,7 @@ class ConflictView extends GitView {
       const base = el(body, "details", "vaultbranch-conflict-base"); el(base, "summary", "", t("共同祖先")); el(base, "pre", "", versions.base || t("（无共同祖先内容）"));
       body.insertBefore(base, resultLabel);
       const save = button(header, "check", t("保存并暂存解决结果"), async () => {
-        const saved = await this.plugin.mutate(t("解决冲突"), () => this.plugin.git.resolveConflict(this.filePath, result.value, expected));
+        const saved = await this.plugin.mutate(t("解决冲突"), () => this.plugin.git.resolveConflict(filePath, result.value, expected));
         if (saved) { save.disabled = true; result.readOnly = true; resultLabel.textContent = t("已保存并暂存 · 在侧栏点击继续"); }
       }, t("保存并暂存"));
       if (versions.ours === null || versions.theirs === null) {
@@ -47,6 +51,14 @@ class ConflictView extends GitView {
         el(body, "div", "vaultbranch-empty", t("此冲突涉及删除，请在外部 Git 工具中处理。"));
       }
     } catch (error) { if (request === this.request) el(body, "div", "vaultbranch-empty is-error", error.message); }
+    finally {
+      if (request === this.request) {
+        this.contentEl.replaceChildren(...(filePath ? page.childNodes : []));
+        body.scrollTop = scroll;
+        this.contentEl.inert = false;
+        this.contentEl.removeAttribute("aria-busy");
+      }
+    }
   }
 }
 
