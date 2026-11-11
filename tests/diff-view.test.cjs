@@ -18,7 +18,7 @@ function load(file) {
     require: (name) => {
       if (name === "obsidian") return { Plugin: class {}, ItemView: class { async setState() {} }, PluginSettingTab: class {}, FuzzySuggestModal: class {}, setIcon() {} };
       const resolved = localRequire.resolve(name);
-      return resolved.startsWith(path.join(__dirname, "../src/views/")) || ["settings.js", "branches.js"].some(name => resolved === path.join(__dirname, "../src/", name)) ? load(resolved) : localRequire(name);
+      return resolved.startsWith(path.join(__dirname, "../src/views/")) || ["settings.js", "branches.js", "navigation.js", "plugin-events.js", "git-operations.js"].some(name => resolved === path.join(__dirname, "../src/", name)) ? load(resolved) : localRequire(name);
     },
   }, { filename: file });
   return module.exports;

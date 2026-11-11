@@ -32,8 +32,9 @@
     if (legacyEnabled) await manager.disablePlugin("my-git");
     reports.before = await measure("before", options.baselineBuild);
     reports.after = await measure("after", path.join(options.sourceRoot, "dist/vaultbranch"));
-    for (const name of ["shared-editor-ui", "diff-loading-ui", "chunk-revert-ui", "syntax-highlight-ui", "startup-ui", "diff-navigation-ui", "sidebar-selection-ui", "performance-timing-ui", "image-preview-ui"]) {
+    for (const name of ["shared-editor-ui", "diff-loading-ui", "chunk-revert-ui", "syntax-highlight-ui", "startup-ui", "diff-navigation-ui", "sidebar-selection-ui", "performance-timing-ui", "image-preview-ui", "file-history-ui", "history-editor-ui", "syntax-history-ui", "view-stability-ui"]) {
       const result = await store(name, await run("tests/manual/" + name + ".js"));
+      if (result.failed?.length || result.checks?.some(check => check.ok === false) || result.errors?.length) throw Error(name + " failed: " + JSON.stringify(result));
       checks.push({ name, checks: result.results?.length ?? result.checks?.length ?? 0 });
     }
     const plugin = manager.plugins.vaultbranch;

@@ -1,10 +1,11 @@
 "use strict";
 
-const { Plugin, Notice, setIcon, Platform, Modal, moment, debounce } = require("obsidian");
-const { hostname } = require("node:os");
+const { Plugin, Notice, setIcon, Platform, Modal, moment } = require("obsidian");
 const { t, setLanguage } = require("./i18n.js");
 const { EditorSessions } = require("./editor-sessions.js");
-const { dateTriggerRange } = require("./date.js");
+const { registerEvents } = require("./plugin-events.js");
+const navigation = require("./navigation.js");
+const operations = require("./git-operations.js");
 const { TimingLog, timingLimit } = require("./timing.js");
 const { SOURCE_VIEW, DIFF_VIEW, HISTORY_VIEW, CONFLICT_VIEW, FILE_HISTORY_VIEW, DEFAULT_SETTINGS, el, button } = require("./views/shared.js");
 const { MyGitSettings } = require("./settings.js");
@@ -45,89 +46,7 @@ module.exports = class MyGitPlugin extends Plugin {
     this.addSettingTab(new MyGitSettings(this.app, this));
     this.ribbonEl = this.addRibbonIcon("git-branch", t("VaultBranch · 源代码管理"), () => this.openSidebar());
     this.localizedCommands = this.commandDefinitions().map(([id, name, callback]) => this.addCommand({ id, name: t(name), callback }));
-    this.dateCommand = this.addCommand({ id: "insert-date", name: t("插入当前日期时间"), editorCallback: (editor) => editor.replaceSelection(this.formatDate()) });
-    this.fileHistoryCommand = this.addCommand({ id: "file-history", name: t("查看当前文件历史"), checkCallback: checking => {
-      const view = this.app.workspace.activeLeaf?.view;
-      const path = view?.file?.path || view?.filePath;
-      if (!path) return false;
-      if (!checking) void this.openFileHistory(path).catch(error => new Notice(error.message));
-      return true;
-    } });
-    this.registerEvent(this.app.workspace.on("file-menu", (menu, file) => {
-      if (typeof file?.extension === "string") this.addFileHistoryMenu(menu, file.path);
-    }));
-    this.registerEvent(this.app.workspace.on("editor-menu", (menu, editor, view) => {
-      if (view.file) this.addFileHistoryMenu(menu, view.file.path);
-    }));
-    this.registerDomEvent(document, "beforeinput", (event) => {
-      this.dateInput = event.inputType === "insertText" || event.inputType === "insertCompositionText";
-    }, true);
-    this.registerEvent(this.app.workspace.on("editor-change", (editor, info) => {
-      if (!this.dateInput || this.expandingDate || this.composingDate || info?.getViewType?.() !== "markdown") return;
-      this.dateInput = false;
-      window.clearTimeout(this.dateTimer);
-      this.dateTimer = window.setTimeout(() => {
-        if (this.unloaded || this.composingDate || this.app.workspace.activeLeaf?.view.editor !== editor) return;
-        const range = dateTriggerRange(editor, this.settings.dateTrigger);
-        if (!range) return;
-        this.expandingDate = true;
-        try { editor.replaceRange(this.formatDate(), range.from, range.to); }
-        finally { this.expandingDate = false; }
-      }, 0);
-    }));
-    this.registerDomEvent(document, "compositionstart", () => { this.composingDate = true; });
-    this.registerDomEvent(document, "compositionend", () => { this.composingDate = false; });
-    this.returnCommand = this.addCommand({ id: "return-to-graph", name: t("返回 Git Graph"), checkCallback: (checking) => {
-      const context = this.activeGraphReturn();
-      if (!context) return false;
-      if (!checking) void this.returnToGraph(context.graphReturn);
-      return true;
-    } });
-    this.registerEvent(this.app.workspace.on("active-leaf-change", (leaf) => {
-      for (const view of this.views(DIFF_VIEW)) if (view.leaf !== leaf) void view.saveEditor(true);
-      this.updateEditorReturn(leaf);
-      this.updateSourceVisibility();
-    }));
-    this.registerEvent(this.app.workspace.on("file-open", () => this.updateEditorReturn(this.app.workspace.activeLeaf)));
-    this.registerEvent(this.app.workspace.on("layout-change", () => { this.pruneGraphReturns(); this.updateSourceVisibility(); }));
-    this.registerEvent(this.app.workspace.on("resize", () => this.updateSourceVisibility()));
-    this.registerDomEvent(document, "visibilitychange", () => this.updateSourceVisibility());
-    const navigateBack = (event) => {
-      const context = this.activeGraphReturn();
-      if (!context) return;
-      event.preventDefault(); event.stopImmediatePropagation();
-      if (event.type !== "mousedown") void this.returnToGraph(context.graphReturn).catch((error) => new Notice(error.message));
-    };
-    for (const event of ["mousedown", "mouseup", "auxclick"]) {
-      this.registerDomEvent(window, event, (event) => { if (event.button === 3) navigateBack(event); }, true);
-    }
-    this.registerDomEvent(window, "keydown", (event) => {
-      if (event.key !== "BrowserBack" && !(event.altKey && event.key === "ArrowLeft")) return;
-      navigateBack(event);
-    }, true);
-    for (const event of ["modify", "create", "delete", "rename"]) this.registerEvent(this.app.vault.on(event, (file, oldPath) => {
-      this.scheduleRefresh();
-      for (const path of new Set([file.path, oldPath])) void this.editors.sessions.get(path)?.sync();
-    }));
-    this.registerEvent(this.app.vault.on("raw", (path) => {
-      // Hidden configuration files have no TFile and do not emit normal modify events.
-      const session = this.editors.sessions.get(path);
-      if (session && !this.app.vault.getAbstractFileByPath(path)) {
-        this.scheduleRefresh();
-        void session.sync();
-      }
-    }));
-    this.registerDomEvent(window, "focus", () => {
-      this.scheduleRefresh();
-      for (const view of this.views(DIFF_VIEW)) void view.session?.sync();
-    });
-    this.registerInterval(window.setInterval(() => {
-      if (this.updateSourceVisibility() && Date.now() - (this.lastAutoRefresh || 0) >= this.settings.refreshSeconds * 1000) void this.refreshSource();
-    }, 1000));
-    this.app.workspace.onLayoutReady(() => {
-      if (this.unloaded) return;
-      if (this.settings.openOnStartup) void this.openSidebar().catch((error) => new Notice(error.message));
-    });
+    registerEvents(this);
   }
 
   onunload() {
@@ -303,13 +222,7 @@ module.exports = class MyGitPlugin extends Plugin {
     modal.open();
   }
 
-  async ensureReady() {
-    if (this.ready) return;
-    if (!this.initTask) {
-      this.initTask = this.git.init().then(() => { this.ready = true; }).finally(() => { this.initTask = null; });
-    }
-    await this.initTask;
-  }
+  ensureReady() { return operations.ensureReady(this); }
 
   createEditorSessions() {
     return new EditorSessions({
@@ -321,32 +234,13 @@ module.exports = class MyGitPlugin extends Plugin {
     });
   }
 
-  scheduleRefresh() {
-    if (this.unloaded || !this.sourceVisible()) { this.refreshSoon?.cancel(); return; }
-    this.refreshSoon ||= debounce(() => { if (!this.unloaded) void this.refreshSource(); }, 650, true);
-    this.refreshSoon();
-  }
+  scheduleRefresh() { return operations.scheduleRefresh(this); }
 
-  sourceVisible() {
-    if (document.hidden) return false;
-    return this.app.workspace.getLeavesOfType(SOURCE_VIEW).some(leaf =>
-      !leaf.getRoot().collapsed && leaf.view.containerEl.isShown());
-  }
+  sourceVisible() { return operations.sourceVisible(this); }
 
-  updateSourceVisibility() {
-    const visible = !this.unloaded && this.sourceVisible();
-    const revealed = visible && !this.sourceWasVisible;
-    this.sourceWasVisible = visible;
-    if (revealed) void this.refreshSource();
-    return visible;
-  }
+  updateSourceVisibility() { return operations.updateSourceVisibility(this); }
 
-  refreshSource() {
-    if (this.unloaded || !this.sourceVisible()) return;
-    this.sourceWasVisible = true;
-    this.lastAutoRefresh = Date.now();
-    return this.refresh();
-  }
+  refreshSource() { return operations.refreshSource(this); }
 
   views(...types) {
     return types.flatMap((type) => this.app.workspace.getLeavesOfType(type)
@@ -360,222 +254,44 @@ module.exports = class MyGitPlugin extends Plugin {
     for (const view of this.views(...types)) void view.render();
   }
 
-  async refresh(notify = false, force = false) {
-    if (this.unloaded || (this.busy && !force)) return;
-    if (this.refreshTask) return this.refreshTask;
-    this.refreshTask = (async () => {
-      try {
-        await this.ensureReady();
-        this.status = await this.git.status();
-        if (!this.busy) this.error = "";
-      } catch (error) {
-        this.error = error.message;
-        if (notify) new Notice(error.message, 8000);
-      } finally {
-        this.renderViews();
-      }
-    })();
-    try { await this.refreshTask; } finally { this.refreshTask = null; }
-  }
+  refresh(notify, force) { return operations.refresh(this, notify, force); }
 
-  async mutate(label, action) {
-    if (this.busy || this.mutationPending) { new Notice(t("已有 Git 操作执行中，请稍候。")); return false; }
-    this.mutationPending = true;
-    for (const view of this.views(DIFF_VIEW)) view.updateEditor();
-    const saved = await Promise.all([...this.editors.sessions.values()].map((session) => session.autoFlush()));
-    this.mutationPending = false;
-    if (saved.some((success) => !success)) {
-      for (const view of this.views(DIFF_VIEW)) view.updateEditor();
-      new Notice(t("存在未保存的差异编辑。请按 Ctrl/Cmd+S 保存，或处理保存错误后再执行 Git 操作。"), 8000);
-      return false;
-    }
-    this.busy = true;
-    for (const view of this.views(DIFF_VIEW)) view.updateEditor();
-    this.busyLabel = label;
-    this.error = "";
-    this.renderViews();
-    let success = false;
-    try {
-      await this.ensureReady();
-      const output = await action();
-      this.lastOutput = `${label}\n${output?.trim() || t("操作完成。")}`;
-      new Notice(t`${label} 完成`);
-      success = true;
-    } catch (error) {
-      this.error = error.message;
-      this.lastOutput = t`${label} 失败\n${error.message}`;
-      new Notice(t`${label} 失败：${error.message}`, 10000);
-    } finally {
-      // Wait for an earlier read before taking a fresh post-operation snapshot.
-      if (this.refreshTask) await this.refreshTask;
-      await this.refresh(false, true);
-      this.busy = false;
-      this.renderViews([SOURCE_VIEW, DIFF_VIEW, HISTORY_VIEW, FILE_HISTORY_VIEW]);
-    }
-    return success;
-  }
+  mutate(label, action) { return operations.mutate(this, label, action); }
 
-  runGit(method) {
-    return this.mutate(method === "stashPop" ? t("恢复 Stash") : method[0].toUpperCase() + method.slice(1), () => this.git[method]());
-  }
+  runGit(method) { return operations.runGit(this, method); }
 
-  toggleStash() {
-    const status = this.status;
-    return this.runGit(status?.files.length ? "stash" : "stashPop");
-  }
+  toggleStash() { return operations.toggleStash(this); }
 
-  async changeStage(files, area) {
-    const paths = files.flatMap((file) => file.oldPath ? [file.path, file.oldPath] : [file.path]);
-    return this.mutate(area === "staged" ? t("取消暂存") : t("暂存"), () => area === "staged" ? this.git.unstage(paths) : this.git.stage(paths));
-  }
+  changeStage(files, area) { return operations.changeStage(this, files, area); }
 
-  async commit() {
-    const message = this.commitMessage();
-    if (await this.mutate("Commit", () => this.git.commit(message))) {
-      this.draft = "";
-      for (const view of this.views(SOURCE_VIEW)) {
-        if (!view.messageEl) continue;
-        view.messageEl.value = "";
-        view.updateButtons();
-      }
-    }
-  }
+  commit() { return operations.commit(this); }
 
-  commitMessage(message = this.draft) {
-    const values = { date: moment().format(this.settings.commitDateFormat || DEFAULT_SETTINGS.commitDateFormat), hostname: this.settings.hostname || hostname() };
-    const prefix = this.settings.commitMessage.replace(/\{\{(date|hostname)\}\}/g, (_, key) => values[key]);
-    return (prefix + (message || "")).trim();
-  }
+  commitMessage(message) { return operations.commitMessage(this, message); }
 
-  async openView(type, state, leaf) {
-    const workspace = this.app.workspace;
-    leaf ||= workspace.getLeavesOfType(type)[0];
-    const existing = Boolean(leaf);
-    leaf ||= type === SOURCE_VIEW ? workspace.getRightLeaf(false) : workspace.getLeaf("tab");
-    if (!leaf) throw new Error(t("无法创建 Git 视图。"));
-    if (!existing || state !== undefined) await leaf.setViewState({ type, active: true, state });
-    await leaf.loadIfDeferred?.();
-    await workspace.revealLeaf(leaf);
-    return leaf;
-  }
+  openView(type, state, leaf) { return navigation.openView(this, type, state, leaf); }
 
   openSidebar() { return this.openView(SOURCE_VIEW); }
   openHistory() { return this.openView(HISTORY_VIEW); }
-  openFileHistory(filePath) {
-    const open = () => this.openView(FILE_HISTORY_VIEW, { filePath });
-    this.fileHistoryNavigation = (this.fileHistoryNavigation || Promise.resolve()).then(open, open);
-    return this.fileHistoryNavigation;
-  }
+  openFileHistory(filePath) { return navigation.openFileHistory(this, filePath); }
   addFileHistoryMenu(menu, filePath) {
     menu.addItem(item => item.setTitle(t("文件历史")).setIcon("history").onClick(() => this.openFileHistory(filePath).catch(error => new Notice(error.message))));
   }
   openConflict(filePath) { return this.openView(CONFLICT_VIEW, { filePath }); }
 
-  async diffLeaf() {
-    if (this.diffLeafTask) return this.diffLeafTask;
-    const leaf = this.app.workspace.getLeavesOfType(DIFF_VIEW)[0];
-    if (leaf && this.isView(leaf.view, DIFF_VIEW)) return leaf;
-    // Only native view creation is shared; file reads must not queue behind it.
-    const task = this.diffLeafTask = this.openView(DIFF_VIEW);
-    try { return await task; }
-    finally { if (this.diffLeafTask === task) this.diffLeafTask = null; }
-  }
+  diffLeaf() { return navigation.diffLeaf(this); }
 
-  async openDiff(file, area, graphReturn = null, timing = this.startDiffTiming(file, area)) {
-    if (area === "history" && !graphReturn) {
-      const graph = this.app.workspace.getLeavesOfType(HISTORY_VIEW).find(item => this.isView(item.view, HISTORY_VIEW));
-      graphReturn = graph?.view.captureNavigation() || null;
-    }
-    const request = this.diffNavigationRequest = (this.diffNavigationRequest || 0) + 1;
-    const open = async () => {
-      try {
-        const leaf = await this.diffLeaf();
-        timing?.mark("queueMs");
-        if (this.unloaded || request !== this.diffNavigationRequest || !this.isView(leaf.view, DIFF_VIEW)) {
-          timing?.mark("cancelledMs"); timing?.finish("cancelled"); return leaf;
-        }
-        const view = leaf.view;
-        // Existing views guard overlapping setState calls with request IDs.
-        // Calling native setViewState concurrently would silently drop clicks.
-        await view.setState({ file, area, graphReturn, timing }, {});
-        if (request === this.diffNavigationRequest && leaf.view === view) {
-          leaf.updateHeader(); this.app.workspace.requestSaveLayout();
-          await this.app.workspace.revealLeaf(leaf);
-        } else timing?.mark("cancelledMs");
-        timing?.finish(timing.record.cancelledMs !== undefined ? "cancelled" : timing.record.errorMs !== undefined ? "failed" : "complete");
-        return leaf;
-      }
-      catch (error) { timing?.finish("failed"); throw error; }
-    };
-    this.diffNavigationTask = open();
-    return this.diffNavigationTask;
-  }
+  openDiff(file, area, graphReturn, timing) { return navigation.openDiff(this, file, area, graphReturn, timing); }
 
-  async openFile(filePath, graphReturn = null) {
-    const file = this.app.vault.getAbstractFileByPath(filePath);
-    if (file && typeof file.extension === "string") {
-      const leaf = this.app.workspace.getLeavesOfType("markdown").find((item) => item.view.file?.path === filePath) || this.app.workspace.getLeaf("tab");
-      await leaf.openFile(file);
-      if (graphReturn) this.setGraphReturn(leaf, filePath, graphReturn);
-      await this.app.workspace.revealLeaf(leaf);
-    }
-    else new Notice(t("文件已删除，或属于 Obsidian 不显示的隐藏配置文件；请使用差异视图查看。"));
-  }
+  openFile(filePath, graphReturn) { return navigation.openFile(this, filePath, graphReturn); }
 
-  setGraphReturn(leaf, filePath, graphReturn) {
-    if (graphReturn) this.graphReturns.set(leaf.id, { filePath, graphReturn });
-    else this.graphReturns.delete(leaf.id);
-    this.updateEditorReturn(leaf);
-  }
+  setGraphReturn(leaf, filePath, graphReturn) { return navigation.setGraphReturn(this, leaf, filePath, graphReturn); }
 
-  pruneGraphReturns() {
-    if (!this.graphReturns.size) return;
-    const leaves = new Set();
-    // A truthy callback return stops traversal of the current workspace branch.
-    this.app.workspace.iterateAllLeaves((leaf) => { leaves.add(leaf.id); });
-    for (const id of this.graphReturns.keys()) if (!leaves.has(id)) this.graphReturns.delete(id);
-  }
+  pruneGraphReturns() { return navigation.pruneGraphReturns(this); }
 
-  activeGraphReturn() {
-    const leaf = this.app.workspace.activeLeaf;
-    const context = leaf && this.graphReturns.get(leaf.id);
-    if (!context) return null;
-    if (this.isView(leaf.view, DIFF_VIEW) && leaf.view.area === "history" && leaf.view.file?.path === context.filePath) return context;
-    if (leaf.view.getViewType() === "markdown" && leaf.view.file?.path === context.filePath) return context;
-    return null;
-  }
+  activeGraphReturn() { return navigation.activeGraphReturn(this); }
 
-  updateEditorReturn(leaf) {
-    if (!leaf?.view) return;
-    const root = leaf.view.containerEl;
-    root.querySelectorAll(".vaultbranch-editor-return").forEach((node) => node.remove());
-    if (leaf.view.getViewType() !== "markdown") return;
-    const context = this.graphReturns.get(leaf.id);
-    if (!context) return;
-    if (leaf.view.file?.path !== context.filePath) { this.graphReturns.delete(leaf.id); return; }
-    const actions = root.querySelector(".view-actions") || root;
-    const back = button(actions, "arrow-left", t("返回 Git Graph"), () => this.returnToGraph(context.graphReturn), "Git Graph");
-    back.classList.add("vaultbranch-editor-return");
-    if (actions === root) back.classList.add("is-floating");
-  }
+  updateEditorReturn(leaf) { return navigation.updateEditorReturn(this, leaf); }
 
-  async returnToGraph(context) {
-    if (this.returningToGraph) return;
-    if (!context) { await this.openHistory(); return; }
-    this.returningToGraph = true;
-    try {
-      const preferred = this.app.workspace.getLeavesOfType(HISTORY_VIEW).find((item) => item.id === context.leafId);
-      const leaf = await this.openView(HISTORY_VIEW, context.state, preferred);
-      // Background Electron windows may suspend animation frames; returning must still finish.
-      await new Promise((resolve) => {
-        const timer = window.setTimeout(resolve, 60);
-        requestAnimationFrame(() => { window.clearTimeout(timer); resolve(); });
-      });
-      if (this.isView(leaf.view, HISTORY_VIEW)) {
-        if (leaf.view.bodyEl) { leaf.view.bodyEl.scrollTop = context.scrollTop || 0; leaf.view.bodyEl.scrollLeft = context.scrollLeft || 0; }
-        if (leaf.view.detailsEl) leaf.view.detailsEl.scrollTop = context.detailTop || 0;
-      }
-    } finally { this.returningToGraph = false; }
-  }
+  returnToGraph(context) { return navigation.returnToGraph(this, context); }
 
 };

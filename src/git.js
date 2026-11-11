@@ -2,17 +2,16 @@
 
 const { t } = require("./i18n.js");
 const { measure } = require("./timing.js");
-const { parseStatus, groupsFor, graphFor } = require("./git-data.js");
+const { parseStatus, groupsFor } = require("./git-data.js");
 
 const { execFile } = require("node:child_process");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
-const MAX_OUTPUT = 12 * 1024 * 1024;
-const MAX_PREVIEW = 2 * 1024 * 1024;
-const MAX_IMAGE = 10 * 1024 * 1024;
-const IMAGE_TYPES = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", bmp: "image/bmp", ico: "image/x-icon", avif: "image/avif" };
-const DIFF_OPTIONS = ["--no-ext-diff", "--no-textconv", "--no-color", "--no-renames", "--unified=4"];
+const { MAX_OUTPUT, MAX_PREVIEW, MAX_IMAGE, IMAGE_TYPES, DIFF_OPTIONS } = require("./git-limits.js");
+const stash = require("./git-stash.js");
+const history = require("./git-history.js");
+const conflicts = require("./git-conflicts.js");
 
 class GitService {
   constructor(root, options = {}) {
@@ -249,121 +248,28 @@ class GitService {
     return this.run(["fetch", "--all"], { timeout: 120000 });
   }
 
-  async stashExists() {
-    try {
-      await this.run(["rev-parse", "--verify", "--quiet", "refs/stash"]);
-      return true;
-    } catch {
-      return false;
-    }
-  }
+  stashExists() { return stash.stashExists(this); }
 
-  async stash() {
-    const status = await this.status();
-    this.assertNormal(status);
-    if (!status.files.length) throw new Error(t("当前没有需要 Stash 的修改。"));
-    return this.run(["stash", "push", "--include-untracked", "--message", "VaultBranch temporary pull stash"]);
-  }
+  stash() { return stash.stash(this); }
 
-  stashPop(entry = null) { return this.restoreStash(entry, true); }
-  stashApply(entry) { return this.restoreStash(entry, false); }
+  stashPop(entry) { return stash.stashPop(this, entry); }
+  stashApply(entry) { return stash.stashApply(this, entry); }
 
-  async stashSelector(hash) {
-    this.checkCommit(hash);
-    const fields = (await this.run(["stash", "list", "-z", "--format=%H%x00%gd"])).split("\0");
-    for (let i = 0; i + 1 < fields.length; i += 2) if (fields[i] === hash) return fields[i + 1];
-    throw new Error(t("这条 Stash 已被移除，请刷新历史后重新选择。"));
-  }
+  stashSelector(hash) { return stash.stashSelector(this, hash); }
 
-  async restoreStash(entry, remove) {
-    const status = await this.status();
-    this.assertNormal(status);
-    if (status.files.length) throw new Error(t("恢复 Stash 前请保持工作区干净。"));
-    if (!status.stash) throw new Error(t("没有可恢复的 Stash。"));
-    const hash = entry?.hash || (await this.run(["rev-parse", "refs/stash"])).trim();
-    await this.stashSelector(hash);
-    try {
-      const output = await this.run(["stash", "apply", "--index", hash]);
-      if (remove) await this.run(["stash", "drop", await this.stashSelector(hash)]);
-      return output;
-    } catch (error) {
-      throw new Error(t`恢复未完成，Stash 仍保留。请检查文件状态；若出现冲突，在侧栏打开冲突文件解决。\n\n${error.message}`);
-    }
-  }
+  restoreStash(entry, remove) { return stash.restoreStash(this, entry, remove); }
 
-  async rebaseOnto(hash) {
-    this.checkCommit(hash);
-    const status = await this.status();
-    this.assertNormal(status);
-    if (status.files.length) throw new Error(t("Rebase 前请先提交或 Stash 当前修改。"));
-    await this.run(["symbolic-ref", "--quiet", "HEAD"]);
-    return this.run(["rebase", "--no-autostash", hash], { timeout: 120000 });
-  }
+  rebaseOnto(hash) { return conflicts.rebaseOnto(this, hash); }
 
-  async stashFiles(hash) {
-    const files = await this.commitFiles(hash);
-    const parents = (await this.run(["rev-list", "--parents", "-n", "1", hash])).trim().split(" ");
-    if (parents[3]) files.push(...await this.commitFiles(parents[3]));
-    return files;
-  }
+  stashFiles(hash) { return stash.stashFiles(this, hash); }
 
-  async stashHistory(limit) {
-    const fields = (await this.run(["stash", "list", "-z", `--max-count=${Math.max(1, Math.min(1000, Number(limit) || 100))}`, "--format=%H%x00%gd%x00%gs%x00%P%x00%an%x00%aI"]))
-      .split("\0");
-    const entries = [];
-    for (let i = 0; i + 5 < fields.length; i += 6) {
-      const [hash, ref, subject, parents, author, date] = fields.slice(i, i + 6);
-      if (!/^[a-f0-9]{40,64}$/.test(hash)) continue;
-      entries.push({
-        hash, parents: parents.split(" ").filter(Boolean).slice(0, 1), short: hash.slice(0, 7),
-        author, date, refs: "stash", stashRef: ref,
-        subject: `${ref} · ${subject.replace(/^On [^:]+: /, "")}`, stash: true,
-      });
-    }
-    return entries;
-  }
+  stashHistory(limit) { return stash.stashHistory(this, limit); }
 
-  async history(limit = 100, ref = "") { return (await this.historyData(limit, ref)).commits; }
+  history(limit, ref) { return history.history(this, limit, ref); }
 
-  async historyData(limit = 100, ref = "", force = false) {
-    limit = Math.max(10, Math.min(1000, Number(limit) || 100));
-    const [refs, head, stashes] = await Promise.all([
-      this.run(["show-ref", "--head"], { allowDiffExit: true }),
-      fs.readFile(path.join(this.gitDir, "HEAD"), "utf8"),
-      this.stashHistory(limit),
-    ]);
-    // Re-read mutable refs, HEAD and the stash reflog every time. Bound the cache to one page.
-    const key = JSON.stringify([refs, head, stashes, limit, ref]);
-    if (!force && this.historyCache?.key === key) return this.historyCache.data;
-    const branches = refs.split("\n").map(line => line.slice(line.indexOf(" ")+1))
-      .filter(name => name.startsWith("refs/heads/") || name.startsWith("refs/remotes/"))
-      .map(name => name.replace(/^refs\/(heads|remotes)\//, ""));
-    const currentBranch = head.startsWith("ref: refs/heads/") ? head.trim().slice(16) : "";
-    const commits = ref === "stash" ? [] : await this.readHistory(limit, ref, refs);
-    if (!ref || ref === "stash") commits.unshift(...stashes);
-    const data = { commits: graphFor(commits), branches, hasStash: Boolean(stashes.length), currentBranch };
-    this.historyCache = { key, data };
-    return data;
-  }
+  historyData(limit, ref, force) { return history.historyData(this, limit, ref, force); }
 
-  async readHistory(limit, ref, refs) {
-    if (!refs.split("\n").some(line => line && !line.endsWith(" refs/stash"))) return [];
-    const selection = ref ? (await this.run(["rev-parse", "--verify", "--end-of-options", `${ref}^{commit}`])).trim() : null;
-    const output = await this.run(["log", ...(selection ? [selection] : ["--exclude=refs/stash", "--all"]), "--topo-order", `--max-count=${Math.max(10, Math.min(1000, Number(limit) || 100))}`,
-      "--format=%H%x00%P%x00%h%x00%an%x00%aI%x00%D%x00%s%x00", "-z"]);
-    const fields = output.split("\0");
-    const commits = [];
-    let i = 0;
-    while (i < fields.length) {
-      while (i < fields.length && !fields[i]) i++;
-      if (i + 6 >= fields.length) break;
-      const [hash, parents, short, author, date, refs, subject] = fields.slice(i, i + 7);
-      if (!/^[a-f0-9]{40,64}$/.test(hash)) throw new Error(t("无法解析提交历史。"));
-      commits.push({ hash, parents: parents ? parents.split(" ") : [], short, author, date, refs, subject });
-      i += 7;
-    }
-    return commits;
-  }
+  readHistory(limit, ref, refs) { return history.readHistory(this, limit, ref, refs); }
 
   checkCommit(hash) {
     if (!/^[a-f0-9]{40,64}$/.test(hash)) throw new Error(t("无效的提交编号。"));
@@ -374,88 +280,11 @@ class GitService {
     return (await this.run(["rev-list", "--parents", "-n", "1", hash], { timing })).trim().split(" ")[1];
   }
 
-  async fileHistory(filePath, { all = false, limit = 50, graph = false } = {}) {
-    this.checkPaths([filePath]);
-    limit = Math.max(1, Math.min(1000, Number(limit) || 50));
-    const head = (await this.run(["rev-parse", "--verify", "--quiet", "HEAD"], { allowDiffExit: true })).trim();
-    if (!head && !all) return { commits: [], hasMore: false };
-    const refs = all ? ["--branches", "--remotes", ...(head ? [head] : [])] : [head];
-    if (!head && !(await this.run(["for-each-ref", "--format=%(refname)", "refs/heads", "refs/remotes"])).trim()) return { commits: [], hasMore: false };
-    const paths = new Set([filePath]);
-    if (all && head) {
-      // A combined --follow walk can miss forks made before a rename. Seed it with
-      // the current lineage's old names, including renames beyond this page.
-      const renames = (await this.run(["log", head, "--follow", "--find-renames", "--diff-filter=R", "--max-count=1000", "--name-status", "-z", "--format=", "--", filePath])).split("\0").filter(Boolean);
-      for (let n = 0; n + 2 < renames.length; n += 3) {
-        this.checkPaths([renames[n + 1], renames[n + 2]]);
-        paths.add(renames[n + 1]); paths.add(renames[n + 2]);
-      }
-    }
-    const entries = new Map();
-    for (const name of paths) for (const commit of await this.readFileHistory(name, refs, limit + 1)) {
-      if (!entries.has(commit.hash)) entries.set(commit.hash, commit);
-    }
-    const commits = [...entries.values()].sort((a, b) => b.timestamp - a.timestamp);
-    const page = commits.slice(0, limit);
-    return { commits: graph && page.length ? await this.fileHistoryGraph(page, refs, all) : page, hasMore: commits.length > limit && limit < 1000 };
-  }
+  fileHistory(filePath, options) { return history.fileHistory(this, filePath, options); }
 
-  async fileHistoryGraph(commits, refs, all) {
-    // The current branch is one ancestry line when there are no visible merges.
-    // Project skipped unrelated commits onto displayed rows without another process.
-    if (!all && commits.every(commit => commit.parents.length <= 1)) {
-      return graphFor(commits.map((commit, index) => ({ ...commit,
-        graphParents: index + 1 < commits.length ? [commits[index + 1].hash] : [],
-      })));
-    }
-    const paths = [...new Set(commits.flatMap(commit => [commit.path, commit.oldPath].filter(Boolean)))];
-    // Git rewrites parents across commits hidden by path filtering. Retain merge
-    // connectors, then project them onto visible file-history entries in one read.
-    const output = await this.run(["rev-list", "--parents", "--topo-order", "--full-history", "--max-count=10000", ...refs, "--", ...paths]);
-    const topology = new Map(output.trim().split("\n").filter(Boolean).map(line => {
-      const [hash, ...parents] = line.trim().split(" "); return [hash, parents];
-    }));
-    const visible = new Set(commits.map(commit => commit.hash));
-    const nearest = hash => {
-      const found = new Set(), seen = new Set(), pending = [hash];
-      while (pending.length) {
-        const current = pending.pop();
-        if (seen.has(current)) continue;
-        seen.add(current);
-        if (visible.has(current) || !topology.has(current)) found.add(current);
-        else pending.push(...topology.get(current));
-      }
-      // Preserve an ancestry continuation below this page instead of inventing a root.
-      return found.size ? [...found] : [hash];
-    };
-    const order = new Map([...topology.keys()].map((hash, index) => [hash, index]));
-    return graphFor(commits.map(commit => ({ ...commit,
-      graphParents: [...new Set((topology.get(commit.hash) || commit.parents).flatMap(nearest))],
-    })).sort((a, b) => (order.get(a.hash) ?? Infinity) - (order.get(b.hash) ?? Infinity)));
-  }
+  fileHistoryGraph(commits, refs, all) { return history.fileHistoryGraph(this, commits, refs, all); }
 
-  async readFileHistory(filePath, refs, limit) {
-    const fields = (await this.run(["log", ...refs, "--follow", "--find-renames", "--diff-merges=first-parent", "--date-order",
-      `--max-count=${limit}`, "--name-status", "-z", "--format=%H%x00%P%x00%an%x00%aI%x00%ct%x00%s", "--", filePath])).split("\0");
-    const commits = [];
-    let i = 0;
-    while (i < fields.length && fields[i]) {
-      const [hash, parents, author, date, timestamp, subject] = fields.slice(i, i + 6);
-      this.checkCommit(hash);
-      i += 6;
-      let file;
-      while (/^\n?[A-Z][0-9]*$/.test(fields[i] || "")) {
-        const status = fields[i++].trim();
-        const first = fields[i++];
-        const renamed = status[0] === "R" || status[0] === "C";
-        const current = renamed ? fields[i++] : first;
-        this.checkPaths([current, ...(renamed ? [first] : [])]);
-        file = { path: current, oldPath: renamed ? first : null, index: status[0], worktree: " ", commit: hash };
-      }
-      if (file) commits.push({ hash, parents: parents.split(" ").filter(Boolean), short: hash.slice(0, 7), author, date, timestamp: Number(timestamp), subject, ...file });
-    }
-    return commits;
-  }
+  readFileHistory(filePath, refs, limit) { return history.readFileHistory(this, filePath, refs, limit); }
 
   async textBlob(hash, timing) {
     if (!hash) return "";
@@ -579,84 +408,17 @@ class GitService {
     } finally { await handle.close(); }
   }
 
-  async commitFiles(hash) {
-    const parent = await this.firstParent(hash);
-    const args = ["diff-tree", "--no-commit-id", "--name-status", "-r", "-z", "--no-renames"];
-    if (parent) args.push(parent, hash);
-    else args.push("--root", hash);
-    const fields = (await this.run(args)).split("\0");
-    const files = [];
-    for (let i = 0; i + 1 < fields.length; i += 2) {
-      if (fields[i]) files.push({ path: fields[i + 1], index: fields[i][0], worktree: " ", commit: hash });
-    }
-    return files;
-  }
+  commitFiles(hash) { return history.commitFiles(this, hash); }
 
-  async commitDiff(file, timing) {
-    this.checkPaths([file.path]);
-    const parent = await this.firstParent(file.commit, timing);
-    const args = parent ? ["diff", ...DIFF_OPTIONS, parent, file.commit, "--", file.path]
-      : ["show", ...DIFF_OPTIONS, "--format=", "--root", file.commit, "--", file.path];
-    return this.preview(args, t("没有文本差异。"), timing);
-  }
+  commitDiff(file, timing) { return history.commitDiff(this, file, timing); }
 
-  async conflictVersions(filePath) {
-    this.checkPaths([filePath]);
-    const status = await this.status();
-    if (!status.files.some((file) => file.path === filePath && file.conflict)) throw new Error(t("该文件已不处于冲突状态，请刷新。"));
-    const stages = (await this.run(["ls-files", "--unmerged", "-z", "--", filePath])).split("\0").filter(Boolean);
-    const versions = { base: null, ours: null, theirs: null, binary: false };
-    for (const record of stages) {
-      const match = record.match(/^(\d+) ([a-f0-9]+) ([123])\t/);
-      if (!match) continue;
-      const size = Number((await this.run(["cat-file", "-s", match[2]])).trim());
-      if (size > MAX_PREVIEW) throw new Error(t("冲突文件超过 2 MB，请使用外部工具解决。"));
-      const text = await this.run(["show", `:${match[3]}:${filePath}`]);
-      if (text.includes("\0")) versions.binary = true;
-      versions[{ 1: "base", 2: "ours", 3: "theirs" }[match[3]]] = text;
-    }
-    let result = "";
-    try {
-      const absolute = path.resolve(this.root, filePath);
-      if ((await fs.stat(absolute)).size > MAX_PREVIEW) throw new Error(t("冲突文件超过 2 MB，请使用外部工具解决。"));
-      result = await fs.readFile(absolute, "utf8");
-      if (result.includes("\0")) versions.binary = true;
-    } catch (error) { if (error.code !== "ENOENT") throw error; }
-    if (versions.binary) throw new Error(t("二进制冲突请使用外部工具解决。"));
-    return { ...versions, result, operation: status.operation,
-      oursLabel: status.operation === "rebase" ? t("上游版本") : t("本地版本"),
-      theirsLabel: status.operation === "rebase" ? t("本地版本") : t("传入版本") };
-  }
+  conflictVersions(filePath) { return conflicts.conflictVersions(this, filePath); }
 
-  async resolveConflict(filePath, content, expected) {
-    this.checkPaths([filePath]);
-    if (/^(<{7}|={7}|>{7}|\|{7})(?: |$)/m.test(content)) throw new Error(t("结果中仍有冲突标记，请编辑完成后再标记已解决。"));
-    const versions = await this.conflictVersions(filePath);
-    if (expected !== undefined && versions.result !== expected) throw new Error(t("冲突文件已被其他编辑器修改，请重新打开冲突视图。"));
-    if (versions.ours === null || versions.theirs === null) throw new Error(t("涉及删除的冲突请在外部工具中处理，再暂存结果。"));
-    const absolute = path.resolve(this.root, filePath);
-    const [actualParent, realRoot] = await Promise.all([fs.realpath(path.dirname(absolute)), fs.realpath(this.root)]);
-    const relative = path.relative(realRoot, actualParent);
-    if (relative.startsWith("..") || path.isAbsolute(relative) || (await fs.lstat(absolute)).isSymbolicLink()) throw new Error(t("不支持通过符号链接写入冲突结果。"));
-    await fs.writeFile(absolute, content, "utf8");
-    await this.stage([filePath]);
-  }
+  resolveConflict(filePath, content, expected) { return conflicts.resolveConflict(this, filePath, content, expected); }
 
-  async continueOperation() {
-    const status = await this.status();
-    if (status.files.some((file) => file.conflict)) throw new Error(t("仍有未解决的冲突。"));
-    const unstaged = status.files.filter((file) => !file.untracked && file.worktree !== " ");
-    if (unstaged.length) throw new Error(t`还有未暂存的修改，请先处理后再继续：\n${unstaged.map((file) => file.path).join("\n")}\n这些修改不会被自动加入冲突提交。`);
-    if (status.operation === "rebase") return this.run(["rebase", "--continue"], { timeout: 120000 });
-    if (status.operation === "merge") return this.run(["commit", "--no-edit"], { timeout: 120000 });
-    throw new Error(t("当前没有可继续的 rebase / merge。"));
-  }
+  continueOperation() { return conflicts.continueOperation(this); }
 
-  async abortOperation() {
-    const status = await this.status();
-    if (status.operation === "rebase" || status.operation === "merge") return this.run([status.operation, "--abort"]);
-    throw new Error(t("当前没有可中止的 rebase / merge。"));
-  }
+  abortOperation() { return conflicts.abortOperation(this); }
 
   async ignored(filePath) {
     const output = await this.run(["check-ignore", "--no-index", "-v", "--", filePath], { allowDiffExit: true });

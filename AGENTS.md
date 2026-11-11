@@ -3,11 +3,12 @@
 ## 项目与目录
 
 - 本仓库是 Obsidian 桌面 Git 插件 VaultBranch 的正式源码，远程仓库为 `li-cr/VaultBranch`。
-- `src/main.js`：Obsidian 生命周期、Git 操作协调和视图导航；通过回调向编辑会话提供当前 Git、设置和界面通知。
+- `src/main.js`：Obsidian 生命周期、设置更新和公共调用入口；通过回调向编辑会话提供当前 Git、设置和界面通知。
+- `src/plugin-events.js`：通过插件宿主注册事件、命令和定时器；`src/navigation.js` 负责视图打开、请求顺序和返回提交图；`src/git-operations.js` 负责刷新、草稿保存与 Git 操作协调。
 - `src/editor-sessions.js`：编辑会话的获取、共享、释放、草稿保留和普通/隐藏文件写入适配；`src/editor-document.js` 负责文档表示，`src/autosave.js` 负责保存调度和冲突保护。
 - `src/views/`：侧栏 `source.js`、差异编辑 `diff.js`、提交图 `history.js`、冲突 `conflict.js`；`shared.js` 只放视图类型和共用 UI 辅助函数。`src/settings.js` 负责设置界面。
 - 设置使用“常规 / Git / 提交 / 其他”顶部标签，面板内复用原生 Setting；保留设置值与当前选中的标签，支持方向键、Home/End 和 tab/tabpanel 无障碍属性。不要添加分支功能默认关闭的开关。
-- `src/git.js`：Git 命令、历史数据读取、Stash 和冲突操作。
+- `src/git.js`：Git 子进程、路径与状态校验、版本读取及公共服务入口。`src/git-history.js` 负责历史，`src/git-stash.js` 负责 Stash，`src/git-conflicts.js` 负责冲突与 Rebase；共用 `src/git-limits.js` 的读取上限。业务模块通过显式传入的服务调用现有校验，不保存另一份状态。
 - `src/git-data.js`：无 I/O 的状态解析、文件分组、目录树、补丁行和提交图计算；视图直接引用所需函数，不通过插件实例访问整个 Git 模块。
 - `src/branches.js`：原生 Obsidian 分支选择与创建对话框；分支变更通过现有 Git 操作协调，保留草稿检查和 Git 原生覆盖保护，不强制切换或自动 Stash。
 - `src/i18n.js`：中文与英文文案；使用 `t("文案")` 或带插值的标签模板，新增提示需补英文翻译。

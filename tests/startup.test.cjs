@@ -25,7 +25,7 @@ function harness(saved) {
     registerInterval() {}
   }
   const host = {
-    Plugin: HostPlugin, Platform: { isMobile: false },
+    Plugin: HostPlugin, Platform: { isMobile: false }, Notice: class {},
     ItemView: class { constructor(leaf) { this.leaf = leaf; this.app = leaf.app; } },
     PluginSettingTab: class {}, FuzzySuggestModal: class {}, Modal: class {},
     debounce(callback) {
@@ -180,4 +180,72 @@ test("hidden-sidebar file events still sync editor sessions and explicit refresh
   assert.equal(h.counts.status, 0);
   await h.plugin.refresh(true);
   assert.equal(h.counts.status, 1);
+});
+
+async function operationHarness() {
+  const h = harness({ ...defaults, openOnStartup: false });
+  await h.plugin.onload();
+  h.plugin.views = () => [];
+  h.plugin.renderViews = () => {};
+  h.plugin.ready = true;
+  h.plugin.refresh = async () => {};
+  return h.plugin;
+}
+
+test("Git actions wait for draft saving and reject concurrent operations while saving", async () => {
+  const p = await operationHarness(), order = [];
+  let release;
+  p.editors.sessions.set("draft.md", { autoFlush: () => new Promise(resolve => { release = () => { order.push("saved"); resolve(true); }; }) });
+  p.refresh = async (notify, force) => { assert.equal(force, true); assert.equal(p.busy, true); order.push("refresh"); };
+  const first = p.mutate("First", async () => { order.push("action"); return "done"; });
+  assert.equal(p.mutationPending, true);
+  assert.equal(await p.mutate("Second", () => { throw Error("Unexpected concurrent action"); }), false);
+  assert.deepEqual(order, []);
+  release();
+  assert.equal(await first, true);
+  assert.deepEqual(order, ["saved", "action", "refresh"]);
+  assert.equal(p.busy, false);
+  assert.equal(p.mutationPending, false);
+});
+
+test("failed draft saving blocks Git without clearing the draft or refreshing status", async () => {
+  const p = await operationHarness();
+  const draft = { autoFlush: async () => false, text: "unsaved content" };
+  p.editors.sessions.set("draft.md", draft);
+  p.refresh = () => { throw Error("Unexpected refresh"); };
+  assert.equal(await p.mutate("Commit", () => { throw Error("Unexpected Git write"); }), false);
+  assert.equal(p.editors.sessions.get("draft.md"), draft);
+  assert.equal(draft.text, "unsaved content");
+  assert.equal(p.mutationPending, false);
+  assert.equal(p.busy, false);
+});
+
+test("failed Git actions wait for the existing status read before the final refresh", async () => {
+  const p = await operationHarness(), order = [];
+  let release;
+  p.refreshTask = new Promise(resolve => { release = () => { order.push("old-read"); resolve(); }; });
+  p.refresh = async () => { order.push("fresh-read"); };
+  const pending = p.mutate("Commit", async () => { throw Error("Expected Git failure"); });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(p.busy, true);
+  assert.deepEqual(order, []);
+  release();
+  assert.equal(await pending, false);
+  assert.deepEqual(order, ["old-read", "fresh-read"]);
+  assert.equal(p.error, "Expected Git failure");
+  assert.equal(p.busy, false);
+});
+
+test("service initialization is shared and later operations use the replacement Git service", async () => {
+  const p = await operationHarness();
+  p.ready = false;
+  let count = 0, release;
+  p.git = { init: () => { count++; return new Promise(resolve => { release = resolve; }); } };
+  const first = p.ensureReady(), second = p.ensureReady();
+  assert.equal(count, 1); release(); await Promise.all([first, second]);
+  assert.equal(p.ready, true);
+  let pushed = 0;
+  p.git = { push: async () => { pushed++; return "new service"; } };
+  assert.equal(await p.runGit("push"), true);
+  assert.equal(pushed, 1);
 });
