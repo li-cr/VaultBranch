@@ -34,9 +34,9 @@
       ["small/note.md", "# Small note\n\noriginal value\n"],
       ["large/deep/json/data.json", JSON.stringify(Array.from({ length: 24000 }, (_, n) => ({ id: n, text: `value ${n} abcdefghijklmnop` })), null, 2) + "\n"],
       ["small/deep/json/data.json", '{\n  "text": "original value"\n}\n'],
-      ["large/note.md", Array.from({ length: 24000 }, (_, n) => `Line ${n}: original value abcdefghijklmnopqrstuvwxyz`).join("\n") + "\n"],
+      ["large/note.md", Array.from({ length: 24000 }, (_, n) => `Line ${n}: original value abcdefghijklmnopqrstuvwxyz`).join("\n\n") + "\n"],
       ["limits/near.json", JSON.stringify({ rows: Array.from({ length: 34000 }, (_, n) => `value ${n} ${"x".repeat(40)}`) }, null, 2) + "\n"],
-      ["limits/over.md", "original value\n".repeat(150000)],
+      ["limits/over.json", JSON.stringify({ rows: Array(150000).fill("original value") }, null, 2)],
     ];
     for (const [path, text] of fixtures) files.push(await app.vault.create(`${root}/${path}`, text));
     await p.git.stage(files.map(f => f.path));
@@ -80,7 +80,7 @@
     await click(4);
     check(!!leaf.view.session && leaf.view.merge.b.state.doc.length > 1900000, "near-2-MB JSON remains editable");
     await click(5);
-    check(!leaf.view.merge && !leaf.view.session && !!leaf.view.contentEl.querySelector(".vaultbranch-diff-row"), "over-2-MB Markdown retains its patch-only fallback");
+    check(!leaf.view.merge && !leaf.view.session && !!leaf.view.contentEl.querySelector(".vaultbranch-diff-row"), "over-2-MB JSON retains its patch-only fallback");
     check(!leaf.view.contentEl.querySelector(".vaultbranch-diff-navigation"), "patch-only fallback does not expose unavailable navigation controls");
     await click(0);
     const disk = await app.vault.read(files[0]);
