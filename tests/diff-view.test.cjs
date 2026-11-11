@@ -16,7 +16,7 @@ function load(file) {
   vm.runInNewContext(fs.readFileSync(file, "utf8"), {
     module, setTimeout, clearTimeout,
     require: (name) => {
-      if (name === "obsidian") return { Plugin: class {}, ItemView: class {}, PluginSettingTab: class {}, FuzzySuggestModal: class {}, setIcon() {} };
+      if (name === "obsidian") return { Plugin: class {}, ItemView: class { async setState() {} }, PluginSettingTab: class {}, FuzzySuggestModal: class {}, setIcon() {} };
       const resolved = localRequire.resolve(name);
       return resolved.startsWith(path.join(__dirname, "../src/views/")) || ["settings.js", "branches.js"].some(name => resolved === path.join(__dirname, "../src/", name)) ? load(resolved) : localRequire(name);
     },
@@ -24,38 +24,53 @@ function load(file) {
   return module.exports;
 }
 const Plugin = load(main);
-const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-test("rapid file clicks keep the latest MD/hidden-JSON request visible even when loading times differ", async () => {
+function navigationFixture() {
   const plugin = new Plugin();
-  const calls = [];
-  let visible;
-  plugin.openView = async (_, { file }) => {
-    calls.push(file.path);
-    await pause(file.delay);
-    visible = file.path;
-    return file.path;
+  const leaf = { view: {}, updateHeader() {} };
+  plugin.app = { workspace: { getLeavesOfType: () => [leaf], revealLeaf: async () => {}, requestSaveLayout() {} } };
+  plugin.isView = () => true;
+  return { plugin, leaf };
+}
+
+test("B opens before A finishes, and superseded requests cannot overwrite B", async () => {
+  const { plugin, leaf } = navigationFixture(), gate = deferred(), started = deferred();
+  const calls = []; let visible, request = 0;
+  leaf.view.setState = async ({ file }) => {
+    const current = ++request; calls.push(file.path);
+    if (file.path === "large.json") { started.resolve(); await gate.promise; }
+    if (current === request) visible = file.path;
   };
-  const files = [
-    { path: "note.md", delay: 25 },
-    { path: "regular.json", delay: 10 },
-    { path: ".obsidian/plugins/example/data.json", delay: 0 },
-  ];
-  await Promise.all(files.map((file) => plugin.openDiff(file, "unstaged")));
-  assert.deepEqual(calls, files.map((file) => file.path));
-  assert.equal(visible, files.at(-1).path);
+  const first = plugin.openDiff({ path: "large.json" }, "unstaged");
+  await started.promise;
+  await plugin.openDiff({ path: ".obsidian/plugins/example/data.json" }, "unstaged");
+  assert.equal(visible, ".obsidian/plugins/example/data.json", "B must not wait for A's read/verification");
+  gate.resolve(); await first;
+  assert.equal(visible, ".obsidian/plugins/example/data.json");
+  assert.deepEqual(calls, ["large.json", ".obsidian/plugins/example/data.json"]);
+});
+
+test("rapid initial clicks share one native view creation and skip superseded reads", async () => {
+  const { plugin, leaf } = navigationFixture(), gate = deferred(), calls = [];
+  plugin.isView = view => view === leaf.view;
+  plugin.app.workspace.getLeavesOfType = () => [];
+  let created = 0;
+  plugin.openView = async () => { created++; await gate.promise; return leaf; };
+  leaf.view.setState = async ({ file }) => { calls.push(file.path); };
+  const requests = ["a.md", "b.json", "deep/last.md"].map(path => plugin.openDiff({ path }, "unstaged"));
+  assert.equal(created, 1);
+  gate.resolve(); await Promise.all(requests);
+  assert.deepEqual(calls, ["deep/last.md"]);
 });
 
 test("an unsuccessful file open does not prevent a later JSON request from opening", async () => {
-  const plugin = new Plugin();
-  plugin.openView = async (_, { file }) => {
+  const { plugin, leaf } = navigationFixture();
+  leaf.view.setState = async ({ file }) => {
     if (file.path === "missing.md") throw new Error("missing");
-    return file.path;
   };
   const first = plugin.openDiff({ path: "missing.md" }, "unstaged");
-  const next = plugin.openDiff({ path: ".obsidian/example.json" }, "unstaged");
   await assert.rejects(first, /missing/);
-  assert.equal(await next, ".obsidian/example.json");
+  assert.equal(await plugin.openDiff({ path: ".obsidian/example.json" }, "unstaged"), leaf);
 });
 
 test("hidden JSON uses adapter processing without a TFile and preserves the index", async () => {
@@ -239,6 +254,32 @@ test("switching releases the displayed session under its original path", async (
   assert.equal(released[0].filePath, "old.md");
   assert.equal(released[0].session, old);
   assert.equal(view.sessionPath, "new.json");
+});
+
+test("an obsolete read releases its session while a newer file becomes ready first", async () => {
+  const { view, session, gate, released } = loadingFixture();
+  const other = { ...session, listeners: new Set() };
+  view.plugin.editorSession = path => path === "large.json" ? gate.promise : Promise.resolve(other);
+  const first = view.setState({ file: { path: "large.json" } }, {});
+  await Promise.resolve(); await Promise.resolve();
+  await view.setState({ file: { path: "small.md" } }, {});
+  assert.equal(view.file.path, "small.md"); assert.equal(view.session, other);
+  gate.resolve(session); await first;
+  assert.equal(view.session, other);
+  assert.equal(released.length, 1); assert.equal(released[0].filePath, "large.json");
+});
+
+test("switching waits for a dirty autosave but does not enqueue a clean session behind verification", async () => {
+  const { view, session, gate } = loadingFixture(), saved = deferred();
+  let saves = 0;
+  view.session = { dirty: true, listeners: new Set(), autoFlush: async () => { saves++; await saved.promise; } };
+  const first = view.setState({ file: { path: "after-save.md" } }, {});
+  await Promise.resolve(); assert.equal(view.file.path, "new.json");
+  saved.resolve(); gate.resolve(session); await first;
+  assert.equal(saves, 1); assert.equal(view.file.path, "after-save.md");
+  session.dirty = false; session.autoFlush = () => { throw Error("clean sessions must not wait for pending verification"); };
+  await view.setState({ file: { path: "clean.json" } }, {});
+  assert.equal(view.file.path, "clean.json");
 });
 
 test("closing a pending diff releases the late session without replacing the closed page", async () => {

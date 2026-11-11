@@ -9,7 +9,7 @@
 - `src/git.js`：Git 命令、状态解析、提交图数据、Stash 和冲突操作。
 - `src/branches.js`：原生 Obsidian 分支选择与创建对话框；分支变更通过现有 Git 操作协调，保留草稿检查和 Git 原生覆盖保护，不强制切换或自动 Stash。
 - `src/i18n.js`：中文与英文文案；使用 `t("文案")` 或带插值的标签模板，新增提示需补英文翻译。
-- 未暂存差异默认用 CodeMirror MergeView 编辑，不按扩展名或 Obsidian 文件索引筛选；二进制、删除等无法编辑的文件回退为差异预览。Diff autosave 默认关闭，使用保存按钮或 Ctrl/Cmd+S；切换文件保留草稿，未保存时阻止 Git 操作。开启后停止输入 500 ms 自动保存，切换文件和 Git 操作前保存。普通文件使用 `vault.process`，隐藏配置使用 `adapter.process` 并监听 `raw`。暂存区和历史只读，不自动暂存或提交。`src/autosave.js` 按路径串行处理保存及外部修改；差异打开请求按点击顺序执行。保留换行、BOM、撤销历史和草稿；外部修改与草稿并存时暂停覆盖。
+- 未暂存差异默认用 CodeMirror MergeView 编辑，不按扩展名或 Obsidian 文件索引筛选；二进制、删除等无法编辑的文件回退为差异预览。Diff autosave 默认关闭，使用保存按钮或 Ctrl/Cmd+S；切换文件保留草稿，未保存时阻止 Git 操作。开启后停止输入 500 ms 自动保存，切换文件和 Git 操作前保存。普通文件使用 `vault.process`，隐藏配置使用 `adapter.process` 并监听 `raw`。暂存区和历史只读，不自动暂存或提交。`src/autosave.js` 按路径串行处理保存及外部修改；差异打开以最新点击为准，仅共享原生视图创建，旧读取不得覆盖新页面。干净会话不为切换排队空保存；脏会话仍等待自动保存。测试旧读取未完成时新文件已完整可用、首次连点仅创建一个视图、迟到会话释放和加载中关闭。保留换行、BOM、撤销历史和草稿；外部修改与草稿并存时暂停覆盖。
 - Other 设置包含日期触发字符串、Moment 时间格式、原生 Obsidian 命令快捷键入口和 Diff autosave。日期输入默认 `@date`，仅在笔记光标处输入完整触发字符串时展开，不扫描历史文本或在撤销时重新展开；`src/date.js` 负责匹配范围。
 - `styles.css`：界面样式；使用 Obsidian 主题变量和限定在插件视图内的选择器，不使用 `!important`，保持界面简洁。
 - `tests/git.test.cjs`：使用临时仓库和本地 bare remote 的 Git 集成测试。

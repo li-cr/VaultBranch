@@ -5,7 +5,7 @@ const { hostname } = require("node:os");
 const { t, setLanguage } = require("./i18n.js");
 const { Autosave, normalize, conflictMessage } = require("./autosave.js");
 const { dateTriggerRange } = require("./date.js");
-const { TimingLog } = require("./timing.js");
+const { TimingLog, timingLimit } = require("./timing.js");
 const { SOURCE_VIEW, DIFF_VIEW, HISTORY_VIEW, CONFLICT_VIEW, FILE_HISTORY_VIEW, DEFAULT_SETTINGS, el, button } = require("./views/shared.js");
 const { MyGitSettings } = require("./settings.js");
 
@@ -186,11 +186,13 @@ module.exports = class MyGitPlugin extends Plugin {
 
   async updateSetting(key, value) {
     if (this.busy) { new Notice(t("Git 操作执行中，请稍后修改设置。")); return false; }
+    if (key === "performanceLogLimit") value = timingLimit(value);
     if (this.settings[key] === value) return true;
     this.settings[key] = value;
     if (key === "performanceLogging" && !value) this.timingLog?.clear();
+    if (key === "performanceLogLimit") this.timingLog?.setLimit(value);
     await this.saveData(this.settings);
-    if (key === "performanceLogging") return true;
+    if (key === "performanceLogging" || key === "performanceLogLimit") return true;
     if (key === "diffAutosave") for (const session of this.editSessions.values()) session.setEnabled(value);
     if (key === "collapseUnchanged") for (const view of this.views(DIFF_VIEW, FILE_HISTORY_VIEW)) view.updateCollapse();
     if (key === "showDiffNavigation") for (const view of this.views(DIFF_VIEW, FILE_HISTORY_VIEW)) view.updateDiffNavigation();
@@ -220,13 +222,13 @@ module.exports = class MyGitPlugin extends Plugin {
 
   startDiffTiming(file, area, event) {
     if (!this.settings?.performanceLogging) return;
-    this.timingLog ||= new TimingLog();
+    this.timingLog ||= new TimingLog(this.settings.performanceLogLimit);
     const delay = event ? performance.now() - event.timeStamp : 0;
     return this.timingLog.start({ operation: "open-diff", path: file.path, area, source: event ? "sidebar" : "command", trusted: event?.isTrusted ?? false, inputDelayMs: delay >= 0 && delay < 60000 ? Math.round(delay * 100) / 100 : null });
   }
 
   timingReport() {
-    return JSON.stringify({ schema: 1, version: this.manifest.version, userAgent: navigator.userAgent, units: "ms", note: "Stages may overlap. Frame callbacks do not guarantee physical paint.", records: this.timingLog?.records || [] }, null, 2);
+    return JSON.stringify({ schema: 1, version: this.manifest.version, userAgent: navigator.userAgent, units: "ms", limit: timingLimit(this.settings.performanceLogLimit), note: "Limit 0 means unlimited for this run. Stages may overlap. Frame callbacks do not guarantee physical paint.", records: this.timingLog?.records || [] }, null, 2);
   }
 
   showTimings() {
@@ -502,22 +504,43 @@ module.exports = class MyGitPlugin extends Plugin {
   }
   openConflict(filePath) { return this.openView(CONFLICT_VIEW, { filePath }); }
 
+  async diffLeaf() {
+    if (this.diffLeafTask) return this.diffLeafTask;
+    const leaf = this.app.workspace.getLeavesOfType(DIFF_VIEW)[0];
+    if (leaf && this.isView(leaf.view, DIFF_VIEW)) return leaf;
+    // Only native view creation is shared; file reads must not queue behind it.
+    const task = this.diffLeafTask = this.openView(DIFF_VIEW);
+    try { return await task; }
+    finally { if (this.diffLeafTask === task) this.diffLeafTask = null; }
+  }
+
   async openDiff(file, area, graphReturn = null, timing = this.startDiffTiming(file, area)) {
     if (area === "history" && !graphReturn) {
       const graph = this.app.workspace.getLeavesOfType(HISTORY_VIEW).find(item => this.isView(item.view, HISTORY_VIEW));
       graphReturn = graph?.view.captureNavigation() || null;
     }
-    // WorkspaceLeaf.setViewState itself is asynchronous; preserve click order.
+    const request = this.diffNavigationRequest = (this.diffNavigationRequest || 0) + 1;
     const open = async () => {
-      timing?.mark("queueMs");
       try {
-        const leaf = await this.openView(DIFF_VIEW, { file, area, graphReturn, timing });
-        timing?.finish(timing.record.errorMs !== undefined ? "failed" : timing.record.cancelledMs !== undefined ? "cancelled" : "complete");
+        const leaf = await this.diffLeaf();
+        timing?.mark("queueMs");
+        if (this.unloaded || request !== this.diffNavigationRequest || !this.isView(leaf.view, DIFF_VIEW)) {
+          timing?.mark("cancelledMs"); timing?.finish("cancelled"); return leaf;
+        }
+        const view = leaf.view;
+        // Existing views guard overlapping setState calls with request IDs.
+        // Calling native setViewState concurrently would silently drop clicks.
+        await view.setState({ file, area, graphReturn, timing }, {});
+        if (request === this.diffNavigationRequest && leaf.view === view) {
+          leaf.updateHeader(); this.app.workspace.requestSaveLayout();
+          await this.app.workspace.revealLeaf(leaf);
+        } else timing?.mark("cancelledMs");
+        timing?.finish(timing.record.cancelledMs !== undefined ? "cancelled" : timing.record.errorMs !== undefined ? "failed" : "complete");
         return leaf;
       }
       catch (error) { timing?.finish("failed"); throw error; }
     };
-    this.diffNavigationTask = (this.diffNavigationTask || Promise.resolve()).then(open, open);
+    this.diffNavigationTask = open();
     return this.diffNavigationTask;
   }
 

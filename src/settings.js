@@ -100,7 +100,18 @@ class MyGitSettings extends PluginSettingTab {
       new Setting(containerEl).setName(t("折叠未修改内容")).setDesc(t("默认开启，使用 CodeMirror 原生 collapseUnchanged，改动前后各保留 3 行。点击折叠提示可展开。")).addToggle(input => input.setValue(p.settings.collapseUnchanged).onChange(value => p.updateSetting("collapseUnchanged", value)));
       new Setting(containerEl).setName(t("显示差异跳转按钮")).setDesc(t("默认开启。在左右差异页和文件历史右上角显示 ↑ / ↓，跳转到上一处或下一处差异。")).addToggle(input => input.setValue(p.settings.showDiffNavigation).onChange(value => p.updateSetting("showDiffNavigation", value)));
       new Setting(containerEl).setName(t("差异语法高亮")).setDesc(t("默认关闭。开启后按扩展名高亮 JSON 和 Markdown；超过 20 万字符或单行超过 1 万字符时使用纯文本。保留差异背景、草稿和撤销历史。")).addToggle(input => input.setValue(p.settings.syntaxHighlighting).onChange(value => p.updateSetting("syntaxHighlighting", value)));
-      new Setting(containerEl).setName(t("调优：记录操作耗时")).setDesc(t("默认关闭。记录差异文件打开的点击、排队、Git、编辑器和帧时间；仅本机保留最近 100 条，不记录正文。关闭或重载后清空。")).addToggle(input => input.setValue(p.settings.performanceLogging).onChange(value => p.updateSetting("performanceLogging", value)));
+      new Setting(containerEl).setName(t("调优：记录操作耗时")).setDesc(t("默认关闭。记录差异文件打开的点击、排队、Git、编辑器和帧时间；仅保存在本机内存，不记录正文。关闭或重载后清空。")).addToggle(input => input.setValue(p.settings.performanceLogging).onChange(value => p.updateSetting("performanceLogging", value)));
+      new Setting(containerEl).setName(t("调优记录保留条数")).setDesc(t("默认 100 条；0 表示本次运行中不限条数。按 Enter 或移开焦点后生效，减少条数会移除较早记录。不限条数时内存占用会随记录增加。")).addText(input => {
+        input.inputEl.type = "number"; input.inputEl.min = "0"; input.inputEl.step = "1";
+        input.setValue(String(p.settings.performanceLogLimit));
+        input.inputEl.addEventListener("change", () => {
+          const value = input.inputEl.value;
+          const limit = Number(value);
+          if (value.trim() && Number.isSafeInteger(limit) && limit >= 0) void p.updateSetting("performanceLogLimit", limit).catch(error => new Notice(error.message));
+        });
+        input.inputEl.addEventListener("blur", () => input.setValue(String(p.settings.performanceLogLimit)));
+        input.inputEl.addEventListener("keydown", event => { if (event.key === "Enter") input.inputEl.blur(); });
+      });
       new Setting(containerEl).setName(t("调优记录")).addButton(input => input.setButtonText(t("查看记录")).onClick(() => p.showTimings()));
     }
   }

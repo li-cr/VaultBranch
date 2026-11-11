@@ -4,7 +4,9 @@
 let language = "zh";
 const english = {
   "调优：记录操作耗时": "Tuning: record operation timings",
-  "默认关闭。记录差异文件打开的点击、排队、Git、编辑器和帧时间；仅本机保留最近 100 条，不记录正文。关闭或重载后清空。": "Off by default. Record diff-opening clicks, queue, Git, editor and frame timings. Keep the latest 100 records locally without file contents. Clear when disabled or reloaded.",
+  "默认关闭。记录差异文件打开的点击、排队、Git、编辑器和帧时间；仅保存在本机内存，不记录正文。关闭或重载后清空。": "Off by default. Record diff-opening clicks, queue, Git, editor and frame timings in local memory without file contents. Clear when disabled or reloaded.",
+  "调优记录保留条数": "Timing record limit",
+  "默认 100 条；0 表示本次运行中不限条数。按 Enter 或移开焦点后生效，减少条数会移除较早记录。不限条数时内存占用会随记录增加。": "Default: 100. Use 0 for unlimited records during this run. Press Enter or leave the field to apply; lowering the limit removes older records. With no limit, memory usage grows with the record count.",
   "调优记录": "Tuning records",
   "查看记录": "View records",
   "复制记录": "Copy records",

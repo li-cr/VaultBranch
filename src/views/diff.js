@@ -36,8 +36,8 @@ class DiffView extends GitView {
     const timing = state.timing;
     const request = ++this.stateRequest;
     this.request++;
-    await measure(timing, "save-before-switch", () => this.session?.autoFlush());
-    if (request !== this.stateRequest) return;
+    await measure(timing, "save-before-switch", () => (this.session?.dirty || this.session?.saving) ? this.session.autoFlush() : undefined);
+    if (request !== this.stateRequest) { timing?.mark("cancelledMs"); return; }
     this.file = state.file || null;
     this.area = LABELS[state.area] ? state.area : "unstaged";
     this.unified = Boolean(state.unified);
@@ -48,7 +48,7 @@ class DiffView extends GitView {
     }
     this.plugin.setGraphReturn(this.leaf, this.file?.path, this.graphReturn);
     await this.render(true, timing);
-    await super.setState(state, result);
+    if (request === this.stateRequest) await super.setState(state, result);
   }
 
   async onClose() {

@@ -1,7 +1,25 @@
 "use strict";
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { TimingLog, measure } = require("../src/timing.js");
+const { TimingLog, measure, timingLimit } = require("../src/timing.js");
+
+test("retention can be resized live or made unlimited without losing pending records", () => {
+  const log = new TimingLog(0);
+  for (let n = 0; n < 150; n++) log.start({ n });
+  const pending = log.start({ n: 150 });
+  assert.equal(log.records.length, 151);
+  log.setLimit(2);
+  assert.deepEqual(log.records.map(r => r.n), [149, 150]);
+  pending.finish("complete");
+  assert.equal(log.records.at(-1).status, "complete");
+  log.setLimit(5);
+  log.start({ n: 151 });
+  assert.equal(log.records.length, 3);
+  log.setLimit(0);
+  for (let n = 0; n < 110; n++) log.start({});
+  assert.equal(log.records.length, 113);
+  for (const value of [undefined, null, NaN, Infinity, -1, 1.5, "20"]) assert.equal(timingLimit(value), 100);
+});
 
 test("disabled tracing preserves synchronous and asynchronous action behavior", async () => {
   assert.equal(measure(undefined, "disabled", () => 7), 7);

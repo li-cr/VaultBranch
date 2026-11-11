@@ -14,5 +14,6 @@
   "collapseUnchanged": true,
   "showDiffNavigation": true,
   "syntaxHighlighting": false,
-  "performanceLogging": false
+  "performanceLogging": false,
+  "performanceLogLimit": 100
 }

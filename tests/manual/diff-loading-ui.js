@@ -102,6 +102,20 @@
     const rapid = [p.openDiff(entries[1], "unstaged"), p.openDiff(entries[2], "unstaged"), p.openDiff(entries[3], "unstaged")];
     await Promise.all(rapid);
     check(leaf.view.file.path === files[3].path && complete(), "rapid large/small/large clicks finish on the last requested file");
+    let blocked;
+    const blockedStarted = new Promise(resolve => { blocked = resolve; });
+    const blockedGate = new Promise(resolve => { release = resolve; });
+    p.editorSession = async (...args) => {
+      const session = await saved.editorSession.apply(p, args);
+      if (args[0] === files[1].path) { blocked(); await blockedGate; }
+      return session;
+    };
+    pending = p.openDiff(entries[1], "unstaged"); await blockedStarted;
+    await p.openDiff(entries[2], "unstaged");
+    check(leaf.view.file.path === files[2].path && complete() && !leaf.view.contentEl.inert, "B becomes fully interactive before the blocked large-file A read finishes");
+    release(); await pending; pending = null; p.editorSession = saved.editorSession;
+    check(leaf.view.file.path === files[2].path && complete(), "late A result cannot replace the completed B page");
+    check(!p.editSessions.has(files[1].path), "superseded large-file A session is released");
     p.ensureReady = async () => { throw Error("expected test read failure"); };
     await p.openDiff(entries[2], "unstaged");
     check(!!leaf.view.contentEl.querySelector(".is-error") && !leaf.view.contentEl.inert, "failed load displays an error and restores interaction");

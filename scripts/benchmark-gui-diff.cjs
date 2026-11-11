@@ -30,16 +30,20 @@ const path = require("node:path");
   try {
     await call("Page.bringToFront");
     await evaluate(`window.__vbGuiTimingMode = ${JSON.stringify(process.argv[3] === "off" ? "off" : "on")}`);
+    const rapid = process.argv[4] === "rapid";
+    await evaluate(`window.__vbGuiTimingRapid = ${rapid}`);
     await evaluate(await fs.readFile(path.resolve(__dirname, "../tests/manual/gui-timing-fixture.js"), "utf8"));
-    for (let round = 0; round < 6; round++) for (let n = 0; n < 4; n++) {
-      const position = await evaluate(`window.__vbGuiTiming.position(${n})`);
-      await call("Input.dispatchMouseEvent", { type: "mouseMoved", ...position });
-      await call("Input.dispatchMouseEvent", { type: "mousePressed", button: "left", clickCount: 1, ...position });
-      await call("Input.dispatchMouseEvent", { type: "mouseReleased", button: "left", clickCount: 1, ...position });
+    for (let round = 0; round < 6; round++) for (let n = 0; n < 4; n += rapid ? 2 : 1) {
+      for (const index of rapid ? [n + 1, n] : [n]) {
+        const position = await evaluate(`window.__vbGuiTiming.position(${index})`);
+        await call("Input.dispatchMouseEvent", { type: "mouseMoved", ...position });
+        await call("Input.dispatchMouseEvent", { type: "mousePressed", button: "left", clickCount: 1, ...position });
+        await call("Input.dispatchMouseEvent", { type: "mouseReleased", button: "left", clickCount: 1, ...position });
+      }
       const deadline = Date.now() + 15000;
       while (true) {
         const state = await evaluate("window.__vbGuiTiming.poll()");
-        if (state.count === round * 4 + n + 1 && state.done) {
+        if (state.count === round * 4 + n + (rapid ? 2 : 1) && state.done) {
           if (!state.hasFrame) await new Promise(resolve => setTimeout(resolve, 50));
           break;
         }
@@ -48,6 +52,7 @@ const path = require("node:path");
       }
     }
     const report = await evaluate("window.__vbGuiTiming.report()");
+    report.mode = rapid ? "rapid-pairs" : "sequential";
     report.samples = report.samples.slice(4); // Discard the warm-up cycle.
     if (!report.samples.every(sample => sample.trusted)) throw Error("Expected trusted GUI clicks");
     console.log(JSON.stringify(report, null, 2));

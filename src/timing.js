@@ -10,16 +10,24 @@ function measure(trace, name, action) {
   } catch (error) { end(); throw error; }
 }
 
+function timingLimit(value) {
+  return Number.isSafeInteger(value) && value >= 0 ? value : 100;
+}
+
 class TimingLog {
   constructor(limit = 100, clock = () => performance.now()) {
-    this.records = []; this.limit = limit; this.clock = clock; this.generation = 0; this.sequence = 0;
+    this.records = []; this.limit = timingLimit(limit); this.clock = clock; this.generation = 0; this.sequence = 0;
   }
   clear() { this.records.length = 0; this.generation++; }
+  setLimit(value) {
+    this.limit = timingLimit(value);
+    if (this.limit && this.records.length > this.limit) this.records.splice(0, this.records.length - this.limit);
+  }
   start(details) {
     const start = this.clock(), generation = this.generation;
     const record = { id: ++this.sequence, time: new Date().toISOString(), ...details, status: "pending", stages: [] };
     this.records.push(record);
-    if (this.records.length > this.limit) this.records.shift();
+    if (this.limit && this.records.length > this.limit) this.records.shift();
     const valid = () => generation === this.generation;
     const elapsed = () => Math.round((this.clock() - start) * 100) / 100;
     return {
@@ -54,4 +62,4 @@ class TimingLog {
   }
 }
 
-module.exports = { TimingLog, measure };
+module.exports = { TimingLog, measure, timingLimit };

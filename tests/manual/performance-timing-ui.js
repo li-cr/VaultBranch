@@ -3,7 +3,7 @@
   const p = app.plugins.plugins.vaultbranch;
   if (!p || [...p.editSessions.values()].some(s => s.dirty || s.saving)) throw Error("Save drafts first.");
   if (p.diffNavigationTask) await p.diffNavigationTask;
-  const saved = { logging: p.settings.performanceLogging, autosave: p.settings.diffAutosave, ensureReady: p.ensureReady, editorSession: p.editorSession };
+  const saved = { logging: p.settings.performanceLogging, limit: p.settings.performanceLogLimit, autosave: p.settings.diffAutosave, ensureReady: p.ensureReady, editorSession: p.editorSession };
   const files = [], results = [];
   const check = (value, name) => { if (!value) throw Error(name); results.push(name); };
   let leaf, staged, release, pending, modal, clipboardWrite;
@@ -24,6 +24,13 @@
     check(record.stages.some(s => s.name === "git:status") && record.stages.some(s => s.name === "git:ls-files"), "live Git status and index reads appear in the trace");
     check(record.stages.some(s => s.name === "create-editor") && record.stages.some(s => s.name === "verify-after-render"), "editor creation and required final verification appear separately");
     check(record.source === "command" && !record.trusted, "programmatic openings are not mislabeled as GUI clicks");
+    await p.updateSetting("performanceLogLimit", 1);
+    check((await p.loadData()).performanceLogLimit === 1 && p.timingLog.records.length === 1, "retention limit persists and trims immediately");
+    await p.updateSetting("performanceLogLimit", 0);
+    for (let n = 0; n < 110; n++) p.startDiffTiming(entry, "unstaged").finish("complete");
+    check(p.timingLog.records.length === 111 && JSON.parse(p.timingReport()).limit === 0, "unlimited retention keeps more than 100 records and appears in export");
+    await p.updateSetting("performanceLogLimit", 2);
+    check(p.timingLog.records.length === 2, "lowering unlimited retention retains the latest two records");
     check(!JSON.stringify(leaf.view.getState()).includes("stages") && !JSON.stringify(await p.loadData()).includes("stages"), "timing records are absent from workspace drafts and persisted preferences");
     check(record.path === files[0].path && !JSON.stringify(record).includes('{"value":'), "trace contains relative path and no file body");
     await p.openDiff(entry, "staged"); record = p.timingLog.records.at(-1);
@@ -60,7 +67,7 @@
     if (leaf) { await leaf.view.session?.reload(); await leaf.detach(); }
     if (staged) await p.git.run(["rm", "--cached", "--force", "--", staged]);
     for (const file of files) if (app.vault.getAbstractFileByPath(file.path)) await app.vault.trash(file, false);
-    await p.updateSetting("diffAutosave", saved.autosave); await p.updateSetting("performanceLogging", saved.logging);
+    await p.updateSetting("diffAutosave", saved.autosave); await p.updateSetting("performanceLogging", saved.logging); await p.updateSetting("performanceLogLimit", saved.limit);
     await p.refresh();
   }
 })()
