@@ -12,15 +12,19 @@
   const edited = base.replace("line 20\n", "change 20\n").replace("line 60\n", "change 60\n").replace("line 100\n", "");
   const file = await app.vault.create(name, base);
   const saved = { navigation: p.settings.showDiffNavigation, collapse: p.settings.collapseUnchanged, autosave: p.settings.diffAutosave, language: p.settings.language };
-  let leaf, historyLeaf, root, original;
+  const scheduleRefresh = p.scheduleRefresh, lastAutoRefresh = p.lastAutoRefresh;
+  let leaf, historyLeaf, root, original, staged = false;
   const controls = view => view.contentEl.querySelectorAll(".vaultbranch-diff-navigation button");
   const click = async (view, index) => { controls(view)[index].click(); await pause(90); };
   const key = (editor, value) => editor.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: value, code: "Key" + value.toUpperCase(), ctrlKey: true, bubbles: true }));
   try {
+    if (p.refreshTask) await p.refreshTask;
+    p.refreshSoon?.cancel(); p.scheduleRefresh = () => {}; p.lastAutoRefresh = Date.now() + 3600000;
     await p.updateSetting("diffAutosave", false);
     await p.updateSetting("showDiffNavigation", true);
     await p.updateSetting("collapseUnchanged", true);
     await p.git.stage([name]);
+    staged = true;
     const index = await p.git.run(["show", ":" + name]);
     await app.vault.modify(file, edited);
     leaf = await p.openDiff({ path: name, index: "A", worktree: "M" }, "unstaged");
@@ -104,10 +108,11 @@
     if (leaf) { await leaf.view.session?.reload(); await leaf.detach(); }
     await historyLeaf?.detach();
     if (original) { p.git = original.git; p.ready = original.ready; p.status = original.status; p.lastAutoRefresh = original.lastAutoRefresh; }
-    await p.git.run(["rm", "--cached", "-f", "--", name]);
+    if (staged) await p.git.run(["rm", "--cached", "-f", "--", name]);
     if (app.vault.getAbstractFileByPath(name)) await app.vault.trash(file, false);
     for (const [key, value] of [["diffAutosave", saved.autosave], ["collapseUnchanged", saved.collapse], ["showDiffNavigation", saved.navigation], ["language", saved.language]]) await p.updateSetting(key, value);
     if (root) await require("node:fs/promises").rm(root, { recursive: true, force: true });
+    p.scheduleRefresh = scheduleRefresh; p.lastAutoRefresh = lastAutoRefresh;
     await p.refresh();
     window.removeEventListener("error", onError); window.removeEventListener("unhandledrejection", onError);
   }
