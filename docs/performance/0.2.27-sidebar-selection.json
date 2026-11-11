@@ -1,0 +1,796 @@
+{
+  "baselineCommit": "2d5f38a",
+  "candidate": "0.2.27 runtime, measured before version metadata bump",
+  "initialBaseline": {
+    "environment": {
+      "obsidian": "1.15.0",
+      "platform": "win32 10.0.19045",
+      "node": "v24.22.1",
+      "electron": "43.8.4",
+      "plugin": "0.2.26"
+    },
+    "method": "Same live note_test vault; synthetic sidebar status only, 10/100/1000 changed files. One discarded warm-up then five measured batches/size. Each batch alternates two actual file-row clicks; openDiff is replaced by a recorder. Includes click handler, selection update and synchronous layout, excludes Git/file reads, editor opening, final paint and cold startup. Setup/full render outside timing. No Git mutations. Original methods, status, selection and collapsed folders restored afterward.",
+    "samples": [
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 144.9,
+        "perClickMs": 14.49
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 93,
+        "perClickMs": 9.3
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 68,
+        "perClickMs": 6.8
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 73.9,
+        "perClickMs": 7.39
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 60.7,
+        "perClickMs": 6.07
+      },
+      {
+        "size": 10,
+        "nodesBefore": 252,
+        "retainedAfterClick": 0
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 402.3,
+        "perClickMs": 40.23
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 397.4,
+        "perClickMs": 39.74
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 435.1,
+        "perClickMs": 43.51
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 686.1,
+        "perClickMs": 68.61
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 498.8,
+        "perClickMs": 49.88
+      },
+      {
+        "size": 100,
+        "nodesBefore": 2272,
+        "retainedAfterClick": 0
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 2045,
+        "perClickMs": 409
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 1989.8,
+        "perClickMs": 397.96
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 1865.2,
+        "perClickMs": 373.04
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 1754.9,
+        "perClickMs": 350.98
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 1961.1,
+        "perClickMs": 392.22
+      },
+      {
+        "size": 1000,
+        "nodesBefore": 22522,
+        "retainedAfterClick": 0
+      }
+    ],
+    "summary": {
+      "10": {
+        "median": 7.39,
+        "range": [
+          6.07,
+          14.49
+        ]
+      },
+      "100": {
+        "median": 43.51,
+        "range": [
+          39.74,
+          68.61
+        ]
+      },
+      "1000": {
+        "median": 392.22,
+        "range": [
+          350.98,
+          409
+        ]
+      }
+    },
+    "gitCalls": 0,
+    "checks": [
+      "10/0: correct diff requested",
+      "10/0: one selected row",
+      "10/0: scroll retained",
+      "10/1: correct diff requested",
+      "10/1: one selected row",
+      "10/1: scroll retained",
+      "10/2: correct diff requested",
+      "10/2: one selected row",
+      "10/2: scroll retained",
+      "10/3: correct diff requested",
+      "10/3: one selected row",
+      "10/3: scroll retained",
+      "10/4: correct diff requested",
+      "10/4: one selected row",
+      "10/4: scroll retained",
+      "10/5: correct diff requested",
+      "10/5: one selected row",
+      "10/5: scroll retained",
+      "100/0: correct diff requested",
+      "100/0: one selected row",
+      "100/0: scroll retained",
+      "100/1: correct diff requested",
+      "100/1: one selected row",
+      "100/1: scroll retained",
+      "100/2: correct diff requested",
+      "100/2: one selected row",
+      "100/2: scroll retained",
+      "100/3: correct diff requested",
+      "100/3: one selected row",
+      "100/3: scroll retained",
+      "100/4: correct diff requested",
+      "100/4: one selected row",
+      "100/4: scroll retained",
+      "100/5: correct diff requested",
+      "100/5: one selected row",
+      "100/5: scroll retained",
+      "1000/0: correct diff requested",
+      "1000/0: one selected row",
+      "1000/0: scroll retained",
+      "1000/1: correct diff requested",
+      "1000/1: one selected row",
+      "1000/1: scroll retained",
+      "1000/2: correct diff requested",
+      "1000/2: one selected row",
+      "1000/2: scroll retained",
+      "1000/3: correct diff requested",
+      "1000/3: one selected row",
+      "1000/3: scroll retained",
+      "1000/4: correct diff requested",
+      "1000/4: one selected row",
+      "1000/4: scroll retained",
+      "1000/5: correct diff requested",
+      "1000/5: one selected row",
+      "1000/5: scroll retained",
+      "selection benchmark performs no Git calls"
+    ]
+  },
+  "initialCandidate": {
+    "environment": {
+      "obsidian": "1.15.0",
+      "platform": "win32 10.0.19045",
+      "node": "v24.22.1",
+      "electron": "43.8.4",
+      "plugin": "0.2.26"
+    },
+    "method": "Same live note_test vault; synthetic sidebar status only, 10/100/1000 changed files. One discarded warm-up then five measured batches/size. Each batch alternates two actual file-row clicks; openDiff is replaced by a recorder. Includes click handler, selection update and synchronous layout, excludes Git/file reads, editor opening, final paint and cold startup. Setup/full render outside timing. No Git mutations. Original methods, status, selection and collapsed folders restored afterward.",
+    "samples": [
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 2.4,
+        "perClickMs": 0.24
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 4.2,
+        "perClickMs": 0.42
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 2.4,
+        "perClickMs": 0.24
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 2.3,
+        "perClickMs": 0.23
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 2.3,
+        "perClickMs": 0.23
+      },
+      {
+        "size": 10,
+        "nodesBefore": 252,
+        "retainedAfterClick": 252
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 6.3,
+        "perClickMs": 0.63
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 3,
+        "perClickMs": 0.3
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 3,
+        "perClickMs": 0.3
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 3.9,
+        "perClickMs": 0.39
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 3,
+        "perClickMs": 0.3
+      },
+      {
+        "size": 100,
+        "nodesBefore": 2272,
+        "retainedAfterClick": 2272
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 2,
+        "perClickMs": 0.4
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 2.2,
+        "perClickMs": 0.44
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 3.6,
+        "perClickMs": 0.72
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 3.8,
+        "perClickMs": 0.76
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 1.9,
+        "perClickMs": 0.38
+      },
+      {
+        "size": 1000,
+        "nodesBefore": 22522,
+        "retainedAfterClick": 22522
+      }
+    ],
+    "summary": {
+      "10": {
+        "median": 0.24,
+        "range": [
+          0.23,
+          0.42
+        ]
+      },
+      "100": {
+        "median": 0.3,
+        "range": [
+          0.3,
+          0.63
+        ]
+      },
+      "1000": {
+        "median": 0.44,
+        "range": [
+          0.38,
+          0.76
+        ]
+      }
+    },
+    "gitCalls": 0,
+    "checks": [
+      "10/0: correct diff requested",
+      "10/0: one selected row",
+      "10/0: scroll retained",
+      "10/1: correct diff requested",
+      "10/1: one selected row",
+      "10/1: scroll retained",
+      "10/2: correct diff requested",
+      "10/2: one selected row",
+      "10/2: scroll retained",
+      "10/3: correct diff requested",
+      "10/3: one selected row",
+      "10/3: scroll retained",
+      "10/4: correct diff requested",
+      "10/4: one selected row",
+      "10/4: scroll retained",
+      "10/5: correct diff requested",
+      "10/5: one selected row",
+      "10/5: scroll retained",
+      "100/0: correct diff requested",
+      "100/0: one selected row",
+      "100/0: scroll retained",
+      "100/1: correct diff requested",
+      "100/1: one selected row",
+      "100/1: scroll retained",
+      "100/2: correct diff requested",
+      "100/2: one selected row",
+      "100/2: scroll retained",
+      "100/3: correct diff requested",
+      "100/3: one selected row",
+      "100/3: scroll retained",
+      "100/4: correct diff requested",
+      "100/4: one selected row",
+      "100/4: scroll retained",
+      "100/5: correct diff requested",
+      "100/5: one selected row",
+      "100/5: scroll retained",
+      "1000/0: correct diff requested",
+      "1000/0: one selected row",
+      "1000/0: scroll retained",
+      "1000/1: correct diff requested",
+      "1000/1: one selected row",
+      "1000/1: scroll retained",
+      "1000/2: correct diff requested",
+      "1000/2: one selected row",
+      "1000/2: scroll retained",
+      "1000/3: correct diff requested",
+      "1000/3: one selected row",
+      "1000/3: scroll retained",
+      "1000/4: correct diff requested",
+      "1000/4: one selected row",
+      "1000/4: scroll retained",
+      "1000/5: correct diff requested",
+      "1000/5: one selected row",
+      "1000/5: scroll retained",
+      "selection benchmark performs no Git calls"
+    ]
+  },
+  "recheckBaseline": {
+    "environment": {
+      "obsidian": "1.15.0",
+      "platform": "win32 10.0.19045",
+      "node": "v24.22.1",
+      "electron": "43.8.4",
+      "plugin": "0.2.26"
+    },
+    "method": "Same live note_test vault; synthetic sidebar status only, 10/100/1000 changed files. One discarded warm-up then five measured batches/size. Each batch alternates two actual file-row clicks; openDiff is replaced by a recorder. Includes click handler, selection update and synchronous layout, excludes Git/file reads, editor opening, final paint and cold startup. Setup/full render outside timing. No Git mutations. Original methods, status, selection and collapsed folders restored afterward.",
+    "samples": [
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 45.3,
+        "perClickMs": 4.53
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 38.8,
+        "perClickMs": 3.88
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 30.3,
+        "perClickMs": 3.03
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 31.8,
+        "perClickMs": 3.18
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 35.4,
+        "perClickMs": 3.54
+      },
+      {
+        "size": 10,
+        "nodesBefore": 252,
+        "retainedAfterClick": 0
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 243.8,
+        "perClickMs": 24.38
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 245.7,
+        "perClickMs": 24.57
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 258.8,
+        "perClickMs": 25.88
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 275.4,
+        "perClickMs": 27.54
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 257.8,
+        "perClickMs": 25.78
+      },
+      {
+        "size": 100,
+        "nodesBefore": 2272,
+        "retainedAfterClick": 0
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 1060.2,
+        "perClickMs": 212.04
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 1267.7,
+        "perClickMs": 253.54
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 1141.3,
+        "perClickMs": 228.26
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 987.6,
+        "perClickMs": 197.52
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 1041,
+        "perClickMs": 208.2
+      },
+      {
+        "size": 1000,
+        "nodesBefore": 22522,
+        "retainedAfterClick": 0
+      }
+    ],
+    "summary": {
+      "10": {
+        "median": 3.54,
+        "range": [
+          3.03,
+          4.53
+        ]
+      },
+      "100": {
+        "median": 25.78,
+        "range": [
+          24.38,
+          27.54
+        ]
+      },
+      "1000": {
+        "median": 212.04,
+        "range": [
+          197.52,
+          253.54
+        ]
+      }
+    },
+    "gitCalls": 0,
+    "checks": [
+      "10/0: correct diff requested",
+      "10/0: one selected row",
+      "10/0: scroll retained",
+      "10/1: correct diff requested",
+      "10/1: one selected row",
+      "10/1: scroll retained",
+      "10/2: correct diff requested",
+      "10/2: one selected row",
+      "10/2: scroll retained",
+      "10/3: correct diff requested",
+      "10/3: one selected row",
+      "10/3: scroll retained",
+      "10/4: correct diff requested",
+      "10/4: one selected row",
+      "10/4: scroll retained",
+      "10/5: correct diff requested",
+      "10/5: one selected row",
+      "10/5: scroll retained",
+      "100/0: correct diff requested",
+      "100/0: one selected row",
+      "100/0: scroll retained",
+      "100/1: correct diff requested",
+      "100/1: one selected row",
+      "100/1: scroll retained",
+      "100/2: correct diff requested",
+      "100/2: one selected row",
+      "100/2: scroll retained",
+      "100/3: correct diff requested",
+      "100/3: one selected row",
+      "100/3: scroll retained",
+      "100/4: correct diff requested",
+      "100/4: one selected row",
+      "100/4: scroll retained",
+      "100/5: correct diff requested",
+      "100/5: one selected row",
+      "100/5: scroll retained",
+      "1000/0: correct diff requested",
+      "1000/0: one selected row",
+      "1000/0: scroll retained",
+      "1000/1: correct diff requested",
+      "1000/1: one selected row",
+      "1000/1: scroll retained",
+      "1000/2: correct diff requested",
+      "1000/2: one selected row",
+      "1000/2: scroll retained",
+      "1000/3: correct diff requested",
+      "1000/3: one selected row",
+      "1000/3: scroll retained",
+      "1000/4: correct diff requested",
+      "1000/4: one selected row",
+      "1000/4: scroll retained",
+      "1000/5: correct diff requested",
+      "1000/5: one selected row",
+      "1000/5: scroll retained",
+      "selection benchmark performs no Git calls"
+    ]
+  },
+  "recheckCandidate": {
+    "environment": {
+      "obsidian": "1.15.0",
+      "platform": "win32 10.0.19045",
+      "node": "v24.22.1",
+      "electron": "43.8.4",
+      "plugin": "0.2.26"
+    },
+    "method": "Same live note_test vault; synthetic sidebar status only, 10/100/1000 changed files. One discarded warm-up then five measured batches/size. Each batch alternates two actual file-row clicks; openDiff is replaced by a recorder. Includes click handler, selection update and synchronous layout, excludes Git/file reads, editor opening, final paint and cold startup. Setup/full render outside timing. No Git mutations. Original methods, status, selection and collapsed folders restored afterward.",
+    "samples": [
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 2.5,
+        "perClickMs": 0.25
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 2.7,
+        "perClickMs": 0.27
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 3,
+        "perClickMs": 0.3
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 3,
+        "perClickMs": 0.3
+      },
+      {
+        "size": 10,
+        "clicks": 10,
+        "totalMs": 2.4,
+        "perClickMs": 0.24
+      },
+      {
+        "size": 10,
+        "nodesBefore": 252,
+        "retainedAfterClick": 252
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 2.6,
+        "perClickMs": 0.26
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 2.4,
+        "perClickMs": 0.24
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 2.2,
+        "perClickMs": 0.22
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 3.4,
+        "perClickMs": 0.34
+      },
+      {
+        "size": 100,
+        "clicks": 10,
+        "totalMs": 2.9,
+        "perClickMs": 0.29
+      },
+      {
+        "size": 100,
+        "nodesBefore": 2272,
+        "retainedAfterClick": 2272
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 1.8,
+        "perClickMs": 0.36
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 3,
+        "perClickMs": 0.6
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 2.2,
+        "perClickMs": 0.44
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 2.4,
+        "perClickMs": 0.48
+      },
+      {
+        "size": 1000,
+        "clicks": 5,
+        "totalMs": 1.8,
+        "perClickMs": 0.36
+      },
+      {
+        "size": 1000,
+        "nodesBefore": 22522,
+        "retainedAfterClick": 22522
+      }
+    ],
+    "summary": {
+      "10": {
+        "median": 0.27,
+        "range": [
+          0.24,
+          0.3
+        ]
+      },
+      "100": {
+        "median": 0.26,
+        "range": [
+          0.22,
+          0.34
+        ]
+      },
+      "1000": {
+        "median": 0.44,
+        "range": [
+          0.36,
+          0.6
+        ]
+      }
+    },
+    "gitCalls": 0,
+    "checks": [
+      "10/0: correct diff requested",
+      "10/0: one selected row",
+      "10/0: scroll retained",
+      "10/1: correct diff requested",
+      "10/1: one selected row",
+      "10/1: scroll retained",
+      "10/2: correct diff requested",
+      "10/2: one selected row",
+      "10/2: scroll retained",
+      "10/3: correct diff requested",
+      "10/3: one selected row",
+      "10/3: scroll retained",
+      "10/4: correct diff requested",
+      "10/4: one selected row",
+      "10/4: scroll retained",
+      "10/5: correct diff requested",
+      "10/5: one selected row",
+      "10/5: scroll retained",
+      "100/0: correct diff requested",
+      "100/0: one selected row",
+      "100/0: scroll retained",
+      "100/1: correct diff requested",
+      "100/1: one selected row",
+      "100/1: scroll retained",
+      "100/2: correct diff requested",
+      "100/2: one selected row",
+      "100/2: scroll retained",
+      "100/3: correct diff requested",
+      "100/3: one selected row",
+      "100/3: scroll retained",
+      "100/4: correct diff requested",
+      "100/4: one selected row",
+      "100/4: scroll retained",
+      "100/5: correct diff requested",
+      "100/5: one selected row",
+      "100/5: scroll retained",
+      "1000/0: correct diff requested",
+      "1000/0: one selected row",
+      "1000/0: scroll retained",
+      "1000/1: correct diff requested",
+      "1000/1: one selected row",
+      "1000/1: scroll retained",
+      "1000/2: correct diff requested",
+      "1000/2: one selected row",
+      "1000/2: scroll retained",
+      "1000/3: correct diff requested",
+      "1000/3: one selected row",
+      "1000/3: scroll retained",
+      "1000/4: correct diff requested",
+      "1000/4: one selected row",
+      "1000/4: scroll retained",
+      "1000/5: correct diff requested",
+      "1000/5: one selected row",
+      "1000/5: scroll retained",
+      "selection benchmark performs no Git calls"
+    ]
+  }
+}

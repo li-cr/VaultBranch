@@ -93,7 +93,7 @@ class SourceControlView extends ItemView {
     if (!this.treeEl) return;
     const { status, busy, error } = this.plugin;
     this.updateButtons();
-    const snapshot = JSON.stringify([status, busy, error, this.selected, [...this.collapsed], this.plugin.settings.language]);
+    const snapshot = JSON.stringify([status, busy, error, [...this.collapsed], this.plugin.settings.language]);
     if (this.renderSnapshot === snapshot) return;
     this.renderSnapshot = snapshot;
     this.branchEl.replaceChildren();
@@ -206,7 +206,8 @@ class SourceControlView extends ItemView {
       el(open, "span", "vaultbranch-file-name", file.path.split("/").at(-1));
       open.addEventListener("click", () => {
         this.selected = `${area}:${file.path}`;
-        this.render();
+        this.treeEl.querySelector(".vaultbranch-file-row.is-selected")?.classList.remove("is-selected");
+        row.classList.add("is-selected");
         (area === "conflicts" ? this.plugin.openConflict(file.path) : this.plugin.openDiff(file, area)).catch((error) => new Notice(error.message));
       });
       if (area !== "conflicts") {

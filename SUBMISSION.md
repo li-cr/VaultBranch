@@ -14,7 +14,7 @@ Description:
 
 > Manage Git changes, browse a commit graph, restore stashes, and resolve conflicts in your vault.
 
-Current release tag: `0.2.26` (must match `manifest.json` exactly).
+Current release tag: `0.2.27` (must match `manifest.json` exactly).
 
 ## Before submitting
 
