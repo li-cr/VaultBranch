@@ -51,6 +51,7 @@ module.exports = class MyGitPlugin extends Plugin {
 
   onunload() {
     this.unloaded = true;
+    if (this.settings?.renderLooseTables) for (const leaf of this.app.workspace.getLeavesOfType("markdown")) if (leaf.view.getMode?.() === "preview") leaf.view.previewMode?.rerender(true);
     this.timingLog?.clear();
     this.refreshSoon?.cancel();
     window.clearTimeout(this.dateTimer);
@@ -108,6 +109,13 @@ module.exports = class MyGitPlugin extends Plugin {
     this.settings[key] = value;
     if (key === "performanceLogging" && !value) this.timingLog?.clear();
     if (key === "performanceLogLimit") this.timingLog?.setLimit(value);
+    if (key === "renderLooseTables") {
+      this.tableExtensions.length = 0;
+      if (value) this.tableExtensions.push(require("./table-editor.js").tableEditorExtension(this));
+      this.app.workspace.updateOptions();
+      for (const leaf of this.app.workspace.getLeavesOfType("markdown")) if (leaf.view.getMode?.() === "preview") leaf.view.previewMode.rerender(true);
+      return true;
+    }
     await this.saveData(this.settings);
     if (key === "performanceLogging" || key === "performanceLogLimit") return true;
     if (key === "diffAutosave") for (const session of this.editors.sessions.values()) session.setEnabled(value);

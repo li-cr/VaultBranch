@@ -3,6 +3,9 @@
 // Chinese source strings are the fallback; tagged templates keep values out of translation keys.
 let language = "zh";
 const english = {
+  "兼容无空行表格": "Tables without a blank line",
+  "默认关闭。在阅读模式和实时预览中显示紧接正文的表格，不修改笔记原文。实时预览中点击表格可编辑源码。": "Off by default. Render tables immediately after text in Reading view and Live Preview without changing the note. Click a table in Live Preview to edit its source.",
+  "点击表格编辑源码": "Click to edit table source",
   "查看 SVG 源码": "View SVG source",
   "预览 SVG": "Preview SVG",
   "SVG 无法预览，请切换源码检查。": "Cannot preview this SVG. Switch to source to inspect it.",
