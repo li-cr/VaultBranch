@@ -346,3 +346,13 @@
   .workspace-leaf-content .vaultbranch-history-row .vaultbranch-history-author { display: none; }
   .vaultbranch-conflict-sources { grid-template-columns: 1fr; }
 }
+.vaultbranch-svg-mode:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.vaultbranch-svg-mode[hidden] { display: none; }
+.vaultbranch-svg-toggle { margin-left: auto; }
+.vaultbranch-svg-toggle svg { width: 15px; height: 15px; }
+.vaultbranch-diff-description:has(.vaultbranch-svg-toggle) { display: flex; align-items: center; gap: 8px; }

@@ -13,6 +13,7 @@ const { collapseOptions, updateCollapse, readOnlyMerge, updateDiffNavigation } =
 const { updateSyntaxHighlight } = require("./highlight.js");
 const { measure } = require("../timing.js");
 const { prepareImages } = require("./images.js");
+const { isSvg, prepareSvg, SvgComparison } = require("./svg.js");
 
 class DiffView extends GitView {
   constructor(leaf, plugin) {
@@ -69,6 +70,20 @@ class DiffView extends GitView {
   async readComparison(file, area, unified, timing) {
     await this.plugin.ensureReady();
     const warnings = [];
+    if (isSvg(file) && ["unstaged", "staged", "history"].includes(area)) {
+      let session;
+      try {
+        if (area === "unstaged" && file.worktree !== "D") session = await this.plugin.editors.acquire(file.path, true, timing);
+        const versions = session ? { left: session.draft.index, right: session.draft.text } : area === "unstaged"
+          ? { left: (await this.plugin.git.comparisonVersions(file, "staged", timing)).right, right: "" }
+          : await this.plugin.git.comparisonVersions(file, area, timing);
+        return { session, versions, svg: await prepareSvg(this.contentEl.ownerDocument, versions), warnings };
+      } catch (error) {
+        if (session) this.plugin.editors.release(file.path, session);
+        warnings.push(error.message);
+        return { result: area === "history" ? await this.plugin.git.commitDiff(file, timing) : await this.plugin.git.diff(file, area, timing), warnings };
+      }
+    }
     if (["unstaged", "staged", "history"].includes(area) && (this.plugin.git.imageType?.(file.path) || this.plugin.git.imageType?.(file.oldPath || ""))) {
       const versions = await this.plugin.git.imageVersions(file, area, timing);
       return { images: await prepareImages(this.contentEl.ownerDocument, versions.images), warnings };
@@ -86,9 +101,10 @@ class DiffView extends GitView {
 
   async render(replace = false, timing) {
     if (this.loading && !replace) return;
-    if (this.merge && this.session && !replace) {
+    if ((this.merge || this.svg) && this.session && !replace) {
       this.updateEditor();
       await this.session.sync();
+      await this.svg?.refresh();
       return;
     }
     const request = ++this.request;
@@ -103,6 +119,7 @@ class DiffView extends GitView {
       timing?.mark("cancelledMs");
       if (loaded.session) this.plugin.editors.release(file.path, loaded.session);
       loaded.images?.destroy();
+      loaded.svg?.images?.destroy();
       return;
     }
     // Commit the complete page in one task, before the browser can paint it.
@@ -119,14 +136,31 @@ class DiffView extends GitView {
     button(header, "file-pen-line", t("打开文件"), () => this.plugin.openFile(this.file.path, this.graphReturn));
     const editable = this.area === "unstaged" && this.file.worktree !== "D";
     if (!editable || loaded.images || this.plugin.git.imageType?.(file.path)) {
-      if (!loaded.images && !this.plugin.git.imageType?.(file.path)) button(header, this.unified ? "columns-2" : "list", this.unified ? t("切换左右对比") : t("切换统一差异"), async () => { this.unified = !this.unified; await this.render(); });
+      if (!loaded.svg && !loaded.images && !this.plugin.git.imageType?.(file.path)) button(header, this.unified ? "columns-2" : "list", this.unified ? t("切换左右对比") : t("切换统一差异"), async () => { this.unified = !this.unified; await this.render(); });
       button(header, "refresh-cw", t("刷新差异"), () => this.render());
     }
-    el(this.contentEl, "div", "vaultbranch-diff-description", this.area === "history" ? t`提交 ${this.file.commit.slice(0, 8)} · 相对第一父提交` : this.area === "staged" ? t("HEAD → 暂存区") : t("暂存区 → 工作区"));
+    const description = el(this.contentEl, "div", "vaultbranch-diff-description", this.area === "history" ? t`提交 ${this.file.commit.slice(0, 8)} · 相对第一父提交` : this.area === "staged" ? t("HEAD → 暂存区") : t("暂存区 → 工作区"));
     const body = el(this.contentEl, "div", "vaultbranch-diff-body");
     try {
       if (loaded.error) throw loaded.error;
       for (const warning of loaded.warnings) el(this.contentEl, "div", "vaultbranch-editor-warning", warning);
+      if (loaded.svg) {
+        if (loaded.session) { this.session = loaded.session; this.sessionPath = file.path; }
+        const labels = this.area === "history" ? [t("父提交"), t("当前提交")] : this.area === "staged" ? ["HEAD", t("暂存区（只读）")] : [t("暂存区（只读）"), t("工作区")];
+        this.svg = new SvgComparison(this, body, description, loaded.svg, labels,
+          () => this.session ? { left: this.session.draft.index, right: this.session.draft.text } : loaded.versions,
+          source => {
+            if (this.session) this.renderEditor(source);
+            else { this.merge = readOnlyMerge(source, loaded.versions, labels, this.plugin.settings); this.collapseEnabled = Boolean(this.plugin.settings.collapseUnchanged); }
+          });
+        if (this.session) {
+          this.svgListener = () => { void this.svg?.refresh(); };
+          this.session.listeners.add(this.svgListener);
+        }
+        timing?.ready(this.contentEl.ownerDocument, () => request === this.request);
+        if (this.session) { await measure(timing, "verify-after-render", () => this.session.sync(timing)); await this.svg?.refresh(); }
+        return;
+      }
       if (loaded.images) {
         this.images = loaded.images;
         this.images.render(body, this.area === "history" ? [t("父提交"), t("当前提交")] : this.area === "staged" ? ["HEAD", t("暂存区")] : [t("暂存区"), t("工作区")]);
@@ -184,8 +218,10 @@ class DiffView extends GitView {
   }
 
   destroyEditor() {
+    this.svg?.destroy(); this.svg = null;
     this.images?.destroy(); this.images = null;
     const session = this.session;
+    session?.listeners.delete(this.svgListener); this.svgListener = null;
     session?.listeners.delete(this.editorListener);
     this.merge?.destroy();
     this.merge = null;

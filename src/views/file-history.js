@@ -6,6 +6,7 @@ const { readOnlyMerge, updateCollapse, updateDiffNavigation } = require("./merge
 const { updateSyntaxHighlight } = require("./highlight.js");
 const { drawGraph } = require("./graph.js");
 const { prepareImages } = require("./images.js");
+const { isSvg, prepareSvg, SvgComparison } = require("./svg.js");
 
 class FileHistoryView extends GitView {
   constructor(leaf, plugin) {
@@ -30,8 +31,12 @@ class FileHistoryView extends GitView {
     await super.setState(state, result);
   }
 
-  destroyMerge() { this.images?.destroy(); this.images = null; this.merge?.destroy(); this.merge = null; this.updateDiffNavigation(); }
+  destroyMerge() { this.svg?.destroy(); this.svg = null; this.images?.destroy(); this.images = null; this.merge?.destroy(); this.merge = null; this.updateDiffNavigation(); }
   async readComparison(commit) {
+    if (isSvg(commit)) {
+      const versions = await this.plugin.git.comparisonVersions(commit, "history");
+      return { versions, svg: await prepareSvg(this.contentEl.ownerDocument, versions) };
+    }
     if (this.plugin.git.imageType?.(commit.path) || this.plugin.git.imageType?.(commit.oldPath || "")) {
       const versions = await this.plugin.git.imageVersions(commit, "history");
       return { images: await prepareImages(this.contentEl.ownerDocument, versions.images) };
@@ -66,7 +71,7 @@ class FileHistoryView extends GitView {
         }
       }
     } catch (error) { prepared = { error }; }
-    if (request !== this.request) { prepared?.images?.destroy(); return; }
+    if (request !== this.request) { prepared?.images?.destroy(); prepared?.svg?.images?.destroy(); return; }
     const scroll = this.contentEl.querySelector(".vaultbranch-file-history-sidebar")?.scrollTop || 0;
     this.destroyMerge();
     this.contentEl.empty();
@@ -137,7 +142,7 @@ class FileHistoryView extends GitView {
       if (prepared?.error) throw prepared.error;
       loaded = prepared || await this.readComparison(commit);
     } catch (error) { failure = error; }
-    if (request !== this.detailRequest || details !== this.detailsEl) { loaded?.images?.destroy(); return; }
+    if (request !== this.detailRequest || details !== this.detailsEl) { loaded?.images?.destroy(); loaded?.svg?.images?.destroy(); return; }
     this.destroyMerge();
     this.selected = commit.hash;
     const row = this.rows[this.commits.indexOf(commit)];
@@ -156,6 +161,13 @@ class FileHistoryView extends GitView {
     const body = el(details, "div", "vaultbranch-diff-body");
     try {
       if (failure) throw failure;
+      if (loaded.svg) {
+        this.svg = new SvgComparison(this, body, description, loaded.svg, [t("父提交（只读）"), t("当前提交（只读）")], () => loaded.versions, source => {
+          this.merge = readOnlyMerge(source, loaded.versions, [t("父提交（只读）"), t("当前提交（只读）")], this.plugin.settings);
+          this.collapseEnabled = Boolean(this.plugin.settings.collapseUnchanged);
+        });
+        return;
+      }
       if (loaded.images) {
         this.images = loaded.images;
         this.images.render(body, [t("父提交（只读）"), t("当前提交（只读）")]);

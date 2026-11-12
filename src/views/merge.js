@@ -11,7 +11,7 @@ function updateDiffNavigation(view) {
   const header = view.contentEl.querySelector(".vaultbranch-diff-header");
   if (!header) return;
   let controls = header.querySelector(".vaultbranch-diff-navigation");
-  if (!view.merge || !view.plugin.settings.showDiffNavigation) { controls?.remove(); return; }
+  if (!view.merge || view.svg?.preview || !view.plugin.settings.showDiffNavigation) { controls?.remove(); return; }
   if (!controls) {
     controls = el(header, "div", "vaultbranch-diff-navigation");
     for (const [icon, name, command] of [["arrow-up", "上一处差异", goToPreviousChunk], ["arrow-down", "下一处差异", goToNextChunk]]) {

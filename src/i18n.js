@@ -3,6 +3,11 @@
 // Chinese source strings are the fallback; tagged templates keep values out of translation keys.
 let language = "zh";
 const english = {
+  "查看 SVG 源码": "View SVG source",
+  "预览 SVG": "Preview SVG",
+  "SVG 无法预览，请切换源码检查。": "Cannot preview this SVG. Switch to source to inspect it.",
+  "源码": "Source",
+  "预览": "Preview",
   "滚轮缩放 · 放大后拖动 · 双击复原": "Scroll to zoom · Drag when zoomed · Double-click to reset",
   "图片超过 10 MB，请在外部查看。": "Image exceeds 10 MB. View it externally.",
   "此文件不支持图片预览。": "This file cannot be previewed as an image.",
