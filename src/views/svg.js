@@ -1,6 +1,7 @@
 "use strict";
 
 const { t } = require("../i18n.js");
+const { setIcon } = require("obsidian");
 const { el, button } = require("./shared.js");
 const { prepareImages } = require("./images.js");
 
@@ -25,7 +26,7 @@ class SvgComparison {
     this.sourceEl = el(body, "div", "vaultbranch-svg-mode");
     this.sourceEl.hidden = true;
     this.renderSource = renderSource;
-    this.toggle = button(toolbar, "code", t("查看 SVG 源码"), () => this.switchMode(), t("源码"));
+    this.toggle = button(toolbar, "code", t("查看 SVG 源码"), () => this.switchMode());
     this.toggle.classList.add("vaultbranch-svg-toggle");
     this.versions = prepared.versions;
     this.show(prepared);
@@ -67,7 +68,7 @@ class SvgComparison {
       const title = this.preview ? t("查看 SVG 源码") : t("预览 SVG");
       this.toggle.title = title;
       this.toggle.setAttribute("aria-label", title);
-      this.toggle.lastElementChild.textContent = this.preview ? t("源码") : t("预览");
+      setIcon(this.toggle.firstElementChild, this.preview ? "code" : "image");
       this.view.updateDiffNavigation();
       this.view.merge?.a.requestMeasure();
       this.view.merge?.b.requestMeasure();

@@ -353,6 +353,6 @@
   min-height: 0;
 }
 .vaultbranch-svg-mode[hidden] { display: none; }
-.vaultbranch-svg-toggle { margin-left: auto; }
+.vaultbranch-diff-description .vaultbranch-svg-toggle { margin-left: auto; width: 1lh; height: 1lh; padding: 0; font: inherit; }
 .vaultbranch-svg-toggle svg { width: 15px; height: 15px; }
 .vaultbranch-diff-description:has(.vaultbranch-svg-toggle) { display: flex; align-items: center; gap: 8px; }

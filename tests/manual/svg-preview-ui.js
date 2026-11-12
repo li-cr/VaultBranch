@@ -54,6 +54,11 @@
     check(view.svg.preview && !view.merge && view.session && images().length === 2, "Changed SVG defaults to decoded preview without creating CodeMirror");
     check(images()[0].naturalWidth === 120 && images()[1].naturalWidth === 80, "Changed preview compares index with worktree");
     check(view.svg.toggle.parentElement.classList.contains("vaultbranch-diff-description"), "mode switch sits at the right of the version-description row");
+    const description = view.svg.toggle.parentElement, plain = description.cloneNode(false);
+    plain.textContent = description.firstChild.textContent; description.parentElement.appendChild(plain);
+    const originalHeight = plain.getBoundingClientRect().height, modeHeight = description.getBoundingClientRect().height;
+    plain.remove();
+    check(Math.abs(originalHeight - modeHeight) < 1 && !view.svg.toggle.textContent && view.svg.toggle.querySelector("svg"), "icon-only switch preserves the original description row height");
     const screenshot = async name => {
       const output = window.__vbReleaseOptions?.outputDir || window.__vbSvgOutputDir;
       if (output) await fs.writeFile(path.join(output, name + ".png"), (await web.capturePage()).toPNG());
