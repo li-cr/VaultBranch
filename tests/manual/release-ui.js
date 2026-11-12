@@ -6,6 +6,7 @@
   const current = manager.plugins.vaultbranch;
   if (!current || [...(current.editors?.sessions || current.editSessions).values()].some(session => session.dirty || session.saving)) throw Error("Enable the plugin and save drafts first.");
   const target = path.join(app.vault.adapter.getBasePath(), current.manifest.dir);
+  const looseTablesEnabled = Boolean(current.settings.renderLooseTables);
   const legacyEnabled = Boolean(manager.plugins["my-git"]), reports = {}, checks = [];
   const originalTrash = app.vault.trash;
   app.vault.trash = async function (...args) {
@@ -45,6 +46,7 @@
     return { startup, switching, editing };
   }
   try {
+    await current.updateSetting("renderLooseTables", false);
     if (legacyEnabled) await manager.disablePlugin("my-git");
     reports.before = await measure("before", options.baselineBuild);
     reports.after = await measure("after", path.join(options.sourceRoot, "dist/vaultbranch"));
@@ -66,7 +68,7 @@
     delete window.__vbSwitchProfile;
     await install(path.join(options.sourceRoot, "dist/vaultbranch"));
     if (legacyEnabled) await manager.enablePlugin("my-git");
-    const plugin = manager.plugins.vaultbranch; await plugin.openSidebar(); await plugin.refresh();
+    const plugin = manager.plugins.vaultbranch; await plugin.updateSetting("renderLooseTables", looseTablesEnabled); await plugin.openSidebar(); await plugin.refresh();
     delete window.__vbReleaseOptions;
   }
 })()

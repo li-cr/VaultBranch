@@ -19,7 +19,7 @@ function harness(text, live = true) {
   } }, { filename: file });
   const extension = module.exports.tableEditorExtension({ settings: { renderLooseTables: true } });
   let state = EditorState.create({ doc: text, extensions: [editorLivePreviewField, editorInfoField, extension] });
-  return { scans, get state() { return state; }, get value() { return state.field(extension); }, update(spec) { state = state.update(spec).state; return this.value; } };
+  return { scans, get state() { return state; }, get value() { return state.field(extension); }, source(from = 0, to = state.doc.length) { return module.exports.tableSourceDecorations({ state, visibleRanges: [{ from, to }] }, this.value); }, update(spec) { state = state.update(spec).state; return this.value; } };
 }
 
 test("Live Preview widgets expose source at the cursor and never activate in Source mode", () => {
@@ -56,4 +56,27 @@ test("editing inside fenced code never creates widgets even in a separate inner 
   const text = "```md\n\nintro\n" + table + "\n\n```\n\nend", h = harness(text);
   h.update({ changes: { from: text.indexOf("intro") + 5, insert: " edit" } });
   assert.equal(h.value.tables.length, 0);
+});
+
+test("loose table source uses host table line and delimiter styles without marking escaped pipes", () => {
+  const text = "intro\n| A\\|B | Code |\n|---|---|\n| `x` | **value** |", h = harness(text, false), decorations = [];
+  h.source().between(0, text.length, (from, to, value) => decorations.push({ from, to, cls: value.spec.class }));
+  assert.equal(h.value.tables.length, 1);
+  assert.equal(h.value.decorations.size, 0);
+  assert.equal(decorations.filter(d => d.cls.startsWith("HyperMD-table-row")).length, 3);
+  assert.equal(decorations.filter(d => d.cls.startsWith("cm-hmd-table-sep")).length, 9);
+  assert.ok(!decorations.some(d => d.from === text.indexOf("\\|") + 1));
+  assert.equal(h.state.doc.toString(), text);
+  const live = harness(text);
+  assert.equal(live.source().size, 0);
+  live.update({ selection: { anchor: text.indexOf("Code") } });
+  assert.ok(live.source().size > 0);
+});
+
+test("source highlighting stays limited to visible lines of a large table", () => {
+  const text = "intro\n" + table + "\n" + "| ordinary table cell content | another ordinary cell with text |\n".repeat(20000);
+  const h = harness(text, false), line = h.state.doc.line(10000);
+  assert.ok(text.length > 1000000);
+  assert.ok(h.source(line.from, line.to).size <= 4);
+  assert.equal(h.state.doc.toString(), text);
 });

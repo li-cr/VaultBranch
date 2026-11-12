@@ -22,30 +22,35 @@ function tableHeader(header, separator) {
 // Top-level paragraphs only. Block syntax remains owned by Obsidian.
 function findLooseTables(text, offset = 0) {
   const lines = text.split("\n"), tables = [], blocked = [];
-  let position = offset, fence, block, blockStart = offset, previous = "", ticks = 0;
+  let position = offset, fence, fenceClose, block, blockStart = offset, previous = "", ticks = 0;
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].replace(/\r$/, ""), end = position + lines[i].length;
+    const line = lines[i].endsWith("\r") ? lines[i].slice(0, -1) : lines[i], end = position + lines[i].length;
+    if (!fence && !block && !/[|`~%<$]/.test(line) && !(i === 0 && offset === 0 && line === "---")) {
+      if (!line.trim()) ticks = 0;
+      previous = line; position = end + 1;
+      continue;
+    }
     if (fence) {
-      if (new RegExp(`^ {0,3}${fence[0]}{${fence.length},}\\s*$`).test(line)) { blocked.push({ from: blockStart, to: end, kind: "fence" }); fence = null; }
+      if (fenceClose.test(line)) { blocked.push({ from: blockStart, to: end, kind: "fence" }); fence = null; }
     } else if (block) {
       const closes = block === "frontmatter" ? /^(---|\.\.\.)\s*$/.test(line) : block === "html" ? !line.trim() : line.includes(block);
       if (closes) { blocked.push({ from: blockStart, to: end, kind: block }); block = null; }
     } else {
       const marker = line.match(/^ {0,3}(`{3,}|~{3,})/);
-      if (marker) { fence = marker[1]; blockStart = position; }
+      if (marker) { fence = marker[1]; fenceClose = new RegExp(`^ {0,3}${fence[0]}{${fence.length},}\\s*$`); blockStart = position; }
       else if (i === 0 && offset === 0 && line === "---") { block = "frontmatter"; blockStart = position; }
       else if (line.includes("<!--") && !line.includes("-->", line.indexOf("<!--") + 4)) { block = "-->"; blockStart = position; }
       else if (line.includes("%%") && line.indexOf("%%") === line.lastIndexOf("%%")) { block = "%%"; blockStart = position; }
       else if (line.trim() === "$$") { block = "$$"; blockStart = position; }
       else if (/^<(?:[a-zA-Z][\w-]*(?:\s|>|\/)|!)/.test(line)) { block = "html"; blockStart = position; }
-      else if (!ticks && i && previous.trim() && !/^(?:[ \t>#|]|[-+*]\s|\d+[.)]\s|`|~|<|\$|%%)/.test(previous) && tableHeader(line, lines[i + 1] || "")) {
+      else if (line.includes("|") && !ticks && i && previous.trim() && !/^(?:[ \t>#|]|[-+*]\s|\d+[.)]\s|`|~|<|\$|%%)/.test(previous) && tableHeader(line, lines[i + 1] || "")) {
         let last = i + 1, to = end + 1 + lines[last].length;
         while (last + 1 < lines.length && lines[last + 1].trim() && !/^[ \t]/.test(lines[last + 1]) && lines[last + 1].includes("|")) { last++; to += 1 + lines[last].length; }
         tables.push({ from: position, to, markdown: lines.slice(i, last + 1).join("\n") });
       }
     }
     if (!line.trim() || fence || block) ticks = 0;
-    else for (let c = 0; c < line.length; c++) {
+    else if (line.includes("`")) for (let c = 0; c < line.length; c++) {
       if (line[c] === "\\") { c++; continue; }
       if (line[c] !== "`") continue;
       let last = c; while (line[last + 1] === "`") last++;

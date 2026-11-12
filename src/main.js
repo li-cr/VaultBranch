@@ -114,6 +114,7 @@ module.exports = class MyGitPlugin extends Plugin {
       if (value) this.tableExtensions.push(require("./table-editor.js").tableEditorExtension(this));
       this.app.workspace.updateOptions();
       for (const leaf of this.app.workspace.getLeavesOfType("markdown")) if (leaf.view.getMode?.() === "preview") leaf.view.previewMode.rerender(true);
+      await this.saveData(this.settings);
       return true;
     }
     await this.saveData(this.settings);

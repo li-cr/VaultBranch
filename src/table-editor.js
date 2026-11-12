@@ -1,7 +1,7 @@
 "use strict";
 
 const { StateField } = require("@codemirror/state");
-const { Decoration, EditorView, WidgetType } = require("@codemirror/view");
+const { Decoration, EditorView, ViewPlugin, WidgetType } = require("@codemirror/view");
 const { MarkdownRenderer, MarkdownRenderChild, editorLivePreviewField, editorInfoField } = require("obsidian");
 const { findLooseTables } = require("./loose-tables.js");
 const { t } = require("./i18n.js");
@@ -61,25 +61,62 @@ function updatedTables(value, transaction) {
   return { tables: tables.sort((a, b) => a.from - b.from), blocked };
 }
 
+function editingTable(state, table) {
+  return !state.field(editorLivePreviewField, false) || state.selection.ranges.some(selection => selection.from <= table.to && selection.to >= table.from);
+}
+
+// Only decorate visible source lines. Inline Markdown keeps the host's tokens.
+function tableSourceDecorations(view, parsed) {
+  const ranges = [], seen = new Set(), doc = view.state.doc;
+  for (const table of parsed.tables) {
+    if (!editingTable(view.state, table)) continue;
+    const first = doc.lineAt(table.from).number;
+    for (const visible of view.visibleRanges) {
+      if (visible.to < table.from || visible.from > table.to) continue;
+      const last = doc.lineAt(Math.min(visible.to, table.to)).number;
+      for (let number = doc.lineAt(Math.max(visible.from, table.from)).number; number <= last; number++) {
+        const line = doc.line(number);
+        if (seen.has(line.from)) continue;
+        seen.add(line.from);
+        ranges.push(Decoration.line({ class: `HyperMD-table-row HyperMD-table-row-${number - first}` }).range(line.from));
+        const left = line.text.search(/\S/), right = line.text.trimEnd().length - 1;
+        let column = 0;
+        for (let i = 0; i < line.length; i++) {
+          if (line.text[i] === "\\") { i++; continue; }
+          if (line.text[i] !== "|") continue;
+          const edge = i === left || i === right;
+          ranges.push(Decoration.mark({ class: `cm-hmd-table-sep cm-hmd-table-sep-${edge ? "dummy" : column++}` }).range(line.from + i, line.from + i + 1));
+        }
+      }
+    }
+  }
+  return Decoration.set(ranges, true);
+}
+
 function tableEditorExtension(plugin) {
   const build = (state, parsed) => {
     const sourcePath = state.field(editorInfoField, false)?.file?.path || "";
-    const ranges = parsed.tables.filter(table => !state.selection.ranges.some(selection => selection.from <= table.to && selection.to >= table.from))
+    const ranges = parsed.tables.filter(table => !editingTable(state, table))
       .map(table => Decoration.replace({ block: true, widget: new TableWidget(plugin, table.markdown, sourcePath) }).range(table.from, table.to));
     return { ...parsed, active: true, decorations: Decoration.set(ranges, true) };
   };
   const empty = () => ({ tables: [], blocked: [], active: false, decorations: Decoration.none });
   return StateField.define({
-    create(state) { return plugin.settings.renderLooseTables && state.field(editorLivePreviewField, false) ? build(state, findLooseTables(state.doc.toString())) : empty(); },
+    create(state) { return plugin.settings.renderLooseTables ? build(state, findLooseTables(state.doc.toString())) : empty(); },
     update(value, transaction) {
       const state = transaction.state;
-      if (!plugin.settings.renderLooseTables || !state.field(editorLivePreviewField, false)) return value.active ? empty() : value;
+      if (!plugin.settings.renderLooseTables) return value.active ? empty() : value;
       if (!value.active) return build(state, findLooseTables(state.doc.toString()));
       if (transaction.docChanged) return build(state, updatedTables(value, transaction));
-      return transaction.selection ? build(state, value) : value;
+      return transaction.selection || state.field(editorLivePreviewField, false) !== transaction.startState.field(editorLivePreviewField, false) ? build(state, value) : value;
     },
-    provide: field => EditorView.decorations.from(field, value => value.decorations),
+    provide: field => [EditorView.decorations.from(field, value => value.decorations), ViewPlugin.fromClass(class {
+      constructor(view) { this.decorations = tableSourceDecorations(view, view.state.field(field)); }
+      update(update) {
+        if (update.viewportChanged || update.state.field(field) !== update.startState.field(field)) this.decorations = tableSourceDecorations(update.view, update.state.field(field));
+      }
+    }, { decorations: value => value.decorations })],
   });
 }
 
-module.exports = { tableEditorExtension };
+module.exports = { tableEditorExtension, tableSourceDecorations };

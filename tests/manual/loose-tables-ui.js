@@ -5,6 +5,7 @@
   await p.diffNavigationTask; await p.refreshTask; p.refreshSoon?.cancel();
   const settings = { ...p.settings }, scheduleRefresh = p.scheduleRefresh, lastAutoRefresh = p.lastAutoRefresh;
   const files = [], leaves = [], results = [], samples = [];
+  const existingViews = app.workspace.getLeavesOfType("markdown").map(leaf => leaf.view.containerEl);
   const check = (value, label) => { if (!value) throw Error(label); results.push(label); };
   const wait = async predicate => { const deadline = performance.now() + 15000; while (!await predicate()) { if (performance.now() > deadline) throw Error("Table UI timeout"); await new Promise(r => setTimeout(r, 10)); } };
   const frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -40,6 +41,7 @@
     check(reads === 0, "disabled processor performs no DOM scan or source lookup");
     await p.updateSetting("renderLooseTables", true);
     const field = p.tableExtensions[0];
+    check((await p.loadData()).renderLooseTables === true, "the compatibility switch is saved across reloads");
     await wait(() => readingRoot.querySelectorAll("table").length === 3);
     check(readingRoot.querySelectorAll("table")[0].querySelectorAll("tbody tr").length === 2, "Reading view renders a table immediately after Chinese paragraph text");
     check(readingRoot.querySelector("table th:nth-child(2)").getAttribute("align") === "right", "native column alignment is preserved");
@@ -55,6 +57,7 @@
     await click(firstWidget.querySelector("td"));
     await wait(() => cm.state.field(p.tableExtensions[0]).decorations.size === 1);
     check(cm.state.field(p.tableExtensions[0]).decorations.size === 1 && cm.state.doc.toString() === source, "clicking a table exposes its source without changing the note");
+    check(editing.view.contentEl.querySelector(".HyperMD-table-row .cm-hmd-table-sep"), "Live Preview source keeps native table delimiter highlighting");
     cm.dispatch({ selection: { anchor: source.indexOf("alpha") + 2 } }); cm.focus();
     let trusted = false;
     cm.contentDOM.addEventListener("beforeinput", event => { trusted = event.isTrusted; }, { once: true });
@@ -73,9 +76,21 @@
     await frame(); await screenshot("loose-tables-live-preview");
     await app.workspace.revealLeaf(reading); await wait(() => readingRoot.querySelectorAll("table").length === 3);
     check(readingRoot.querySelectorAll("table").length === 3, "the same note can stay rendered in a separate Reading view");
+    await app.workspace.revealLeaf(editing);
     await editing.setViewState({ type: "markdown", state: { file: file.path, mode: "source", source: true } }); await frame();
     check(!editing.view.contentEl.querySelector(".vaultbranch-loose-table"), "Source mode retains raw Markdown");
+    const sourceEditor = editing.view.editor.cm;
+    sourceEditor.dispatch({ selection: { anchor: source.indexOf("| Dataset") }, scrollIntoView: true }); await frame();
+    const lineAt = at => { const node = sourceEditor.domAtPos(at).node; return (node.nodeType === 1 ? node : node.parentElement).closest(".cm-line"); };
+    const looseLine = lineAt(source.indexOf("| Dataset") + 2), nativeLine = lineAt(source.indexOf("| Native") + 2);
+    check(looseLine.classList.contains("HyperMD-table-row") && looseLine.querySelector(".cm-hmd-table-sep"), "Source mode highlights loose table rows and separators with host classes");
+    check(getComputedStyle(looseLine).fontFamily === getComputedStyle(nativeLine).fontFamily && getComputedStyle(looseLine).fontSize === getComputedStyle(nativeLine).fontSize && getComputedStyle(looseLine).whiteSpace === getComputedStyle(nativeLine).whiteSpace, "loose table source font, size and whitespace match a native table");
+    check(sourceEditor.state.doc.toString() === source, "source highlighting never reformats or pads the note");
+    await screenshot("loose-tables-source");
     await p.updateSetting("renderLooseTables", false);
+    await frame();
+    check(!lineAt(source.indexOf("| Dataset") + 2).classList.contains("HyperMD-table-row"), "disabling restores the host's original source parsing");
+    await app.workspace.revealLeaf(reading);
     await wait(() => readingRoot.querySelectorAll("table").length === 1);
     check(readingRoot.querySelectorAll("table").length === 1, "turning off immediately restores the open Reading view");
     await editing.detach(); await reading.detach();
@@ -128,7 +143,7 @@
       }
       await leaf.detach(); await wait(async () => await app.vault.read(large) === largeSource);
     }
-    check(!document.querySelector(".vaultbranch-loose-table"), "closed editor views leave no table widget DOM");
+    check([...document.querySelectorAll(".vaultbranch-loose-table")].every(node => existingViews.some(root => root.contains(node))), "closed test editor views leave no table widget DOM");
     check(await p.git.run(["write-tree"]) === index, "table rendering and source edits leave the staged index unchanged");
     check(!(window.__vaultbranchErrors || []).length, "no table runtime errors");
     return { results, samples, fixtures: files.map(file => ({ path: file.path, bytes: file.stat.size })), note: "Reading samples measure the compatibility processor including native Markdown rendering, excluding whole-page layout/paint. Field initialization measures full-note compatibility scanning/decoration setup, excluding native editor creation/render. Typing measures trusted native beforeinput to document update and synchronous dispatch separately. Five samples after one warm-up; timing/CPU sampling off." };

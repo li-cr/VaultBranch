@@ -4,7 +4,7 @@
 let language = "zh";
 const english = {
   "兼容无空行表格": "Tables without a blank line",
-  "默认关闭。在阅读模式和实时预览中显示紧接正文的表格，不修改笔记原文。实时预览中点击表格可编辑源码。": "Off by default. Render tables immediately after text in Reading view and Live Preview without changing the note. Click a table in Live Preview to edit its source.",
+  "默认关闭。在阅读模式和实时预览中显示紧接正文的表格，源码保留表格高亮，不修改笔记原文。实时预览中点击表格可编辑源码。": "Off by default. Render tables immediately after text in Reading view and Live Preview, with table source highlighting and no changes to the note. Click a table in Live Preview to edit its source.",
   "点击表格编辑源码": "Click to edit table source",
   "查看 SVG 源码": "View SVG source",
   "预览 SVG": "Preview SVG",

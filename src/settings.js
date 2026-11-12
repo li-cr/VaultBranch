@@ -86,7 +86,7 @@ class MyGitSettings extends PluginSettingTab {
       }
       updatePreview();
     } else if (id === "other") {
-      new Setting(containerEl).setName(t("兼容无空行表格")).setDesc(t("默认关闭。在阅读模式和实时预览中显示紧接正文的表格，不修改笔记原文。实时预览中点击表格可编辑源码。")).addToggle(input => input.setValue(p.settings.renderLooseTables).onChange(value => p.updateSetting("renderLooseTables", value)));
+      new Setting(containerEl).setName(t("兼容无空行表格")).setDesc(t("默认关闭。在阅读模式和实时预览中显示紧接正文的表格，源码保留表格高亮，不修改笔记原文。实时预览中点击表格可编辑源码。")).addToggle(input => input.setValue(p.settings.renderLooseTables).onChange(value => p.updateSetting("renderLooseTables", value)));
       new Setting(containerEl).setName(t("日期触发字符串")).setDesc(t("在笔记中输入此字符串后自动替换为当前日期时间。留空关闭；前面须为空格或行首。")).addText((input) => input.setPlaceholder("@date").setValue(p.settings.dateTrigger).onChange((value) => p.updateSetting("dateTrigger", value.trim())));
       const datePreview = new Setting(containerEl).setName(t("日期时间格式"));
       const showDatePreview = () => datePreview.setDesc(t`Moment 格式；固定文字用方括号包住，例如 [Time:] YYYY-MM-DD HH:mm:ss。预览：${p.formatDate()}`);
