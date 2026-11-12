@@ -20,6 +20,7 @@
     return originalTrash.apply(this, args);
   };
   window.__vaultbranchErrors = [];
+  delete window.__vbEditFailure;
   const consoleErrors = [], originalConsoleError = console.error;
   console.error = function (...args) {
     consoleErrors.push({ messages: args.map(value => value?.stack || String(value)), callsite: new Error("Console error during release checks").stack });
@@ -64,6 +65,7 @@
     app.vault.trash = originalTrash;
     console.error = originalConsoleError;
     await store("console-errors", consoleErrors);
+    if (window.__vbEditFailure) { await store("edit-failure", window.__vbEditFailure); delete window.__vbEditFailure; }
     await window.__vbStagedSwitch?.cleanup();
     delete window.__vbSwitchProfile;
     await install(path.join(options.sourceRoot, "dist/vaultbranch"));

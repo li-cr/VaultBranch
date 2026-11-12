@@ -17,7 +17,7 @@
       const original = editor.state.doc.toString(), at = Math.floor(original.length / 2);
       const dispatch = editor.dispatch;
       let pending;
-      const begin = event => { if (pending && !pending.event) pending.event = { start: performance.now(), type: event.type, trusted: event.isTrusted }; };
+      const begin = event => { if (pending && !pending.event) pending.event = { start: performance.now(), type: event.type, key: event.key, inputType: event.inputType, trusted: event.isTrusted }; };
       for (const type of ["keydown", "beforeinput"]) editor.contentDOM.addEventListener(type, begin, true);
       editor.dispatch = function (...args) {
         const before = this.state.doc, started = performance.now();
@@ -46,7 +46,11 @@
             testWindow.show(); testWindow.focus(); web.focus(); editor.focus(); await pause(40);
             if (!document.hasFocus() || editor.composing) throw Error("Focus/composition prevents a native edit sample; discard this run");
             const record = await new Promise((resolve, reject) => {
-              const timer = setTimeout(() => { pending = null; reject(Error("Native editing timeout: " + operation)); }, 3000);
+              const timer = setTimeout(() => {
+                const diagnostic = { path: name, round, operation, event: pending?.event, focused: document.hasFocus(), editorFocused: editor.hasFocus, composing: editor.composing, readonly: editor.state.readOnly, selection: editor.state.selection.main.toJSON(), documentLength: editor.state.doc.length, completedSamples: samples };
+                window.__vbEditFailure = diagnostic;
+                pending = null; reject(Error("Native editing timeout: " + JSON.stringify({ ...diagnostic, completedSamples: samples.length })));
+              }, 3000);
               pending = { round, operation, sent: performance.now(), resolve: value => { clearTimeout(timer); resolve(value); }, reject: error => { clearTimeout(timer); reject(error); } };
               if (operation === "insert") web.sendInputEvent({ type: "char", keyCode: "x" });
               else {

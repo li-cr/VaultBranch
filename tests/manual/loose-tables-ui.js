@@ -84,7 +84,7 @@
     const lineAt = at => { const node = sourceEditor.domAtPos(at).node; return (node.nodeType === 1 ? node : node.parentElement).closest(".cm-line"); };
     const looseLine = lineAt(source.indexOf("| Dataset") + 2), nativeLine = lineAt(source.indexOf("| Native") + 2);
     check(looseLine.classList.contains("HyperMD-table-row") && looseLine.querySelector(".cm-hmd-table-sep"), "Source mode highlights loose table rows and separators with host classes");
-    check(getComputedStyle(looseLine).fontFamily === getComputedStyle(nativeLine).fontFamily && getComputedStyle(looseLine).fontSize === getComputedStyle(nativeLine).fontSize && getComputedStyle(looseLine).whiteSpace === getComputedStyle(nativeLine).whiteSpace, "loose table source font, size and whitespace match a native table");
+    check(["fontFamily", "fontSize", "fontWeight", "whiteSpace", "color"].every(key => getComputedStyle(looseLine)[key] === getComputedStyle(nativeLine)[key]) && getComputedStyle(looseLine.querySelector(".cm-hmd-table-sep")).color === getComputedStyle(nativeLine.querySelector(".cm-hmd-table-sep")).color, "loose table source font, size, weight, whitespace and separator color match a native table");
     check(sourceEditor.state.doc.toString() === source, "source highlighting never reformats or pads the note");
     await screenshot("loose-tables-source");
     await p.updateSetting("renderLooseTables", false);
