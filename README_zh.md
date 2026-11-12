@@ -13,19 +13,20 @@
 - **分支与 Stash**：创建或切换分支，收起未提交改动并恢复指定 Stash。
 - **冲突处理**：对比本地与传入内容，编辑合并结果，继续或中止 Rebase。
 - **编辑辅助**：差异折叠与跳转、可选 JSON/Markdown 语法高亮、日期插入、中英文界面。
+- **笔记表格兼容**：可选支持表格前无空行的阅读与实时预览，源码沿用原生表格样式。
 
-## 当前性能 · 1.0.5
+## 当前性能 · 1.0.6
 
-本地 Windows / Obsidian 1.15.0，与 1.0.4 对比。中位数，单位 ms；本次新增 SVG 预览，不宣称提速。
+本地 Windows / Obsidian 1.15.0，与 1.0.5 对比。中位数，单位 ms；表格兼容默认关闭，不宣称整体提速。
 
 | 测试项目 | ms | 样本数 |
 | --- | ---: | --- |
-| 插件重载（缓存已预热） | 18.7 | 5 |
-| 点击 → Staged / Changed 页面就绪 | 187.9 / 133.0 | 各 20 |
-| Changed 1.6 MB JSON：输入 / 换行 / 删除 | 3.9 / 5.8 / 1.1 | 各 5 |
-| Changed 1.28 MB Markdown：输入 / 换行 / 删除 | 4.6 / 5.2 / 5.5 | 各 5 |
+| 插件重载（缓存已预热） | 17.7 | 5 |
+| 点击 → Staged / Changed 页面就绪 | 202.3 / 139.8 | 各 20 |
+| Changed 1.6 MB JSON：输入 / 换行 / 删除 | 4.1 / 5.2 / 0.9 | 各 5 |
+| Changed 1.28 MB Markdown：输入 / 换行 / 删除 | 7.3 / 4.8 / 4.0 | 各 5 |
 
-切换包含 CPU 采样；修改测量原生输入至文档更新。[环境、对比及复现](https://github.com/li-cr/VaultBranch/blob/1.0.5/docs/performance/1.0.5.md) · [Tag 1.0.5](https://github.com/li-cr/VaultBranch/releases/tag/1.0.5)。
+开启表格兼容后，1.12 MB 笔记首次兼容识别为 9.1 ms（5 次，不含编辑器初始化和绘制）。切换包含 CPU 采样；修改测量原生输入至文档更新。[环境、范围、对比及复现](https://github.com/li-cr/VaultBranch/blob/1.0.6/docs/performance/1.0.6.md) · [Tag 1.0.6](https://github.com/li-cr/VaultBranch/releases/tag/1.0.6)。
 
 ## 反馈与建议
 
