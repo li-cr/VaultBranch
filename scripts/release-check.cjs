@@ -31,7 +31,14 @@ try {
   const code = `(async()=>{window.__vbReleaseOptions=${JSON.stringify({ sourceRoot: root, outputDir: output, baselineBuild: options["--baseline-build"] })};return await eval(require("node:fs").readFileSync(${JSON.stringify(path.join(root, "tests/manual/release-ui.js"))},"utf8"));})()`;
   const safe = "eval(String.fromCharCode(" + Array.from(code, char => char.charCodeAt(0)).join(",") + "))";
   console.log("Running both builds' startup/switch/edit measurements, then the complete UI regression suite in note_test.");
-  const result = run("obsidian-ui", options["--obsidian-cli"], ["vault=note_test", "eval", "code=" + safe], 300000);
+  let result;
+  try { result = run("obsidian-ui", options["--obsidian-cli"], ["vault=note_test", "eval", "code=" + safe], 300000); }
+  catch (error) {
+    // The Windows CLI can select the vault before its eval command is ready.
+    // Retry only this pre-execution rejection, never an executed UI script.
+    if (!String(error.message).includes('Command "eval" not found')) throw error;
+    result = run("obsidian-ui", options["--obsidian-cli"], ["vault=note_test", "eval", "code=" + safe], 300000);
+  }
   const json = JSON.parse(result.slice(result.indexOf("=> ") + 3));
   console.log(JSON.stringify(json, null, 2));
   console.log("Reports: " + output);
