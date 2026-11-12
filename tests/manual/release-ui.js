@@ -39,6 +39,7 @@
   async function measure(name, build) {
     await install(build);
     const startup = await store(name + "-startup", await run("scripts/benchmark-startup.js"));
+    if (startup.samples.some(sample => sample.tableCompatibilityEnabled || sample.tableEditorExtensionCount)) throw Error("Required benchmarks must run with table compatibility disabled.");
     await run("tests/manual/staged-switch-ui.js");
     const switching = await store(name + "-switch", await run("tests/manual/profile-switch-ui.js"));
     await store(name + "-switch-profile", window.__vbSwitchProfile); delete window.__vbSwitchProfile;
@@ -48,6 +49,8 @@
   }
   try {
     await current.updateSetting("renderLooseTables", false);
+    if (current.settings.renderLooseTables) throw Error("Unable to disable compatibility before required benchmarks.");
+    await current.saveData(current.settings);
     if (legacyEnabled) await manager.disablePlugin("my-git");
     reports.before = await measure("before", options.baselineBuild);
     reports.after = await measure("after", path.join(options.sourceRoot, "dist/vaultbranch"));

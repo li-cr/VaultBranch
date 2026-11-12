@@ -21,8 +21,8 @@ function harness(saved) {
     addRibbonIcon() { return { setAttribute() {} }; }
     addCommand(command) { return command; }
     registerEvent() {}
-    registerEditorExtension() {}
-    registerMarkdownPostProcessor(callback) { this.tableProcessor = callback; }
+    registerEditorExtension() { this.editorRegistrations = (this.editorRegistrations || 0) + 1; }
+    registerMarkdownPostProcessor(callback) { this.markdownRegistrations = (this.markdownRegistrations || 0) + 1; this.tableProcessor = callback; }
     registerDomEvent(target, name, callback) { domEvents.set(name, callback); }
     registerInterval() {}
   }
@@ -73,6 +73,8 @@ test("startup registers every view without evaluating view implementations or st
   assert.equal(h.writes.length, 0);
   assert.equal(h.plugin.settings.renderLooseTables, false);
   assert.equal(h.plugin.tableProcessor(null, null), undefined);
+  assert.equal(h.plugin.editorRegistrations || 0, 0);
+  assert.equal(h.plugin.markdownRegistrations || 0, 0);
   assert.equal([...h.loaded].some(file => /(?:loose-tables|table-editor)\.js$/.test(file)), false);
 });
 

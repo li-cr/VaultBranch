@@ -3,20 +3,12 @@
 const { Notice } = require("obsidian");
 const { t } = require("./i18n.js");
 const { dateTriggerRange } = require("./date.js");
+const { initializeTables } = require("./table-support.js");
 const { DIFF_VIEW } = require("./views/shared.js");
 
 // All registrations belong to the host plugin, which disposes them on unload.
 function registerEvents(plugin) {
-  plugin.tableExtensions = [];
-  if (plugin.settings.renderLooseTables) plugin.tableExtensions.push(require("./table-editor.js").tableEditorExtension(plugin));
-  plugin.registerEditorExtension(plugin.tableExtensions);
-  plugin.tableProcessor = (el, context) => {
-    if (plugin.unloaded || !plugin.settings.renderLooseTables || !el.classList.contains("el-p") || el.childElementCount !== 1) return;
-    const paragraph = el.firstElementChild;
-    if (paragraph?.tagName !== "P" || !/\n[| :\t-]*-[| :\t-]*(?:\n|$)/.test(paragraph.textContent)) return;
-    return require("./loose-tables.js").renderReadingTable(plugin, el, context);
-  };
-  plugin.registerMarkdownPostProcessor(plugin.tableProcessor);
+  initializeTables(plugin);
   plugin.dateCommand = plugin.addCommand({ id: "insert-date", name: t("插入当前日期时间"), editorCallback: (editor) => editor.replaceSelection(plugin.formatDate()) });
   plugin.fileHistoryCommand = plugin.addCommand({ id: "file-history", name: t("查看当前文件历史"), checkCallback: checking => {
     const view = plugin.app.workspace.activeLeaf?.view;

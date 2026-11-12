@@ -3,7 +3,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { cells, tableHeader, findLooseTables } = require("../src/loose-tables.js");
-const table = "| 数据集 | unique 总数 |\n|---|---:|\n| DDA | 2,370 |\n| DIA | 8,269 |";
+const table = "| 数据集 | 总数 |\n|---|---:|\n| 示例 A | 12 |\n| 示例 B | 34 |";
 
 test("finds only a table directly following top-level paragraph text and preserves exact source ranges", () => {
   const text = "总体分析：\n" + table + "\n\n尾部文字";

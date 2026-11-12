@@ -55,6 +55,8 @@
       started = performance.now();
       const plugin = await manager.loadPlugin(id);
       sample.loadPluginMs = round(performance.now() - started);
+      sample.tableCompatibilityEnabled = Boolean(plugin.settings.renderLooseTables);
+      sample.tableEditorExtensionCount = plugin.tableExtensions?.length || 0;
       sample.settingsWrites ||= 0;
       sample.readyAtLoad = plugin.ready;
       const run = plugin.git.run, gitCalls = [];
