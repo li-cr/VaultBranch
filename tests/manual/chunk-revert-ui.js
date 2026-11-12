@@ -9,14 +9,18 @@
   const edited = base.replace("line 4\n", "changed four\n").replace("line 22\n", "").replace("line 35\n", "extra line\nline 35\n");
   const settings = { ...p.settings };
   const file = await app.vault.create(filePath, base);
-  let leaf, untracked;
+  const scheduleRefresh = p.scheduleRefresh, lastAutoRefresh = p.lastAutoRefresh;
+  let leaf, untracked, staged = false;
   const controls = view => [...view.contentEl.querySelectorAll(".cm-merge-revert button")];
   const mouse = control => control.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
   const undo = editor => { editor.focus(); editor.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "z", code: "KeyZ", ctrlKey: true, bubbles: true })); };
   try {
+    if (p.refreshTask) await p.refreshTask;
+    p.refreshSoon?.cancel(); p.scheduleRefresh = () => {}; p.lastAutoRefresh = Date.now() + 3600000;
     await p.updateSetting("diffAutosave", false);
     await p.updateSetting("collapseUnchanged", false);
     await p.git.stage([filePath]);
+    staged = true;
     const index = await p.git.run(["show", ":" + filePath]);
     await app.vault.modify(file, edited);
     leaf = await p.openDiff({ path: filePath, index: "A", worktree: "M" }, "unstaged");
@@ -79,9 +83,11 @@
   } finally {
     p.busy = false; p.mutationPending = false;
     if (leaf) { await leaf.view.session?.reload(); await leaf.detach(); }
-    await p.git.run(["rm", "--cached", "--force", "--", filePath]);
+    if (staged) await p.git.run(["rm", "--cached", "--force", "--", filePath]);
     if (app.vault.getAbstractFileByPath(filePath)) await app.vault.trash(file, false);
     if (untracked && app.vault.getAbstractFileByPath(untracked.path)) await app.vault.trash(untracked, false);
     for (const key of ["diffAutosave", "collapseUnchanged", "language"]) await p.updateSetting(key, settings[key]);
+    p.scheduleRefresh = scheduleRefresh; p.lastAutoRefresh = lastAutoRefresh;
+    await p.refresh();
   }
 })()
