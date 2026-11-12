@@ -371,11 +371,15 @@ class GitService {
       const versions = await this.comparisonVersions(file, area, timing, read);
       return versions && { images: versions };
     }
-    const [status, index, working] = await Promise.all([
+    const reads = await Promise.allSettled([
       this.status({ includeStash: false }),
       this.run(["ls-files", "--stage", "-z", "--", file.path], { timing }),
       this.workingImage(file.path),
     ]);
+    // A failed image read must not leave a status/index read running behind it.
+    const failure = reads.find(result => result.status === "rejected");
+    if (failure) throw failure.reason;
+    const [status, index, working] = reads.map(result => result.value);
     this.assertNormal(status);
     if (!status.files.some(entry => entry.path === file.path && entry.worktree !== " ")) throw new Error(t("文件状态已改变，请刷新后重试。"));
     const entries = index.split("\0").filter(Boolean);

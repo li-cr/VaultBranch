@@ -37,6 +37,9 @@ async function write(root, file, text) {
 
 test("image previews keep raw bytes and live HEAD/index/worktree versions without changing the index", async () => {
   const { root, service } = await fixture();
+  const status = service.status.bind(service);
+  let pendingStatus = 0;
+  service.status = async (...args) => { pendingStatus++; try { return await status(...args); } finally { pendingStatus--; } };
   const file = { path: "Fig/deep/nested/TMP-{counter_00X}.PNG" };
   const base = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 255, 128]);
   const staged = Buffer.concat([base, Buffer.from("staged")]);
@@ -74,6 +77,7 @@ test("image previews keep raw bytes and live HEAD/index/worktree versions withou
   assert.equal(versions.left, null); assert.deepEqual(bytes(versions.right), base);
   await write(root, "new.png", Buffer.alloc(10 * 1024 * 1024 + 1));
   await assert.rejects(service.imageVersions({ path: "new.png" }, "unstaged"), /10 MB/);
+  assert.equal(pendingStatus, 0, "a rejected image read finishes its parallel status query before returning");
   git(root, "add", "new.png");
   await assert.rejects(service.imageVersions({ path: "new.png" }, "staged"), /10 MB/);
 });
