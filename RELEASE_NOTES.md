@@ -1,25 +1,24 @@
-VaultBranch 1.0.6 — table compatibility and source-style bug fix.
+VaultBranch 1.0.7 — unused translation cleanup.
 
-- Add an optional **Other → Tables without a blank line** switch, off by default. Render tables immediately after paragraph text in note Reading view and Live Preview without changing the file.
-- **Bug fix / 修复：编辑模式下无空行表格的源码样式与原生表格不一致。** Reuse Obsidian's native table row and delimiter classes for font, size, weight and separator colors, following the current theme instead of fixed formatting.
-- Click a Live Preview table to edit source; leaving the table restores the preview. Preserve drafts, selection, undo, ordinary tables and fenced code. Save the switch across reloads.
-- Limit extra source highlighting to visible lines and ordinary re-parsing to the changed paragraph. Optimize the measured first compatibility scan without new dependencies or Git read/cache changes.
+- Remove 13 obsolete translation entries from retired source/preview text controls, draft dialogs and loading placeholders. Keep all 292 currently used English entries unchanged.
+- Reduce bundled main.js by 1206 bytes. No dependencies added and no operation-speedup claim.
+- Git read/write, validation, caches, editor lifecycle, independent table compatibility and CSS are unchanged.
 
-Local Windows / Obsidian 1.15.0, ms (median):
+Local Windows / Obsidian 1.15.0; ms, median:
 
-| Measurement | Current | Samples |
+| Measurement | ms | Samples |
 | --- | ---: | --- |
-| Plugin reload, warm cache | 17.7 | 5 |
-| Trusted click → Staged / Changed page ready | 202.3 / 139.8 | 20 each |
-| Changed 1.6 MB JSON, type / Enter / Backspace | 4.1 / 5.2 / 0.9 | 5 each |
-| Changed 1.28 MB Markdown, type / Enter / Backspace | 7.3 / 4.8 / 4.0 | 5 each |
+| Plugin reload (warm cache) | 12.1 | 5 |
+| Click → Staged / Changed page ready | 141.7 / 98.8 | 20 each |
+| Changed 1.6 MB JSON: type / Enter / Backspace | 5.1 / 4.4 / 1.0 | 5 each |
+| Changed 1.28 MB Markdown: type / Enter / Backspace | 5.5 / 3.4 / 14.1 | 5 each |
 
-First sidebar: 496.7 ms; first diff: 419.0 ms, separate from plugin load. Required release benchmarks have table compatibility off. Switching includes CPU sampling; typing measures native event-to-document update. With compatibility on, first field initialization for a 1.12 MB note is 9.1 [6.9–15.6] ms versus 25.9 [24.9–31.2] ms in the initial implementation; this excludes native editor creation and paint. Enabled/disabled rendering/input costs and all ranges are in the report. No overall speedup, zero-overhead or physical-paint claim.
+First sidebar: 359.0 ms; first diff: 240.7 ms, measured separately from plugin load. A reverse-order follow-up of first-use/Backspace variability is retained separately in the report; primary results above are unchanged. Plugin reload uses warm caches. Switching includes CPU sampling; typing measures trusted native input to document update. Table compatibility, highlighting and autosave are off during required benchmarks. All baseline comparisons, ranges, flags and raw samples are in the report; physical paint is not measured.
 
-Validated in one final complete release-check run: 129 automated tests, 415 UI assertions (49 table checks) and both builds' three required performance probes. Index preserved; final sessions/pending reads/runtime and console errors: zero. Support targets unindented top-level tables; native nested syntax and the native grid editor remain unchanged.
+Validated in one complete release-check run: 129 automated tests, 415 UI assertions and both builds' three performance probes. Index preserved; final sessions, pending reads, runtime and captured console errors: zero.
 
-Version/tag: [1.0.6](https://github.com/li-cr/VaultBranch/tree/1.0.6). Baseline: [1.0.5 / ca0196b5c8c572a1aa62b977f6893c8a1ee211ee](https://github.com/li-cr/VaultBranch/tree/1.0.5). Tested source: [600b8e81b794956d78fee323b8b64ebd61d3d7d8](https://github.com/li-cr/VaultBranch/commit/600b8e81b794956d78fee323b8b64ebd61d3d7d8). [Compare](https://github.com/li-cr/VaultBranch/compare/1.0.5...1.0.6).
+Version/tag: [1.0.7](https://github.com/li-cr/VaultBranch/tree/1.0.7). Baseline: [1.0.6 / d35c759afa99e704c37aa9c717a06d6e6a3d315d](https://github.com/li-cr/VaultBranch/tree/1.0.6). Tested source: [886964eb231528942483746f307b3f7e9ac46456](https://github.com/li-cr/VaultBranch/commit/886964eb231528942483746f307b3f7e9ac46456). [Compare 1.0.6...1.0.7](https://github.com/li-cr/VaultBranch/compare/1.0.6...1.0.7).
 
-[Performance report and reproduction](https://github.com/li-cr/VaultBranch/blob/1.0.6/docs/performance/1.0.6.md) · [Raw samples](https://github.com/li-cr/VaultBranch/blob/1.0.6/docs/performance/1.0.6-samples.json). The tag workflow appends the exact release commit; runtime and dependency hashes are in the samples.
+[Performance report and reproduction](https://github.com/li-cr/VaultBranch/blob/1.0.7/docs/performance/1.0.7.md) · [Raw samples](https://github.com/li-cr/VaultBranch/blob/1.0.7/docs/performance/1.0.7-samples.json). The tag workflow appends the exact release commit.
 
 Release assets retain GitHub provenance attestations. Desktop only; requires Git installed separately.
